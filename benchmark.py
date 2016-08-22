@@ -30,11 +30,11 @@ np.random.seed(5)
 #cfg = DAM(ExtKF, infl = 1.05)
 
 
-from mods.Lorenz95.sak08 import setup
+from mods.MAOOAM.maooam16 import setup
 #
 cfg           = DAM(EnKF)
-cfg.N         = 24
-cfg.infl      = 1.018
+cfg.N         = 30
+cfg.infl      = 1
 cfg.AMethod   = 'Sqrt'
 cfg.rot       = True
 #
@@ -52,8 +52,8 @@ cfg.rot       = True
 ############################
 # Common
 ############################
-setup.t.T = 4**3
-cfg.liveplotting = True
+setup.t.T = 32444
+cfg.liveplotting = False
 
 
 ############################

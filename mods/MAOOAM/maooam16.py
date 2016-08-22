@@ -17,18 +17,19 @@ print (" Model initialized")
 m = mods.MAOOAM.params2.ndim
 p = m
 
-#15 days simulation - time step 0.1
-#obs time step 5 day
+#10 years simulation - time step 0.1
+#obs time step 1 day
 #model transient time 10 years
-#DA transient time 0
+#DA transient time 1
 
-T=200
-BurnIn=44
-t = Chronology(0.1,dtObs=9,T=T,BurnIn=BurnIn)
+T=32444
+BurnIn=3244
+t = Chronology(0.1,dtObs=8.9,T=T,BurnIn=BurnIn)
 
 f = {
     'm': m,
     'model': lambda x,t,dt: mods.MAOOAM.integrator.step(x,t,dt),
+    'TLM'  : 0,
     'noise': 0
     }
 
@@ -71,9 +72,10 @@ hnoise = GaussRV(C=CovMat(R),mu=0)
 h = {
     'm': p,
     'model': lambda x,t: x,
+    'TLM'  : lambda x,t: eye(p),
     'noise': hnoise,
     }
 
 other = {'name': os.path.basename(__file__)}
 
-params = OSSE(f,h,t,X0,**other)
+setup = OSSE(f,h,t,X0,**other)

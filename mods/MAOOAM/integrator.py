@@ -17,7 +17,7 @@ def sparse_mul3(arr) :
 	arr = np.hstack((np.array([[1]*n]).reshape(n,1),arr))
 	res=np.zeros((n,ndim+1))
 	for (i,j,k,v) in aotensor :
-		res[:,i-1]=res[:,i-1]+v*arr[:,j-1]*arr[:,k-1]
+		res[:,i]=res[:,i]+v*arr[:,j]*arr[:,k]
 	if res.shape[0] is 1:
 		res = res.squeeze()
 		return res[1:]
@@ -34,15 +34,15 @@ def tendencies(y) :
 def step(y,t,dt) :
 	""" Heun method integration"""
 	n=y.shape[0]
-buf_f0=np.zeros((n,ndim+1))
-buf_f1=np.zeros((n,ndim+1))
-buf_y1=np.zeros((n,ndim+1))
+	buf_f0=np.zeros((n,ndim+1))
+	buf_f1=np.zeros((n,ndim+1))
+	buf_y1=np.zeros((n,ndim+1))
 
-buf_f0=tendencies(y)
-buf_y1= y + dt * buf_f0
-buf_f1=tendencies(buf_y1)
-Y=y + 0.5 * (buf_f0 + buf_f1) * dt
-return Y
+	buf_f0=tendencies(y)
+	buf_y1= y + dt * buf_f0
+	buf_f1=tendencies(buf_y1)
+	Y=y + 0.5 * (buf_f0 + buf_f1) * dt
+	return Y
 
 if __name__ == "__main__":
 	import ic

@@ -69,8 +69,8 @@ h     = 165      #  136.5 GMD depth of the water layer of the ocean
 d     = 6e-8  # 1.1 10-7 GMDs the coupling parameter (should be divided by f0 in order to be adimensional)
 
 #Parameters for the atmosphere
-k     = 0.02    #  atmosphere bottom friction coefficient
-kp    = 0.01    #  atmosphere internal friction coefficient
+k     = 0.01    #  atmosphere bottom friction coefficient
+kp    = 0.02    #  atmosphere internal friction coefficient
 sig0  = 0.1e0     #  static stability of the atmosphere
 
 #Temperature-related parameters for the ocean

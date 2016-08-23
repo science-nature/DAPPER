@@ -83,6 +83,6 @@ print('Mean analysis MGSL: {: 8.5f} ± {:<5g}'
 ############################
 # Plot
 ############################
-plot_time_series(xx,s,chrono,dim=2)
-plot_ens_stats(xx,s,chrono,cfg)
-plot_3D_trajectory(xx[:,:3],s,chrono)
+# plot_time_series(xx,s,chrono,dim=2)
+# plot_ens_stats(xx,s,chrono,cfg)
+# plot_3D_trajectory(xx[:,:3],s,chrono)

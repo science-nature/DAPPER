@@ -22,9 +22,11 @@ p = m
 #model transient time 10 years
 #DA transient time 1
 
-T=32444
-BurnIn=32444
-t = Chronology(0.1,dtObs=9,T=T,BurnIn=BurnIn)
+#T=32444
+#BurnIn=32444
+T=1600
+BurnIn=500
+t = Chronology(0.1,dtObs=1.5,T=T,BurnIn=BurnIn)
 
 f = {
     'm': m,

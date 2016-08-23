@@ -17,14 +17,14 @@ print (" Model initialized")
 m = mods.MAOOAM.params2.ndim
 p = m
 
-#10 years simulation - time step 0.1
+#3 years simulation - time step 0.1
 #obs time step 1 day
 #model transient time 10 years
 #DA transient time 1
 
 T=32444
-BurnIn=3244
-t = Chronology(0.1,dtObs=8.9,T=T,BurnIn=BurnIn)
+BurnIn=32444
+t = Chronology(0.1,dtObs=9,T=T,BurnIn=BurnIn)
 
 f = {
     'm': m,

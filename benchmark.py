@@ -33,7 +33,7 @@ np.random.seed(5)
 from mods.MAOOAM.maooam16 import setup
 #
 cfg           = DAM(EnKF)
-cfg.N         = 30
+cfg.N         = 5
 cfg.infl      = 1
 cfg.AMethod   = 'Sqrt'
 cfg.rot       = True
@@ -53,7 +53,7 @@ cfg.rot       = True
 # Common
 ############################
 setup.t.T = 32444
-cfg.liveplotting = False
+cfg.liveplotting = False 
 
 
 ############################

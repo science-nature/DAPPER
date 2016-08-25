@@ -30,6 +30,12 @@ class Stats:
       N    = cfg.N
       m_Nm = np.minimum(m,N)
       self.svals = zeros((K+1,m_Nm))
+    #initialization of Pf and Pa
+    self.rmsef=zeros((KObs+2,m))
+    self.rmsea=zeros((KObs+2,m))
+    self.matcovf=zeros((KObs+2,m))
+    self.matcova=zeros((KObs+2,m))
+
 
   def assess(self,E,x,k):
     assert(type(E) is np.ndarray)
@@ -128,8 +134,22 @@ class Stats:
           elif len(val) == t.KObs+1:
             avrg[key] = series_mean_with_conf(val[kk_O])
     return avrg
+#computation of the covariance matrix
+  def covariancematrixforecast(self,E,x,kObs,k):
+    N,m           = E.shape
+    A             = E - mean(E,0)
+    self.rmsef[(kObs+1),:]= sqrt(mean((mean(E,0) - x[(k),:])**2))
+    #self.matcovf[(kObs+1),:]=diag(A.T.dot(A))/(N-1)
+    #self.var[k]   = sum(A**2  ,0) / (N-1)
+    self.matcovf[(kObs+1),:]=sum(A**2  ,0) / (N-1)
 
-      
+  def covariancematrixanalysis(self,E,x,kObs,k):
+    N,m           = E.shape
+    A             = E - mean(E,0)
+    self.rmsea[(kObs+1),:]= sqrt(mean((mean(E,0) - x[(k),:])**2))
+    #self.matcova[(kObs+1),:]=diag(A.T.dot(A))/(N-1)
+    #self.var[k]   = sum(A**2  ,0) / (N-1)
+    self.matcova[(kObs+1),:]=sum(A**2  ,0) / (N-1)
 
 
 def average_each_field(ss,axis=None):

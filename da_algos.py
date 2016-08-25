@@ -9,6 +9,7 @@ def EnKF(setup,cfg,xx,yy):
   E = X0.sample(cfg.N)
 
   stats = Stats(setup,cfg)
+  stats.covariancematrixanalysis(E,xx,-1,0)
   stats.assess(E,xx,0)
   lplot = LivePlot(setup,cfg,E,stats,xx,yy)
 
@@ -17,9 +18,11 @@ def EnKF(setup,cfg,xx,yy):
     E += sqrt(dt)*f.noise.sample(cfg.N)
 
     if kObs is not None:
+      stats.covariancematrixforecast(E,xx,kObs,k)
       hE = h.model(E,t)
       y  = yy[kObs]
       E,s_now = EnKF_analysis(E,hE,h.noise,y,cfg.AMethod)
+      stats.covariancematrixanalysis(E,xx,kObs,k)
       stats.copy_paste(s_now,kObs)
       post_process(E,cfg)
       #if t<BurnIn:

@@ -52,7 +52,7 @@ cfg.rot       = True
 ############################
 # Common
 ############################
-setup.t.T = 1600
+# setup.t.T = 1600
 cfg.liveplotting = False 
 
 

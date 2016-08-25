@@ -24,9 +24,9 @@ p = m
 
 #T=32444
 #BurnIn=32444
-T=1600
-BurnIn=500
-t = Chronology(0.1,dtObs=266.7,T=T,BurnIn=BurnIn)
+T=500
+BurnIn=1
+t = Chronology(0.1,dtObs=62.2,T=T,BurnIn=BurnIn)
 
 f = {
     'm': m,

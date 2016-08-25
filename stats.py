@@ -24,6 +24,12 @@ class Stats:
     self.err   = zeros((K+1,m))
     self.rmv   = zeros(K+1)
     self.rmse  = zeros(K+1)
+    #four rmse for each physical variable
+    self.rmsePSIa   =zeros(K+1)
+    self.rmseTa     =zeros(K+1)
+    self.rmseAoc    =zeros(K+1)
+    self.rmseTHETAoc=zeros(K+1)
+
     self.rh    = zeros((K+1,m))
     self.trHK  = zeros(KObs+1)
     if hasattr(cfg,'N'):
@@ -49,7 +55,11 @@ class Stats:
     self.err[k]   = x[k] - self.mu[k]
     self.rmv[k]    = sqrt(mean(self.var[k]))
     self.rmse[k]    = sqrt(mean(self.err[k]**2))
-
+    #four rmse for each physical variable
+    self.rmsePSIa[k]   = sqrt(mean(self.err[k,[0,1,2,3,4,5,6,7,8,9]]**2))
+    self.rmseTa[k]     = sqrt(mean(self.err[k,[10,11,12,13,14,15,16,17,18,19]]**2))
+    self.rmseAoc[k]    = sqrt(mean(self.err[k,[20,21,22,23,24,25,26,27]]**2))
+    self.rmseTHETAoc[k]= sqrt(mean(self.err[k,[28,29,30,31,32,33,34,35]]**2))
     # Marginal log score
     ldet            = sum(log(self.var[k]))
     nmisf           = self.var[k]**(-1/2) * self.err[k]

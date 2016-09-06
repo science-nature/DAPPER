@@ -247,6 +247,7 @@ def EnKF_N(setup,cfg,xx,yy):
 
   stats = Stats(setup,cfg)
   stats.assess(E,xx,0)
+  stats.covariancematrixanalysis(E,xx,-1,0)
   stats.infl = zeros(chrono.KObs+1)
   lplot = LivePlot(setup,cfg,E,stats,xx,yy)
 
@@ -299,10 +300,10 @@ def EnKF_N(setup,cfg,xx,yy):
       # Hess    = Y@Ri@Y.T + zeta*eye(N) \
       #           - 2*zeta**2/(N+g)*np.outer(w,w)
       # T       = funm_psd(Hess, lambda x: x**(-0.5)) * sqrt(N-1)
-
+      stats.covariancematrixforecast(E,xx,kObs,k)
       E = mu + w@A + T@A
       post_process(E,cfg)
-
+      stats.covariancematrixanalysis(E,xx,kObs,k)
       stats.trHK[kObs] = sum(((l1*s)**2 + (N-1))**(-1.0)*s**2)/h.noise.m
 
     stats.assess(E,xx,k)

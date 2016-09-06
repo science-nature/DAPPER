@@ -1,5 +1,4 @@
-# Reproduce results from
-# table1 of sakov et al "iEnKF" (2012)
+# DAPPER's configuration for MAOOAM
 
 from common import *
 import numpy as np
@@ -15,7 +14,7 @@ mu0= ic.X1
 
 print (" Model initialized")
 m = mods.MAOOAM.params2.ndim
-p = m
+
 
 #3 years simulation - time step 0.1
 #obs time step 1 day
@@ -24,9 +23,9 @@ p = m
 
 #T=32444
 #BurnIn=32444
-T=500
-BurnIn=1
-t = Chronology(0.1,dtObs=62.2,T=T,BurnIn=BurnIn)
+T=3244.4
+BurnIn=0
+t = Chronology(0.1,dtObs=8.9,T=T,BurnIn=BurnIn)
 
 f = {
     'm': m,
@@ -81,12 +80,18 @@ X0 = GaussRV(C=C0,mu=mu0)
 
 #observation noise variance is 1% of the var on 200 years effective dt=0.01
 R= 0.01*0.01*diag(var2)
+# R= 0.01*0.01*diag(var2)
 hnoise = GaussRV(C=CovMat(R),mu=0)
+@atmost_2d
+def hmod(E,t):
+  return E[:,:]
 
+p = 36
 h = {
     'm': p,
-    'model': lambda x,t: x,
-    'TLM'  : lambda x,t: eye(p),
+    'model' : hmod,
+    # 'model': lambda x,t: x,
+    # 'TLM'  : lambda x,t: eye(p),
     'noise': hnoise,
     }
 

@@ -64,7 +64,6 @@ def simulate(setup):
   xx[0] = X0.mu
   for k,_,t,dt in chrono.forecast_range:
     xx[k] = f.model(xx[k-1],t-dt,dt) + sqrt(dt)*f.noise.sample(1)
-    print(t)
   # obs
   yy = zeros((chrono.KObs+1,h.m))
   for k,t in enumerate(chrono.ttObs):

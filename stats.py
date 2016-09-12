@@ -37,6 +37,9 @@ class Stats:
     self.errf=zeros((KObs+2,m))
     self.erra=zeros((KObs+2,m))
 
+    self.Xa = zeros((KObs+2,N,m))
+    self.Xf = zeros((KObs+2,N,m))
+
   def assess(self,E,x,k):
     assert(type(E) is np.ndarray)
     N,m             = E.shape
@@ -137,20 +140,20 @@ class Stats:
 #computation of the covariance matrix
   def covariancematrixforecast(self,E,x,kObs,k):
     N,m           = E.shape
-    A             = E - mean(E,0)
+    self.Xf[(kObs+1),:,:] = E - mean(E,0)
     self.errf[(kObs+1)]= (mean(E,0) - x[(k),:])
     #self.matcovf[(kObs+1),:]=diag(A.T.dot(A))/(N-1)
     #self.var[k]   = sum(A**2  ,0) / (N-1)
-    self.matcovf[(kObs+1),:]=sum(A**2  ,0) / (N-1)
+    self.matcovf[(kObs+1),:]=sum(self.Xf[(kObs+1),:,:]**2  ,0) / (N-1)
 
 
   def covariancematrixanalysis(self,E,x,kObs,k):
     N,m           = E.shape
-    A             = E - mean(E,0)
+    self.Xa[(kObs+1),:,:]             = E - mean(E,0)
     self.erra[(kObs+1)]= (mean(E,0) - x[(k),:])
     #self.matcova[(kObs+1),:]=diag(A.T.dot(A))/(N-1)
     #self.var[k]   = sum(A**2  ,0) / (N-1)
-    self.matcova[(kObs+1),:]=sum(A**2  ,0) / (N-1)
+    self.matcova[(kObs+1),:]=sum(self.Xa[(kObs+1),:,:]**2  ,0) / (N-1)
 
 
 

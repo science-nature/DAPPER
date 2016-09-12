@@ -2,7 +2,7 @@
 # Preamble
 ############################
 from common import *
-import time
+
 np.random.seed(5)
 #LCG(5)
 
@@ -34,7 +34,7 @@ from mods.MAOOAM.maooam16 import setup
 #
 cfg           = DAM(EnKF_N)
 cfg.N         = 15
-cfg.rot       = True
+cfg.rot       = False
 #
 #cfg = DAM(Climatology)
 #cfg = DAM(D3Var)
@@ -53,19 +53,27 @@ cfg.rot       = True
 # setup.t.T = 1600
 cfg.liveplotting = False 
 
-T=time.clock()
 
 ############################
 # Generate synthetic truth/obs
 ############################
-# xx,yy = simulate(setup)
-xx=np.loadtxt('./data/truthref.dat')
-yy=np.loadtxt('./data/obsref.dat')
+# xx=np.loadtxt('./data/truthref.dat')
 
+# f,hatm,h,chrono,X0 = setup.f, setup.hatm, setup.h, setup.t, setup.X0
+# # obs
+# yyatm = zeros((chrono.KObs+1,hatm.m))
+# for k,t in enumerate(chrono.ttObs):
+#   yyatm[k] = hatm.model(xx[chrono.kkObs[k]],t) + hatm.noise.sample(1)
+
+# yy = zeros((chrono.KObs+1,h.m))
+# for k,t in enumerate(chrono.ttObs):
+#   yy[k] = h.model(xx[chrono.kkObs[k]],t) + h.noise.sample(1)
+xx,yy = simulate(setup)
+yyatm=yy
 ############################
 # Assimilate
 ############################
-s = assimilate(setup,cfg,xx,yy)
+s = assimilate(setup,cfg,xx,yyatm,yy)
 
 
 ############################
@@ -80,20 +88,6 @@ print('Mean forecast RMSE: {: 8.5f} ± {:<5g},    RMV: {:8.5f}'
     .format(*series_mean_with_conf(s.rmse[kk_f]),mean(s.rmv[kk_f])))
 print('Mean analysis MGSL: {: 8.5f} ± {:<5g}'
     .format(*series_mean_with_conf(s.logp_m[kk_a])))
-
-f,h,chrono,X0 = setup.f, setup.h, setup.t, setup.X0
-
-# free run
-fr = zeros((chrono.K+1,f.m))
-fr[0] = s.mu[0]
-for k,_,t,dt in chrono.forecast_range:
-  fr[k] = f.model(fr[k-1],t-dt,dt) + sqrt(dt)*f.noise.sample(1)
-
-d=time.clock()-T
-
-print ("Time clock :")
-print (d)
-
 
 ############################
 # Plot

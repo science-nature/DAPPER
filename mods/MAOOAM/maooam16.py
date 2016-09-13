@@ -23,7 +23,7 @@ m = mods.MAOOAM.params2.ndim
 
 #T=32444
 #BurnIn=32444
-T=32444.4
+T=3244.4
 BurnIn=0
 t = Chronology(0.1,dtObs=8.9,T=T,BurnIn=BurnIn)
 
@@ -119,4 +119,4 @@ h = {
 
 other = {'name': os.path.basename(__file__)}
 
-setup = OSSE(f,hatm,hatm,t,X0,**other)
+setup = OSSE(f,h,h,t,X0,**other)

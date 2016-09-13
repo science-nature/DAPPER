@@ -60,7 +60,7 @@ np.savetxt('./data/obs.dat',yyatm)
 for k,cfg in enumerate(DAMs):
 	print(bcolors.OKBLUE +"method" + bcolors.ENDC,cfg.da_method,bcolors.OKBLUE +"size N"+ bcolors.ENDC,cfg.N)
 	#assimilation
-	s = assimilate(setup,cfg,xx,yyatm,yy)
+	s = assimilate(setup,cfg,xx,yy,yy)
 	#free run
 	# fr = zeros((chrono.K+1,f.m))
 	# fr[0] = s.mu[0]

@@ -78,32 +78,7 @@ C0 = 0.01*0.01*diag(var2)
 X0 = GaussRV(C=C0,mu=mu0)
 
 
-#observation noise variance is 1% of the var on 200 years effective dt=0.01
-Ratm= 0.01*0.01*diag(var2[[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]])
-hnoiseatm = GaussRV(C=CovMat(Ratm),mu=0)
-@atmost_2d
-def hmodatm(E,t):
-  return E[:,[[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]]]
-
-hatm = {
-    'm': 20,
-    'model' : hmodatm,
-    'noise': hnoiseatm,
-    }
-
-#observation noise variance is 1% of the var on 200 years effective dt=0.01
-Roc= 0.01*0.01*diag(var2[[20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]])
-hnoiseoc = GaussRV(C=CovMat(Roc),mu=0)
-@atmost_2d
-def hmodoc(E,t):
-  return E[:,[[20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]]]
-
-hoc = {
-    'm': 16,
-    'model' : hmodoc,
-    'noise': hnoiseoc,
-    }
-
+############################################################################
 #observation noise variance is 1% of the var on 200 years effective dt=0.01
 R= 0.01*0.01*diag(var2)
 hnoise = GaussRV(C=CovMat(R),mu=0)
@@ -120,3 +95,38 @@ h = {
 other = {'name': os.path.basename(__file__)}
 
 setup = OSSE(f,h,h,t,X0,**other)
+############################################################################
+
+############################################################################
+#observation noise variance is 1% of the var on 200 years effective dt=0.01
+Ratm= 0.01*0.01*diag(var2[[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]])
+hnoiseatm = GaussRV(C=CovMat(Ratm),mu=0)
+@atmost_2d
+def hmodatm(E,t):
+  return E[:,[[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]]]
+
+hatm = {
+    'm': 20,
+    'model' : hmodatm,
+    'noise': hnoiseatm,
+    }
+
+setupatm = OSSE(f,hatm,hatm,t,X0,**other)
+############################################################################
+
+############################################################################
+#observation noise variance is 1% of the var on 200 years effective dt=0.01
+Roc= 0.01*0.01*diag(var2[[20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]])
+hnoiseoc = GaussRV(C=CovMat(Roc),mu=0)
+@atmost_2d
+def hmodoc(E,t):
+  return E[:,[[20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]]]
+
+hoc = {
+    'm': 16,
+    'model' : hmodoc,
+    'noise': hnoiseoc,
+    }
+
+setupoc = OSSE(f,hoc,hoc,t,X0,**other)
+############################################################################

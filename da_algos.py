@@ -307,10 +307,11 @@ def EnKF_N(setup,cfg,xx,yyatm,yy):
       # T       = funm_psd(Hess, lambda x: x**(-0.5)) * sqrt(N-1)
 
       E = mu + w@A + T@A
-      stats.covariancematrixanalysis(E,xx,kObs,k)
+      
       post_process(E,cfg)
-
+      stats.covariancematrixanalysis(E,xx,kObs,k)
       stats.trHK[kObs] = sum(((l1*s)**2 + (N-1))**(-1.0)*s**2)/hatm.noise.m
+      
     if kObs is not None and kObs%28==0 :
       stats.covariancematrixforecast(E,xx,kObs,k)
       hE = h.model(E,t)
@@ -359,9 +360,9 @@ def EnKF_N(setup,cfg,xx,yyatm,yy):
       # T       = funm_psd(Hess, lambda x: x**(-0.5)) * sqrt(N-1)
 
       E = mu + w@A + T@A
-      stats.covariancematrixanalysis(E,xx,kObs,k)
+      
       post_process(E,cfg)
-
+      stats.covariancematrixanalysis(E,xx,kObs,k)
       stats.trHK[kObs] = sum(((l1*s)**2 + (N-1))**(-1.0)*s**2)/h.noise.m
 
     stats.assess(E,xx,k)

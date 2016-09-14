@@ -32,8 +32,8 @@ T=time.clock()
 
 # xx,yy = simulate(setup)
 
-xx=np.loadtxt('./data/obsFULL/truthref.dat')
-yy=np.loadtxt('./data/obsFULL/obsref.dat')
+xx=np.loadtxt('./data/truthref.dat')
+yy=np.loadtxt('./data/obsref.dat')
 
 # yyatm=yy[:,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]]
 # yyatm = zeros((chrono.KObs+1,hatm.m))

@@ -30,8 +30,8 @@ DAMs.add(EnKF_N,N=20,rot=False,liveplotting = False)
 
 T=time.clock()
 
-xx=np.loadtxt('./data/obsOC/truthref.dat')
-yy=np.loadtxt('./data/obsOC/obsref.dat')
+xx=np.loadtxt('./data/truthref.dat')
+yy=np.loadtxt('./data/obsref.dat')
 
 yyoc=yy[:,[20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]]
 

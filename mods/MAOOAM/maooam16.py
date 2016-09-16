@@ -77,7 +77,8 @@ var2=array([5.68701073021621e-06,0.00106977154793093,0.00107912057634068,
 C0 = 0.01*0.01*diag(var2)
 X0 = GaussRV(C=C0,mu=mu0)
 
-
+############################################################################
+#STRONGLY - FULL OBSERVED
 ############################################################################
 #observation noise variance is 1% of the var on 200 years effective dt=0.01
 R= 0.01*0.01*diag(var2)
@@ -96,7 +97,38 @@ other = {'name': os.path.basename(__file__)}
 
 setup = OSSE(f,h,h,t,X0,**other)
 ############################################################################
+#STRONGLY - FULL OBSERVED - DIFFERENT OBS FREQUENCY
+############################################################################
+#observation noise variance is 1% of the var on 200 years effective dt=0.01
+R= 0.01*0.01*diag(var2)
+hnoise = GaussRV(C=CovMat(R),mu=0)
+@atmost_2d
+def hmod(E,t):
+  return E[:,:]
 
+h = {
+    'm': 36,
+    'model' : hmod,
+    'noise': hnoise,
+    }
+
+Ratm= 0.01*0.01*diag(var2[[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]])
+hnoiseatm = GaussRV(C=CovMat(Ratm),mu=0)
+@atmost_2d
+def hmodatm(E,t):
+  return E[:,[[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]]]
+
+hatm = {
+    'm': 20,
+    'model' : hmodatm,
+    'noise': hnoiseatm,
+    }
+
+other = {'name': os.path.basename(__file__)}
+
+setupmix = OSSE(f,hatm,h,t,X0,**other)
+############################################################################
+#STRONGLY - ONLY ATMOSPHERE
 ############################################################################
 #observation noise variance is 1% of the var on 200 years effective dt=0.01
 Ratm= 0.01*0.01*diag(var2[[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]])
@@ -113,7 +145,7 @@ hatm = {
 
 setupatm = OSSE(f,hatm,hatm,t,X0,**other)
 ############################################################################
-
+#STRONGLY - ONLY OCEAN
 ############################################################################
 #observation noise variance is 1% of the var on 200 years effective dt=0.01
 Roc= 0.01*0.01*diag(var2[[20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]])
@@ -129,4 +161,29 @@ hoc = {
     }
 
 setupoc = OSSE(f,hoc,hoc,t,X0,**other)
+############################################################################
+#WEAKLY
+############################################################################
+#observation noise variance is 1% of the var on 200 years effective dt=0.01
+Ratm= 0.01*0.01*diag(var2[[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]])
+hnoiseatm = GaussRV(C=CovMat(Ratm),mu=0)
+
+
+hatmw = {
+    'm': 20,
+    'model' : lambda x,t: x,
+    'noise': hnoiseatm,
+    }
+
+#observation noise variance is 1% of the var on 200 years effective dt=0.01
+Roc= 0.01*0.01*diag(var2[[20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]])
+hnoiseoc = GaussRV(C=CovMat(Roc),mu=0)
+
+hocw = {
+    'm': 16,
+    'model' : lambda x,t: x,
+    'noise': hnoiseoc,
+    }
+
+setupw = OSSE(f,hatmw,hocw,t,X0,**other)
 ############################################################################

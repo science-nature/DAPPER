@@ -1,3 +1,9 @@
+##################################################################################
+#
+#STRONGLY
+#changing N
+#only atmosphere observed
+###################################################################################
 from common import *
 import time
 np.random.seed(5)
@@ -32,8 +38,9 @@ T=time.clock()
 
 # xx,yy = simulate(setup)
 
-xx=np.loadtxt('./data/truthref.dat')
-
+xxref=np.loadtxt('./data/truthref.dat')
+xx = zeros((chrono.K+1,f.m))
+xx=xxref[chrono.kk,:]
 yy=np.loadtxt('./data/obsref.dat')
 
 yyatm=yy[:,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]]
@@ -41,8 +48,8 @@ yyatm=yy[:,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]]
 
 print(bcolors.OKBLUE +"truth and observation generated" + bcolors.ENDC)
 print (bcolors.OKGREEN +"Time clock :" + bcolors.ENDC ,time.clock()-T)
-np.savetxt('./data/obsATM/truth.dat',xx)
-np.savetxt('./data/obsATM/obs.dat',yy)
+np.savetxt('./data/strongly/obsATM/truth.dat',xx)
+np.savetxt('./data/strongly/obsATM/obs.dat',yy)
 
 
 for k,cfg in enumerate(DAMs):
@@ -63,24 +70,24 @@ for k,cfg in enumerate(DAMs):
 	# extr=np.hstack((0,kk_f))
 	# y6=(xx-fr)[extr,:]
 	la=len(s.Xa[:,1,1])
-	np.savetxt('./data/obsATM/'+str(cfg.N)+'/xa1.dat',s.Xa[1,:,:])
-	np.savetxt('./data/obsATM/'+str(cfg.N)+'/xa182.dat',s.Xa[floor(la/2),:,:])
-	np.savetxt('./data/obsATM/'+str(cfg.N)+'/xa363.dat',s.Xa[la-1,:,:])
+	np.savetxt('./data/strongly/obsATM/'+str(cfg.N)+'/xa0.dat',s.Xa[0,:,:])
+	np.savetxt('./data/strongly/obsATM/'+str(cfg.N)+'/xa182.dat',s.Xa[floor(la/2),:,:])
+	np.savetxt('./data/strongly/obsATM/'+str(cfg.N)+'/xa363.dat',s.Xa[la-1,:,:])
 
 	lf=len(s.Xf[:,1,1])
-	np.savetxt('./data/obsATM/'+str(cfg.N)+'/xf1.dat',s.Xf[1,:,:])
-	np.savetxt('./data/obsATM/'+str(cfg.N)+'/xf182.dat',s.Xf[floor(lf/2),:,:])
-	np.savetxt('./data/obsATM/'+str(cfg.N)+'/xf363.dat',s.Xf[lf-1,:,:])
+	np.savetxt('./data/strongly/obsATM/'+str(cfg.N)+'/xf0.dat',s.Xf[0,:,:])
+	np.savetxt('./data/strongly/obsATM/'+str(cfg.N)+'/xf182.dat',s.Xf[floor(lf/2),:,:])
+	np.savetxt('./data/strongly/obsATM/'+str(cfg.N)+'/xf363.dat',s.Xf[lf-1,:,:])
 
-	np.savetxt('./data/obsATM/'+str(cfg.N)+'/obsvar.dat',diag(hatm.noise.C.C))
-	# np.savetxt('./data/obsATM/'+str(cfg.N)+'/freerun.dat',fr)
-	np.savetxt('./data/obsATM/'+str(cfg.N)+'/ensemblemean.dat',s.mu)
-	np.savetxt("./data/obsATM/"+str(cfg.N)+"/matcovf.dat",y1)
-	np.savetxt("./data/obsATM/"+str(cfg.N)+"/matcova.dat",y2)
-	np.savetxt("./data/obsATM/"+str(cfg.N)+"/errf.dat",y3)
-	np.savetxt("./data/obsATM/"+str(cfg.N)+"/erra.dat",y4)
-	# np.savetxt("./data/"+str(cfg.N)+"/errfr.dat",y6)
-	fichier6 = open("./data/obsATM/"+str(cfg.N)+"/info.dat", "w")
+	np.savetxt('./data/strongly/obsATM/'+str(cfg.N)+'/obsvar.dat',diag(hatm.noise.C.C))
+	# np.savetxt('./data/strongly/obsATM/'+str(cfg.N)+'/freerun.dat',fr)
+	np.savetxt('./data/strongly/obsATM/'+str(cfg.N)+'/ensemblemean.dat',s.mu)
+	np.savetxt("./data/strongly/obsATM/"+str(cfg.N)+"/matcovf.dat",y1)
+	np.savetxt("./data/strongly/obsATM/"+str(cfg.N)+"/matcova.dat",y2)
+	np.savetxt("./data/strongly/obsATM/"+str(cfg.N)+"/errf.dat",y3)
+	np.savetxt("./data/strongly/obsATM/"+str(cfg.N)+"/erra.dat",y4)
+	# np.savetxt("./data/strongly/"+str(cfg.N)+"/errfr.dat",y6)
+	fichier6 = open("./data/strongly/obsATM/"+str(cfg.N)+"/info.dat", "w")
 	fichier6.write(str(chrono))
 	fichier6.write("\n")
 	fichier6.write("system's size n :" + str(36))

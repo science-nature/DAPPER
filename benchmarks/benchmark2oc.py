@@ -1,3 +1,9 @@
+##################################################################################
+#
+#STRONGLY
+#changing N
+#only ocean observed
+###################################################################################
 from common import *
 import time
 np.random.seed(5)
@@ -30,7 +36,9 @@ DAMs.add(EnKF_N,N=20,rot=False,liveplotting = False)
 
 T=time.clock()
 
-xx=np.loadtxt('./data/truthref.dat')
+xxref=np.loadtxt('./data/truthref.dat')
+xx = zeros((chrono.K+1,f.m))
+xx=xxref[chrono.kk,:]
 yy=np.loadtxt('./data/obsref.dat')
 
 yyoc=yy[:,[20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]]
@@ -38,8 +46,8 @@ yyoc=yy[:,[20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]]
 
 print(bcolors.OKBLUE +"truth and observation generated" + bcolors.ENDC)
 print (bcolors.OKGREEN +"Time clock :" + bcolors.ENDC ,time.clock()-T)
-np.savetxt('./data/obsOC/truth.dat',xx)
-np.savetxt('./data/obsOC/obs.dat',yy)
+np.savetxt('./data/strongly/obsOC/truth.dat',xx)
+np.savetxt('./data/strongly/obsOC/obs.dat',yy)
 
 
 for k,cfg in enumerate(DAMs):
@@ -60,24 +68,24 @@ for k,cfg in enumerate(DAMs):
 	# extr=np.hstack((0,kk_f))
 	# y6=(xx-fr)[extr,:]
 	la=len(s.Xa[:,1,1])
-	np.savetxt('./data/obsOC/'+str(cfg.N)+'/xa1.dat',s.Xa[1,:,:])
-	np.savetxt('./data/obsOC/'+str(cfg.N)+'/xa182.dat',s.Xa[floor(la/2),:,:])
-	np.savetxt('./data/obsOC/'+str(cfg.N)+'/xa363.dat',s.Xa[la-1,:,:])
+	np.savetxt('./data/strongly/obsOC/'+str(cfg.N)+'/xa0.dat',s.Xa[0,:,:])
+	np.savetxt('./data/strongly/obsOC/'+str(cfg.N)+'/xa182.dat',s.Xa[floor(la/2),:,:])
+	np.savetxt('./data/strongly/obsOC/'+str(cfg.N)+'/xa363.dat',s.Xa[la-1,:,:])
 
 	lf=len(s.Xf[:,1,1])
-	np.savetxt('./data/obsOC/'+str(cfg.N)+'/xf1.dat',s.Xf[1,:,:])
-	np.savetxt('./data/obsOC/'+str(cfg.N)+'/xf182.dat',s.Xf[floor(lf/2),:,:])
-	np.savetxt('./data/obsOC/'+str(cfg.N)+'/xf363.dat',s.Xf[lf-1,:,:])
+	np.savetxt('./data/strongly/obsOC/'+str(cfg.N)+'/xf0.dat',s.Xf[0,:,:])
+	np.savetxt('./data/strongly/obsOC/'+str(cfg.N)+'/xf182.dat',s.Xf[floor(lf/2),:,:])
+	np.savetxt('./data/strongly/obsOC/'+str(cfg.N)+'/xf363.dat',s.Xf[lf-1,:,:])
 
-	np.savetxt('./data/obsOC/'+str(cfg.N)+'/obsvar.dat',diag(hoc.noise.C.C))
-	# np.savetxt('./data/obsOC/'+str(cfg.N)+'/freerun.dat',fr)
-	np.savetxt('./data/obsOC/'+str(cfg.N)+'/ensemblemean.dat',s.mu)
-	np.savetxt("./data/obsOC/"+str(cfg.N)+"/matcovf.dat",y1)
-	np.savetxt("./data/obsOC/"+str(cfg.N)+"/matcova.dat",y2)
-	np.savetxt("./data/obsOC/"+str(cfg.N)+"/errf.dat",y3)
-	np.savetxt("./data/obsOC/"+str(cfg.N)+"/erra.dat",y4)
-	# np.savetxt("./data/obsOC/"+str(cfg.N)+"/errfr.dat",y6)
-	fichier6 = open("./data/obsOC/"+str(cfg.N)+"/info.dat", "w")
+	np.savetxt('./data/strongly/obsOC/'+str(cfg.N)+'/obsvar.dat',diag(hoc.noise.C.C))
+	# np.savetxt('./data/strongly/obsOC/'+str(cfg.N)+'/freerun.dat',fr)
+	np.savetxt('./data/strongly/obsOC/'+str(cfg.N)+'/ensemblemean.dat',s.mu)
+	np.savetxt("./data/strongly/obsOC/"+str(cfg.N)+"/matcovf.dat",y1)
+	np.savetxt("./data/strongly/obsOC/"+str(cfg.N)+"/matcova.dat",y2)
+	np.savetxt("./data/strongly/obsOC/"+str(cfg.N)+"/errf.dat",y3)
+	np.savetxt("./data/strongly/obsOC/"+str(cfg.N)+"/erra.dat",y4)
+	# np.savetxt("./data/strongly/obsOC/"+str(cfg.N)+"/errfr.dat",y6)
+	fichier6 = open("./data/strongly/obsOC/"+str(cfg.N)+"/info.dat", "w")
 	fichier6.write(str(chrono))
 	fichier6.write("\n")
 	fichier6.write("system's size n :" + str(36))

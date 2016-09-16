@@ -46,6 +46,7 @@ class DAM:
     # Careful with defaults -- explicit is better than implicit!
     self.da_method = da_method
     self.liveplotting = False
+    self.rapportocatm = 28
     for key, value in kwargs.items():
       setattr(self, key, value)
 

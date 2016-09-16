@@ -251,6 +251,8 @@ def EnKF_N(setup,cfg,xx,yyatm,yy):
 
   stats = Stats(setup,cfg)
   stats.assess(E,xx,0)
+  stats.covariancematrixanalysis(E,xx,-1,0)
+  stats.covariancematrixforecast(E,xx,-1,0)
   stats.infl = zeros(chrono.KObs+1)
   # lplot = LivePlot(setup,cfg,E,stats,xx,yy)
 
@@ -258,7 +260,7 @@ def EnKF_N(setup,cfg,xx,yyatm,yy):
     E  = f.model(E,t-dt,dt)
     E += sqrt(dt)*f.noise.sample(N)
 
-    if kObs is not None and kObs%28!=0:
+    if kObs is not None and kObs%cfg.rapportocatm!=0:
       #case of hatm
       stats.covariancematrixforecast(E,xx,kObs,k)
       hE = hatm.model(E,t)
@@ -311,8 +313,8 @@ def EnKF_N(setup,cfg,xx,yyatm,yy):
       post_process(E,cfg)
       stats.covariancematrixanalysis(E,xx,kObs,k)
       stats.trHK[kObs] = sum(((l1*s)**2 + (N-1))**(-1.0)*s**2)/hatm.noise.m
-      
-    if kObs is not None and kObs%28==0 :
+
+    if kObs is not None and kObs%cfg.rapportocatm==0 :
       stats.covariancematrixforecast(E,xx,kObs,k)
       hE = h.model(E,t)
       y  = yy[kObs]
@@ -757,5 +759,153 @@ def post_process(E,cfg):
   E[:] = mu + T@A
 
 
+def EnKF_N_weakly(setup,cfg,xx,yyatm,yy):
+  """
+  Finite-size EnKF (EnKF-N).
+  Corresponding to version ql2 of Datum.
+  """
 
+  f,hatm,h,chrono,X0 = setup.f, setup.hatm, setup.h, setup.t, setup.X0
+
+  N = cfg.N
+  E = X0.sample(N)
+
+  # EnKF-N constants
+  eN = (N+1)/N;              # Effect of unknown mean
+  g  = 1                     # Nullity of anomalies matrix # TODO: For N>m ?
+  LB = sqrt((N-1)/(N+g)*eN); # Lower bound for lambda^1    # TODO: Updated with g. Correct?
+  clog = (N+g)/(N-1);        # Coeff in front of log term
+  mode = eN/clog;            # Mode of prior for lambda
+
+  #2 observations model
+  Rm12atm = hatm.noise.C.m12
+  Riatm   = hatm.noise.C.inv
+
+  Rm12 = h.noise.C.m12
+  Ri   = h.noise.C.inv
+
+  stats = Stats(setup,cfg)
+  stats.assess(E,xx,0)
+  stats.covariancematrixanalysis(E,xx,-1,0)
+  stats.covariancematrixforecast(E,xx,-1,0)
+  stats.infl = zeros(chrono.KObs+1)
+  # lplot = LivePlot(setup,cfg,E,stats,xx,yy)
+
+  for k,kObs,t,dt in progbar(chrono.forecast_range):
+    E  = f.model(E,t-dt,dt)
+    E += sqrt(dt)*f.noise.sample(N)
+
+    if kObs is not None:
+      #case of hatm
+      stats.covariancematrixforecast(E,xx,kObs,k)
+      Eatm=E[:,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]]
+      hE = hatm.model(Eatm,t)
+      y  = yyatm[kObs]
+
+      mu = mean(Eatm,0)
+      A  = Eatm - mu
+
+      hx = mean(hE,0)
+      Y  = hE-hx
+      dy = y - hx
+
+      V,s,U_T = sla.svd( Y @ Rm12atm.T )
+
+      # Find inflation factor.
+      du   = U_T @ (Rm12atm @ dy)
+      d    = lambda l: pad0( (l*s)**2, hatm.m ) + (N-1)
+      PR   = sum(s**2)/(N-1)
+      fctr = sqrt(mode**(1/(1+PR)))
+      J    = lambda l: (du/d(l)) @ du \
+             + (1/fctr)*eN/l**2 + fctr*clog*log(l**2)
+      l1   = minzs(J, bounds=(LB, 1e2), method='bounded').x
+      stats.infl[kObs] = l1
+
+      # Turns it into the ETKF
+      #l1 = 1.0
+
+      # Inflate prior.
+      # This is strictly equivalent to using zeta formulations.
+      # With the Hessian adjustment, it's also equivalent to
+      # the primal EnKF-N (in the Gaussian case).
+      A *= l1
+      Y *= l1
+
+      # Compute ETKF (sym sqrt) update
+      d       = lambda l: pad0( (l*s)**2, N ) + (N-1)
+      Pw      = (V * d(l1)**(-1.0)) @ V.T
+      w       = dy@Riatm@Y.T@Pw
+      T       = (V * d(l1)**(-0.5)) @ V.T * sqrt(N-1)
+
+      # NB: Use Hessian adjustment ?
+      # Replace sqrtm_psd with something like Woodbury?
+      # zeta    = (N-1)/l1**2
+      # Hess    = Y@Riatm@Y.T + zeta*eye(N) \
+      #           - 2*zeta**2/(N+g)*np.outer(w,w)
+      # T       = funm_psd(Hess, lambda x: x**(-0.5)) * sqrt(N-1)
+
+      Eatm = mu + w@A + T@A
+      
+      post_process(Eatm,cfg)
+      E[:,[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]]=Eatm
+      stats.covariancematrixanalysis(E,xx,kObs,k)
+      stats.trHK[kObs] = sum(((l1*s)**2 + (N-1))**(-1.0)*s**2)/hatm.noise.m
+
+    if kObs is not None and kObs%cfg.rapportocatm==0 :
+      stats.covariancematrixforecast(E,xx,kObs,k)
+      Eoc=E[:,[20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]]
+      hE = h.model(Eoc,t)
+      y  = yy[kObs]
+
+      mu = mean(Eoc,0)
+      A  = Eoc - mu
+
+      hx = mean(hE,0)
+      Y  = hE-hx
+      dy = y - hx
+
+      V,s,U_T = sla.svd( Y @ Rm12.T )
+
+      # Find inflation factor.
+      du   = U_T @ (Rm12 @ dy)
+      d    = lambda l: pad0( (l*s)**2, h.m ) + (N-1)
+      PR   = sum(s**2)/(N-1)
+      fctr = sqrt(mode**(1/(1+PR)))
+      J    = lambda l: (du/d(l)) @ du \
+             + (1/fctr)*eN/l**2 + fctr*clog*log(l**2)
+      l1   = minzs(J, bounds=(LB, 1e2), method='bounded').x
+      stats.infl[kObs] = l1
+
+      # Turns it into the ETKF
+      #l1 = 1.0
+
+      # Inflate prior.
+      # This is strictly equivalent to using zeta formulations.
+      # With the Hessian adjustment, it's also equivalent to
+      # the primal EnKF-N (in the Gaussian case).
+      A *= l1
+      Y *= l1
+
+      # Compute ETKF (sym sqrt) update
+      d       = lambda l: pad0( (l*s)**2, N ) + (N-1)
+      Pw      = (V * d(l1)**(-1.0)) @ V.T
+      w       = dy@Ri@Y.T@Pw
+      T       = (V * d(l1)**(-0.5)) @ V.T * sqrt(N-1)
+
+      # NB: Use Hessian adjustment ?
+      # Replace sqrtm_psd with something like Woodbury?
+      # zeta    = (N-1)/l1**2
+      # Hess    = Y@Ri@Y.T + zeta*eye(N) \
+      #           - 2*zeta**2/(N+g)*np.outer(w,w)
+      # T       = funm_psd(Hess, lambda x: x**(-0.5)) * sqrt(N-1)
+
+      Eoc = mu + w@A + T@A
+      post_process(Eoc,cfg)
+      E[:,[20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]]=Eoc
+      stats.covariancematrixanalysis(E,xx,kObs,k)
+      stats.trHK[kObs] = sum(((l1*s)**2 + (N-1))**(-1.0)*s**2)/h.noise.m
+
+    stats.assess(E,xx,k)
+    # lplot.update(E,k,kObs)
+  return stats
 

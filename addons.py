@@ -340,7 +340,8 @@ class Benchmark(object):
   @staticmethod
   def load(day,hour,extra=''):
     #build the paths:
-    directory='/Users/remubo/Documents/obs_error_invest/benchmarks/'+day
+    #directory='/Users/remubo/Documents/obs_error_invest/benchmarks/'+day
+    directory='data/obs_error_invest/benchmarks/'+day
     titlecsv='outputcsv-'+hour+extra
     titlepkl='outputpkl-'+hour+extra
 

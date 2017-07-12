@@ -46,6 +46,14 @@ from numpy import \
     eye, zeros, ones, diag, trace \
 
 
+# From Remy
+from scipy.linalg import block_diag
+from numpy import fromiter, reshape,hstack,vstack
+from itertools import product
+from time import time,strftime
+from pandas import DataFrame,read_csv
+
+
 ##################################
 # Installation suggestion 
 ##################################

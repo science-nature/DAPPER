@@ -4,7 +4,10 @@ from tools.viz import plot_benchmark_analysis
 #then run the whole.
 if __name__=='__main__':
 
-	b=Benchmark(config=EnKF('Sqrt', N=50, infl=1.01, rot=True, liveplotting=False),tunning=False)
+	l=list(range(1000,1016))+list(range(1020,1090,5))
+	configs=[EnKF('Sqrt', N=50, infl=i/1000, rot=True, liveplotting=False) for i in l]
+
+	b=Benchmark(config=configs,tunning=False,assimcycles=(10**4))
 	p=b.setup.h.m
 
 	#####################################
@@ -20,8 +23,7 @@ if __name__=='__main__':
 	b+=MARKOV(size=p,thin=0.2)
 	"""
 
-	for i in range(1,19):
-		b+=MultiDiag(size=p,Rinfl=i/10)
+	b+=MultiDiag(size=p,Rinfl=1.3)
 
 	"""
 

@@ -1171,7 +1171,7 @@ def plot_benchmark_analysis(entry,loc1='1211',loc2='1212',skip=False):
       return y
   
   df.kind=df.apply(disp,axis=1)
-  df['infl']=df.DA.apply(lambda x:float(re.findall('infl=[0-9]\.[0-9]{1,}',str(x))[0][5:9]))
+  df['infl']=df.DA.apply(lambda x:float(re.findall('infl=[0-9]\.[0-9]{1,}',str(x))[0][5:]))
 
   
   #plt.pause(0.01)

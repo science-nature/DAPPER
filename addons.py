@@ -229,7 +229,7 @@ class Benchmark(object):
 	def __init__(
 		self,
 		setup=setup,
-		config=EnKF('Sqrt', N=50, infl=1.0, rot=True, liveplotting=False),
+		config=[EnKF('Sqrt', N=50, infl=1.0, rot=True, liveplotting=False)],
 		Rt=MARKOV(size=setup.h.m,deltax=1,Lr=1),
 		tunning=True,
 		assimcycles=10**4
@@ -242,7 +242,7 @@ class Benchmark(object):
 		self.Rt=Rt
 		self._bench=List_of_matrices(Rt)
 		self.setup=setup
-		self.config=config
+		self.config=List_of_Configs(config)
 		self._output=DataFrame(columns=cols)
 		self._is_paused=False
 		self.tunning=tunning
@@ -258,12 +258,12 @@ class Benchmark(object):
 		"""
 
 	#Be careful when changing the opti criterion. Need to change both *while* condition and the r or s returned and temp+-0.01.
-	def assess_matrix(self,m,xx,yy):
+	def assess_matrix(self,m,c,xx,yy):
 		#Function aimed at tunning the inflation factor:
-		temp=self.config.infl
+		temp=c.infl
 		#Ugly as possible, should need rework
 
-		r=dict(m.experiment(xx,yy,setup=self.setup,config=self.config))
+		r=dict(m.experiment(xx,yy,setup=self.setup,config=c))
 		if self.tunning:
 			#t=0
 			s=r.copy()
@@ -272,8 +272,8 @@ class Benchmark(object):
 				#t+=1
 				r=s.copy()
 				temp+=0.01
-				s=dict(m.experiment(xx,yy,setup=self.setup,config=self.config.update_settings(infl=temp)))
-		return [('DA',self.config.update_settings(infl=temp-0.01))]+list(r.items())
+				s=dict(m.experiment(xx,yy,setup=self.setup,config=c.update_settings(infl=temp)))
+		return [('DA',c.update_settings(infl=temp))]+list(r.items())
 
 
 	def run(self):
@@ -282,15 +282,16 @@ class Benchmark(object):
 		#D=diag(diag(self.Rt.matrix)**0.5)
 
 		#Go through the bench
-		for (i,m) in enumerate(tqdm.tqdm(self._bench,desc='Benchmark')):
+		if len(self.config)==1:
+			self.config*=len(self._bench)
+
+		for (i,(m,c)) in enumerate(tqdm.tqdm(list(product(self._bench,self.config)),desc='Benchmark')):
 					#self.pause_run()
 					if m.rk==m.m:
-						r=self.assess_matrix(m,xx,yy)
-
+						r=self.assess_matrix(m,c,xx,yy)
 						#now fill a pandas dataframe with results
 						#Create a dictionary of all the useful information for the experiment
 						row=dict([('Setup',self.setup.name),('R',m.__class__)]+r)
-
 						if i==0:
 							row['kind']+=' (Rt)'
 						#Complete the row/dataframe

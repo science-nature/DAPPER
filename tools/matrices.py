@@ -247,14 +247,7 @@ class CovMat(object):
     """Truncation threshold."""
     return self._trunc
 
-  """
-  #Hazardous
-  @trunc.setter
-  def trunc(self,value):
-    print('set')
-    return print(CovMat(data=self.full,trunc=value))
-  """
-  
+
   ##################################
   # "Non-EVD" stuff
   ##################################
@@ -738,3 +731,291 @@ class Sparse(CorrMat):
 # and revert its operator definitions to that of ndarray. 
 # and use it for the V (eigenvector) matrix that gets output
 # by various fields of CovMat.
+
+
+
+
+
+
+
+
+
+"""
+class VarMat(CovMat):
+
+  def __init__(self,data):
+
+    stds=std(data,axis=0)
+
+    new_dat=diag(stds)
+
+    CovMat.__init__(self,data=new_dat,kind='full_or_diag',trunc=1.0)
+"""
+
+class CorrMat(CovMat):
+
+  def __init__(self,data,thin=1.0,Rinfl=1.0):
+
+    #Filter elements of the matrix
+    data=np.where(data>1.0e-6,data,0)
+    CovMat.__init__(self,data=data,kind='full_or_diag',trunc=1.0)
+    
+    if type(thin)==int or float(thin)<0.999:
+      self._thinning(threshold=thin)
+
+    self._args=[t for t in locals().items() if t[0] not in ['self','data']]
+    self._thin=thin
+    self._Rinfl=Rinfl
+
+    global sizer
+    def sizer(f):
+      try:
+        last_bm_size=Benchmark.instances[-1].setup.h.m
+        return functools.partial(f,size=last_bm_size)
+      except (IndexError,NameError):
+        return f
+
+  def experiment(self,X,Y,setup,config):
+
+    setup.h.noise.C=self
+
+    #timepoint reference
+    start_time=time.time()
+    #assimilate
+    stats=config.assimilate(setup,X,Y)
+    #Close timewindow
+    delta_t=time.time()-start_time
+
+    #get rmse and spread through time, once BurnIn is done
+    rmse_s=stats.rmse.a
+    spread_s=mean(stats.mad.a,axis=1)
+    umsft_s= mean( abs(stats.umisf.a) ,0)
+    umsprd_s=mean(     stats.svals.a  ,0)
+
+    #Get the average rmse and spread
+    rmse=mean(rmse_s[setup.t.maskObs_BI])
+    spread=mean(spread_s[setup.t.maskObs_BI])
+    stats=hstack([rmse_s.reshape((len(rmse_s),-1)),spread_s.reshape((len(spread_s)),-1)])
+    ErrComp=hstack([umsft_s.reshape((len(umsft_s),-1)),umsprd_s.reshape(len(umsprd_s),-1)])
+
+    output=[('RMSE',rmse),('Spread',spread),('CPU_Time',delta_t),('Stats_TS',stats),('ErrComp',ErrComp)]+self._args
+    return output    
+
+  def __str__(self):
+    #self._args+=[()]
+    a=[i[0] for i in self._args]
+    b=[str(i[1]) for i in self._args]
+    for i in range(len(a)):
+      a[i]=str(a[i])+' '*(max(len(a[i]),len(b[i]))-len(a[i]))
+      b[i]=str(b[i])+' '*(max(len(a[i]),len(b[i]))-len(b[i]))
+    cols=' | '.join(a)
+    inter='-'*len(cols)
+    row=' | '.join(b)
+    return cols+'\n'+inter+'\n'+row
+    
+    #return str(self._args)+'---'+str(self._values)
+    return str(self._args)
+
+  def __mul__(self,arr):
+    data=self.full@arr
+    n=self.__class__.__bases__[0](data=data)
+    n._args+=[('kind',dict(self._args)['kind'])]
+    return n
+
+  ##################################
+  ######## Thinning method #########
+  ##################################
+
+  """
+  This thinning method has been implemented as suggested by Stewart '08 and is therefore rank conservative (keeps PD a PD matrix)
+  Was a pain to:
+    -make it user friendly (turn it into a easy-to-use way for the beginner user)
+    -ensure this rank conservation
+
+  Is broadcasting a row to muliply it with a matrix faster than turning it into a diagonal matrix and usign the built-in matmul ??
+
+  """
+
+
+  #Hidden method ! As it works in-place, it should never be accessed in the __main__.
+  #it messes up the arguments of the matrix if used so.
+  def _thinning(self,threshold=1.0):
+
+    r = truncate_rank(self.ews,threshold,True)
+
+    #This operation is in line with Stewart08 (double checked):
+    V=self.V[:,:r]
+    w=self.ews[:r]
+    #recomputing alpha here is very close to be a doublon with the computations done in truncate_rank but not exactly:
+    #if the threshold of truncate_rank is 0.8, it does not mean that the span is reduced to exactly 80%: it means than we chose
+    #as much eigenvectors as possible without going further than 80% of the spectrum representation, because we have to select
+    #a round number of eigenvectors (obviously).
+    
+    #alpha is used to re-adjust the span of the whole correlation (therefore )
+    alpha=self.ews[r:].sum()/(self.m-r+1)
+
+    w-=alpha
+
+    #now adjust the substracted span to the final result by scaling a identity matrix
+    data=(V * w) @ V.T + alpha*eye(self.m)
+    
+    #It now re-creates (initializes) a CorrMat object (with thin=1.0 (as default) to avoid endless looping)
+    #In the end, I still call __init__ twice and it is therefore syntactic sugar between this and calling mother.__init__
+    #twice in the child.__init__ but I find it more readable this way.
+    #It is overall the price to pay to re-use Patrick's transform_by method
+    CorrMat.__init__(self,data=data)
+
+
+  ################################################
+  #Protect the arguments used to build the matrix
+  #If needed other arguments, build another matrix
+  ################################################
+
+  @property
+  def arguments(self):
+    return self._args
+
+  #Kinda useless because thin is already accessible and protected in the arguments list above. 
+  #Still, it remains more understandable for the reader this way, as it emphasizes that thin
+  #is used when building the matrix, it therefore does not make any sense to modify it once the matrix built.
+  @property
+  def thin(self):
+    return self._thin
+
+  @property
+  def Rinfl(self):
+    return self._Rinfl
+
+  """
+  This method was supposed to avoir the need to precise the size of the added matrix to any benchmark but I failed facing several issues:
+  Can not access the size of the last benchmark in the body of a function as the globals variable will not be reloaded at each call but only at the
+  declaration of the function.
+  This was anyway highly uneffecient and heavy/dirty.
+
+  I therefore have to stick to the old version.
+  
+  @staticmethod
+  def sizer(f):
+    try:
+      return functools.partial(f,size=last_bm_size)
+    except (IndexError,NameError):
+      return f
+  """
+
+class MARKOV(CorrMat):
+  def __init__(self,size,deltax=1,Lr=1,thin=0.999999):
+    A=zeros((size,size))
+    for (i,j) in product(range(size),repeat=2):
+      A[i,j]=exp(-abs(i-j)*deltax/Lr)
+    CorrMat.__init__(self,data=A,thin=thin)
+    del(i,j,A,size)
+    l=[t for t in locals().items() if t[0] not in ['self']]
+    l.append(('kind','MARKOV'))
+    self._args=l
+
+
+
+class SOAR(CorrMat):
+  
+  def __init__(self,size,deltax=1,Lr=1,thin=0.999999):
+
+    A=zeros((size,size))
+    for (i,j) in product(range(size),repeat=2):
+      A[i,j]=exp(-abs(i-j)*deltax/Lr)*(1+abs(i-j)*deltax/Lr)
+    CorrMat.__init__(self,data=A,thin=thin)
+    del(i,j,A,size)
+    l=[t for t in locals().items() if t[0] not in ['self']]
+    l.append(('kind','SOAR'))
+    self._args=l
+
+class MultiDiag(CorrMat):
+
+  def __init__(self,size,diags=1,decay=0,thin=0.999999,Rinfl=1.0):
+    
+    if diags%2==0:
+      raise ValueError('Even number of diagonals lead to non-symmetrical correlation matrix')
+    
+    decay=max(decay,1)
+
+    A=eye(size)
+
+    for k in range(1,diags//2+1):
+      A+=(eye(size,k=k)+eye(size,k=-k))/decay**k
+
+    A*= Rinfl if diags==1 else 1.0
+
+    CorrMat.__init__(self,data=A,thin=thin)
+
+    del(size,A)
+    if diags>1:
+      del(k)
+    l=[t for t in locals().items() if t[0] not in ['self']]
+    l.append(('kind','MultiDiag'))
+    self._args=l
+
+class Custom(CorrMat):
+
+  def __init__(self,size,thin=0.999999,f=lambda x,y:(x==y)*1):
+
+    A=zeros((size,size))
+    for (i,j) in product(range(size),repeat=2):
+      A[i,j]=f(i,j)
+    CorrMat.__init__(self,data=A,thin=thin)
+
+
+    l=[('kind','Custom'),('thinning',thin)]
+    self._args=l
+
+class BlockDiag(CorrMat):
+
+  def __init__(self,*args,size=None,submat=None,thin=0.999999):
+    #if size%submat.m>0:
+    #  raise ValueError('Uncorrect size of the submatrices')
+    l=[('kind','BlockDiag'),('thin',thin)]
+    if submat==None:
+      try:
+        types=[a.__class__.__bases__[0] for a in args]
+        if any([not str(t)=="<class 'aux.matrices.CorrMat'>" for t in types]):
+          raise ValueError('Uncorrect argument(s), must be CorrMat -or derived type')
+        else:
+          fulls=tuple([m.full for m in args])
+          A=block_diag(*fulls)
+          l+=[('submat',[str(a.__class__).replace("'",'').replace('>','').split('.')[-1] for a in args])]
+      except:
+        IndexError('Uncorrect argument(s), must be CorrMat -or derived type')
+
+    else:
+
+      B=submat.full
+      q=B.shape[0]
+      #t=submatkind
+      n=size/q
+      assert (n%1==0), 'bad definition -size issue'
+      #S=ObsErrMat(kind=t,size=q).matrix
+      A=zeros((size,size))
+      #Build the matrix
+      for k in range(int(n)):
+        for (i,j) in product(range(q),repeat=2):
+          A[k*q+i,k*q+j]=B[i,j]
+      l+=[('submat',re.sub('[^A-Za-z]',' ',str(submat.__class__)).split()[-1]),('Subdiv',int(n))]
+
+    CorrMat.__init__(self,data=A,thin=thin)
+
+    self._args=l
+    
+class Sparse(CorrMat):
+
+  def __init__(self,size,deltax=1,Lr=1,thin=0.999999):
+    
+    A=zeros((size,size))
+    for (i,j) in product(range(size),repeat=2):
+      A[i,j]=exp((abs(abs(i-j)-(size-1)/2)-(size-1)/2)*deltax/Lr)
+    CorrMat.__init__(self,data=A,thin=thin)
+    del(i,j,A)
+    l=[t for t in locals().items() if t[0] not in ['self','size']]
+    l.append(('kind','Sparse'))
+    self._args=l
+
+
+
+

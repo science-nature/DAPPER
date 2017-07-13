@@ -13,7 +13,6 @@ from matplotlib.widgets import Slider
 import tkinter
 
 
-
 class LivePlot:
   """
   Live plotting functionality.
@@ -1141,6 +1140,153 @@ def plot_rank_histogram(stats):
       integer_hist(ranks.ravel(),N,weights=w)
   else:
     not_available_text(ax_H)
+
+
+
+import matplotlib.cm as cm
+def plot_benchmark_analysis(entry,loc1='1211',loc2='1212',skip=False):
+  #allows to plot a compiled output, or a loaded output from an older Benchmark
+  source=entry.output if 'Benchmark' in str(type(entry)) else entry
+
+  #Mind mutability
+  sels=['kind','CPU_Time','thin','submat','Subdiv','RMSE','Spread','Stats_TS','diags','DA','ErrComp','Rinfl']
+  absent=list(set(sels)-set(source.columns))
+  for c in absent:
+    source[c]=''
+  df=source[sels].copy()
+
+  #Convert everything to string
+  #df[list(set(df.columns)-set(['Stats_TS','ErrComp']))]=df[list(set(df.columns)-set(['Stats_TS','ErrComp']))].applymap(str)
+  
+  def disp(x):
+    if str(x.diags)=='1' and x.kind=='MultiDiag':
+      return 'Identity'+('\nRinfl='+str(x.Rinfl) if float(x.Rinfl)!=1.0 else '')
+    else: 
+      y=x.kind \
+      +(', '+str(x.thin) if float(x.thin)<0.9 else '') \
+      +(',\n'+str(x.submat) if not x.submat=='' else '') \
+      +('*'+str(x.Subdiv) if not '[' in str(x.submat) and not str(x.submat)=='' else '') \
+      +('\n#d='+str(x.diags) if not str(x.diags)=='' and not str(x.diags)=='None' else '')
+      return y
+  
+  df.kind=df.apply(disp,axis=1)
+  df['infl']=df.DA.apply(lambda x:float(re.findall('infl=[0-9]\.[0-9]{1,}',str(x))[0][5:9]))
+
+  
+  #plt.pause(0.01)
+
+  #Plot individual TS with a slider
+  f3=plt.figure()
+  ax=f3.add_subplot(212)
+  
+  r=df.iloc[0]
+  l1,=ax.plot(r.Stats_TS[:,0],label='RMSE')
+  l2,=ax.plot(r.Stats_TS[:,1],label='Spread')
+  ax.set_xlabel('Assimilation cycles')
+  ax.legend()
+  ax.autoscale(True)
+  plt.subplots_adjust(left=0.1, bottom=0.25)
+
+  axframe = plt.axes([0.1, 0.1, 0.85, 0.03])
+  sframe = Slider(axframe, 'CorrMat', 0, len(df), valinit=0,valfmt='%d')
+  axframe.xaxis.set_visible(True)
+  axframe.set_xticks(range(len(df)))
+  axframe.set_xticklabels(df['kind'],rotation=45)
+
+  ax2 = plt.subplot(211)                                                         
+  ax2.set_xlabel('Principal component index')                                    
+  ax2.set_ylabel('Time-average (_a) magnitude')                                  
+  ax2.set_title('Spectral error comparison') 
+  supt = plt.suptitle(df.iloc[0].kind+'\ninfl='+str(r.infl),fontsize=12,fontweight='bold')                                    
+  has_been_computed = np.any(np.isfinite(df.iloc[0].ErrComp[:,0]))           
+  if has_been_computed:                                                          
+    L = len(df.iloc[0].ErrComp)                                              
+    l3, = ax2.plot(        range(L),      df.iloc[0].ErrComp[:,0],'k',lw=2, label='Error')
+    ax2.fill_between(range(L),[0]*L,df.iloc[0].ErrComp[:,1],alpha=0.7,label='Spread')     
+    ax2.set_yscale('log')                                                                 
+    ax2.set_ylim(bottom=1e-4*df.iloc[0].ErrComp[:,1].sum())                               
+    ax2.set_xlim(right=df.iloc[0].ErrComp[:,1].shape[0]-1); add_endpoint_xtick(ax2)       
+    ax2.get_xaxis().set_major_locator(MaxNLocator(integer=True))                          
+    ax2.legend()                                                                          
+  else:                                                                                   
+      not_available_text(ax2)                                                               
+
+  def update(val):  
+    ind = int(numpy.floor(sframe.val))                                                    
+    r=df.iloc[ind]                                                                           
+    l1.set_ydata(r.Stats_TS[:,0])                                                         
+    l2.set_ydata(r.Stats_TS[:,1])                                                         
+    #ax2.set_title(r.kind+'\ninfl='+str(r.DA.infl),fontsize=12,fontweight='bold') 
+    supt.set_text(r.kind+'\ninfl='+str(r.infl))          
+    ax.relim()                                                                            
+    ax.autoscale_view()                                                                   
+    l3.set_ydata(r.ErrComp[:,0])                                                          
+    for coll in (ax2.collections):                                                        
+      ax2.collections.remove(coll)                                                      
+    ax2.fill_between(range(L),[0]*L,r.ErrComp[:,1],alpha=0.7,label='Spread',color=sns.color_palette()[0])              
+    plt.draw()
+
+  sframe.on_changed(update)
+  win_title(f3,'Individual time series')
+  set_figpos(loc2)
+  #f3.tight_layout()
+  f3.show(0)
+
+  f, (ax_r,ax_s)=plt.subplots(nrows=2,sharex=True)
+
+  infe=[cm.plasma((i-min(df.CPU_Time))/(max(df.CPU_Time)-min(df.CPU_Time)),1) for i in df.CPU_Time]
+
+  #Plot CPU_Time
+  ax_r.scatter(range(len(df['kind'])),df['CPU_Time'],marker='*',s=100,c=infe,edgecolor='black',linewidth=1.0)
+  ax_r.set_xticks(range(len(df)))
+  ax_r.set_ylabel('CPU_Time (s)',fontweight='bold')
+  ax_r.set_title('Benchmark analysis',fontsize=14,fontweight='bold')
+
+  #Plot Spread VS RMSE
+  ax_s.stackplot(range(len(df['kind'])),df['RMSE'],labels="RMSE",alpha=0.8,zorder=1)
+  ax_s.plot(range(len(df['kind'])),df.Spread,marker='o',label='Spread',c='black',zorder=10)
+  ax_s.set_xticks(range(len(df)))
+  ax_s.set_xticklabels(df['kind'],rotation=45)
+  ax_s.set_ylabel('Spread / RMSE',fontweight='bold')
+  ax_s.legend(loc=2)
+  if max(df.Spread)>1 or max(df.RMSE)>1:
+    ax_s.set_ylim([0,1])
+  
+  #Now the inflation
+  ax_t=ax_s.twinx()
+  ax_t.bar(range(len(df)),df.infl,color='green',alpha=0.65,label='Infl',zorder=2)
+  ax_t.set_ylabel('Inflation factor',fontweight='bold')
+  ax_t.set_ylim(bottom=1.0)
+  ax_t.grid(b=False)
+  ax_t.legend(loc=1)
+
+  #Set the figure details
+  f.tight_layout()
+  win_title(f,'Global comparison of CorrMats')
+  set_figpos(loc1)
+  f.show(0)
+  
+
+#plot_benchmark_analysis(b)
+
+  """
+  for (x,y,l) in zip(df['RMSE'],df['CPU_Time'],df.kind):
+    plt.annotate(
+      l,
+      xy=(x,y),
+      #xytext=(x*0.95,y*0.95),
+      #textcoords='offset points', ha='right', va='bottom',
+      bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
+      arrowprops=dict(arrowstyle = '->', connectionstyle='arc3,rad=0')
+      )
+  """
+
+  #Plot now a detailed plot on thinning effects:
+  #df2=b[['kind','thin','RMSE']].groupby(['kind']).count()
+  #df2=b[df2>1]
+  #for key,grp in df2.groupby('kind'):
+  #  grp.plot.scatter()
+
   
 
 

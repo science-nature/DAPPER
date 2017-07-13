@@ -172,6 +172,7 @@ def compute_q(psi):
 #  setter(xx[k],mu[k],var[k],obs_inds(t))
 #  plt.suptitle('t = %.1f'%t)
 def show(x,mu=None,var=None,jj=None):
+  cmap=plt.cm.viridis
   prep_p = lambda x: square(x)
   prep_q = lambda x: compute_q(square(x))
   prep_m = prep_p
@@ -182,10 +183,10 @@ def show(x,mu=None,var=None,jj=None):
   ax_q.set_title('q')
   ax_m.set_title('mean estimate of psi')
   ax_v.set_title('std. dev. in psi')
-  im_p = ax_p.imshow(prep_p(x)        , origin='lower')
-  im_q = ax_q.imshow(prep_q(x)        , origin='lower')
-  im_m = ax_m.imshow(prep_m(mu)       , origin='lower')
-  im_v = ax_v.imshow(prep_v(sqrt(var)), origin='lower')
+  im_p = ax_p.imshow(prep_p(x)        , origin='lower',cmap=cmap)
+  im_q = ax_q.imshow(prep_q(x)        , origin='lower',cmap=cmap)
+  im_m = ax_m.imshow(prep_m(mu)       , origin='lower',cmap=cmap)
+  im_v = ax_v.imshow(prep_v(sqrt(var)), origin='lower',cmap=cmap)
   s_yy = ax_p.scatter(*array(np.unravel_index(jj,(nx,ny))),s=8)
   ax_p.set_xlim(0,129)
   ax_p.set_ylim(0,129)

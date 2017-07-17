@@ -144,9 +144,20 @@ class Stats(MLR_Print):
 
   def assess_ens(self,k,E,w=None):
     """Ensemble and Particle filter (weighted/importance) assessment."""
+    """
+    if crop_borders:
+      #Crop the borders
+      _,m=E.shape
+      d=int(m**0.5)
+      E=E[:,list(filter(lambda x:(x%d not in [0,d-1])*(x//d not in [0,d-1]) ,range(m)))]
+
+      m=self.xx[k[0]].shape[0]
+      d=int(m**0.5)
+      X=self.xx[k[0]][list(filter(lambda x:(x%d not in [0,d-1])*(x//d not in [0,d-1]) ,range(m)))].copy()
+    """
     # Unpack
     N,m = E.shape
-    x = self.xx[k[0]]
+    x = X
 
     # Process weights
     if w is None: 

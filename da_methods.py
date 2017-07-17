@@ -515,7 +515,9 @@ def LETKF(loc_rad,N,taper='GC',approx=False,infl=1.0,rot=False,**kwargs):
           stats.trHK[kObs] = (sd**(-1.0) * sd**2).sum()/h.noise.m
         #else:
           # nevermind
-
+      #_,m=E.shape
+      #d=int(m**0.5)
+      #E[:,list(filter(lambda x:(x%d not in [0,d-1])*(x//d not in [0,d-1]) ,range(m)))]=1.0
       stats.assess(k,kObs,E=E)
   return assimilator
 

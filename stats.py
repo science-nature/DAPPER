@@ -157,7 +157,7 @@ class Stats(MLR_Print):
     """
     # Unpack
     N,m = E.shape
-    x = X
+    x = self.xx[k[0]]
 
     # Process weights
     if w is None: 

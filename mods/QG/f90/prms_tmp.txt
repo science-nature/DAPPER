@@ -4,7 +4,7 @@
   dt                  = 1.25
   RKB                 = 0
   RKH                 = 0
-  RKH2                = 2e-12
+  RKH2                = 2e-11
   F                   = 1600
   R                   = 1e-05
   scheme              = 'rk4'

@@ -35,7 +35,7 @@ prms = [
     ["dt"           , dt_internal], # dt used internally by Fortran
     ["RKB"          , 0          ], # bottom friction
     ["RKH"          , 0          ], # horizontal friction
-    ["RKH2"         , 2.0e-12    ], # biharmonic horizontal friction
+    ["RKH2"         , 2.0e-11    ], # biharmonic horizontal friction
     ["F"            , 1600       ], # Froud number
     ["R"            , 1.0e-5     ], # ≈ Rossby number
     ["scheme"       , "'rk4'"    ]  # One of (2ndorder, rk4, dp5)

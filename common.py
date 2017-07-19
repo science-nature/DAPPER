@@ -44,7 +44,9 @@ from numpy import \
     array, asarray, asmatrix, \
     linspace, arange, reshape, \
     eye, zeros, ones, diag, trace, \
-    fromiter, reshape,hstack,vstack
+    fromiter, reshape,hstack,vstack, \
+    expand_dims
+
 
 from itertools import product
 

@@ -28,19 +28,33 @@ X0 = RV(m=m,file=sample_filename)
 ############################
 # Observation settings
 ############################
-p  = 300
+#modified this to obtain a clean periodicity on the map and ease implementation of the block-diag matrix. See notes week July 19th.
+p  = 347
+"""
 jj = equi_spaced_integers(m,p)
 jj = jj-jj[0]
 
 rstream = np.random.RandomState()
 max_offset = jj[1]-jj[0]
+"""
+d=int(m**0.5)
+#inds = obs_inds(t)
+alle=range(0,m)
+#I have already decided the number of tracks
+tracks=range(0,d*2-1,16)
+#pick points which are on the tracks. 
+obs_indices=filter(lambda m:m%d+m//d in tracks,alle)
+#take one point every 3 to decrease #obs
+jjs=filter(lambda n:n%3==0,obs_indices)
+jj=list(jjs)
+
 def random_offset(t):
   rstream.seed(int(t/dt*100))
   u = rstream.rand()
   return int(floor(max_offset * u))
 
 def obs_inds(t):
-  return jj + random_offset(t)
+  return jj #+ random_offset(t)
 
 @ens_compatible
 def hmod(E,t):

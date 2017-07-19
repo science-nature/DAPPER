@@ -25,7 +25,7 @@ def simulate(setup,desc='Truth & Obs',reorder=False):
         bruit = fromiter(bruit,dtype=int)
         bruit = expand_dims(bruit,axis=0)
 
-      yy[kObs] = h(xx[k],t) + bruit
+      yy[kObs] += bruit
 
   return xx,yy
 

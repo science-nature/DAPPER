@@ -13,7 +13,6 @@ def simulate(setup,desc='Truth & Obs',reorder=False):
   for k,kObs,t,dt in progbar(chrono.forecast_range,desc):
     xx[k] = f(xx[k-1],t-dt,dt) + sqrt(dt)*f.noise.sample(1)
     if kObs is not None:
-      yy[kObs] = h(xx[k],t)
       bruit = h.noise.sample(1)
 
       if reorder:
@@ -25,7 +24,7 @@ def simulate(setup,desc='Truth & Obs',reorder=False):
         bruit = fromiter(bruit,dtype=int)
         bruit = expand_dims(bruit,axis=0)
 
-      yy[kObs] += bruit
+      yy[kObs] = h(xx[k],t) + bruit
 
   return xx,yy
 

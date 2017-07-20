@@ -1,11 +1,13 @@
 from addons import *
 from tools.viz import plot_benchmark_analysis
+from mods.QG.sak08 import setup as setupQG
 
 #then run the whole.
 if __name__=='__main__':
 
-  config = EnKF('Sqrt', N=50, infl=1.01, rot=True, liveplotting=False)
-  b=Benchmark(config=config,tunning=False,assimcycles=10**4)
+  config = LETKF(loc_rad=10, N=25, taper='Gauss', infl=1.07, rot=True)
+  setupQG.t.KObs=10**3
+  b=Benchmark(setup=setupQG,config=config,tunning=False,assimcycles=10**4)
   p=b.setup.h.m
 
   #####################################
@@ -19,12 +21,9 @@ if __name__=='__main__':
   b+=MARKOV(size=p,thin=0.4)
 
   b+=MARKOV(size=p,thin=0.2)
-  """
 
   for i in range(1,19):
     b+=MultiDiag(size=p,Rinfl=i/10)
-
-  """
 
   b+=SOAR(size=p,thin=0.1)
 

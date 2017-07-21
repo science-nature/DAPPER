@@ -2,7 +2,7 @@
 
 from common import *
 
-from mods.QG.core import step, dt, nx, ny, m, square, sample_filename, show
+from mods.QG.core import step, dt, nx, ny, m, square, sample_filename, show, generate_diags
 
 
 # As specified in core.py: dt = 4*1.25 = 5.0.
@@ -28,25 +28,41 @@ X0 = RV(m=m,file=sample_filename)
 ############################
 # Observation settings
 ############################
-#modified this to obtain a clean periodicity on the map and ease implementation of the block-diag matrix. See notes week July 19th.
-p  = 347
 """
-jj = equi_spaced_integers(m,p)
-jj = jj-jj[0]
+generate diagonal tracks:
 
-rstream = np.random.RandomState()
-max_offset = jj[1]-jj[0]
+Indications for one direction-tracks. Of course this double in case of cross-crossing observations (change the angle).
+
+diags:2, lighten_factor:1, obs:131
+diags:2, lighten_factor:2, obs:67
+diags:2, lighten_factor:3, obs:43
+diags:2, lighten_factor:4, obs:34
+diags:2, lighten_factor:5, obs:26
+diags:2, lighten_factor:6, obs:22
+diags:4, lighten_factor:1, obs:261
+diags:4, lighten_factor:2, obs:133
+diags:4, lighten_factor:3, obs:86
+diags:4, lighten_factor:4, obs:67
+diags:4, lighten_factor:5, obs:52
+diags:4, lighten_factor:6, obs:44
+diags:8, lighten_factor:1, obs:521
+diags:8, lighten_factor:2, obs:265
+diags:8, lighten_factor:3, obs:173
+diags:8, lighten_factor:4, obs:133
+diags:8, lighten_factor:5, obs:104
+diags:8, lighten_factor:6, obs:88
+diags:16, lighten_factor:1, obs:1041
+diags:16, lighten_factor:2, obs:529
+diags:16, lighten_factor:3, obs:346
+diags:16, lighten_factor:4, obs:265
+diags:16, lighten_factor:5, obs:208
+diags:16, lighten_factor:6, obs:176
+
 """
-d=int(m**0.5)
-#inds = obs_inds(t)
-alle=range(0,m)
-#I have already decided the number of tracks
-tracks=range(0,d*2-1,16)
-#pick points which are on the tracks. 
-obs_indices=filter(lambda m:m%d+m//d in tracks,alle)
-#take one point every 3 to decrease #obs
-jjs=filter(lambda n:n%3==0,obs_indices)
-jj=list(jjs)
+params={'m':16641,'diags':8,'angle':-1,'lighten_factor':2}
+jj = generate_diags(**params)
+p = len(jj)
+
 
 def random_offset(t):
   rstream.seed(int(t/dt*100))
@@ -89,9 +105,10 @@ h = {
     }
 
 setup = TwinSetup(f,h,t,X0)
+
 setup.name = os.path.relpath(__file__,'mods/')
 
-
+#Create R here
 
 ####################
 # Suggested tuning

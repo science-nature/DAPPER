@@ -16,13 +16,23 @@ def simulate(setup,desc='Truth & Obs',reorder=False):
       bruit = h.noise.sample(1)
 
       if reorder:
-        d = int(f.m**0.5)
-        space = f.m//(h.m-1) #(hm-1) because starts at 0 and we want the #spaces
-        bruit = map(lambda m:(m[1],(m[0]*space)//d+(m[0]*space)%d),enumerate(bruit.squeeze()))
-        bruit = sorted(bruit,key=lambda x:x[1])
-        bruit = map(lambda x:x[0], bruit)
-        bruit = fromiter(bruit,dtype=int)
-        bruit = expand_dims(bruit,axis=0)
+        from mods.QG.sak08 import jj,params
+        #Only supports counter-diagonals for now
+        angle = params['angle']
+        out = array([])
+        if not hasattr(angle,'__iter__'):
+          angle = [angle]
+          bruit = [bruit.squeeze()]
+        else:
+          bruit = [bruit.squeeze()[:h.m//2],bruit.squeeze()[h.m//2:]]
+        for (a,b) in zip(angle,bruit):
+          d = int(f.m**0.5)
+          b = sorted(zip(jj,b),key=lambda x: x[0]%d - a * (x[0]//d))
+          b = map(lambda x: x[1], b)
+          b = fromiter(b,dtype=float)
+
+        out = hstack((out,b))
+        bruit = expand_dims(out,axis = 0)
 
       yy[kObs] = h(xx[k],t) + bruit
 

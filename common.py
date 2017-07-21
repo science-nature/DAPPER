@@ -61,6 +61,7 @@ from numpy import fromiter, reshape,hstack,vstack
 from itertools import product
 from time import time,strftime
 from pandas import DataFrame,read_csv
+from functools import partial
 
 
 ##################################

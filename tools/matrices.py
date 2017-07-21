@@ -975,7 +975,7 @@ class BlockDiag(CorrMat):
     if submat==None:
       try:
         types=[a.__class__.__bases__[0] for a in args]
-        if any([not str(t)=="<class 'aux.matrices.CorrMat'>" for t in types]):
+        if any([not str(t)=="<class 'tools.matrices.CorrMat'>" for t in types]):
           raise ValueError('Uncorrect argument(s), must be CorrMat -or derived type')
         else:
           fulls=tuple([m.full for m in args])

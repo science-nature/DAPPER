@@ -171,36 +171,88 @@ def compute_q(psi):
 #for k,kObs,t,dt in progbar(chrono.forecast_range):
 #  setter(xx[k],mu[k],var[k],obs_inds(t))
 #  plt.suptitle('t = %.1f'%t)
-def show(x,mu=None,var=None,jj=None):
+def show_map(stats):
   cmap=plt.cm.viridis
   prep_p = lambda x: square(x)
   prep_q = lambda x: compute_q(square(x))
   prep_m = prep_p
   prep_v = prep_p
 
+  x=stats.xx
+  mu=stats.mu.a
+  var=stats.var.a
+
   f, ((ax_p, ax_q), (ax_m, ax_v)) = plt.subplots(2, 2, figsize=(10,10))
   ax_p.set_title('psi')
   ax_q.set_title('q')
   ax_m.set_title('mean estimate of psi')
   ax_v.set_title('std. dev. in psi')
-  im_p = ax_p.imshow(prep_p(x)        , origin='lower',cmap=cmap)
-  im_q = ax_q.imshow(prep_q(x)        , origin='lower',cmap=cmap)
-  im_m = ax_m.imshow(prep_m(mu)       , origin='lower',cmap=cmap)
-  im_v = ax_v.imshow(prep_v(sqrt(var)), origin='lower',cmap=cmap)
-  s_yy = ax_p.scatter(*array(np.unravel_index(jj,(nx,ny))),s=8)
+  im_p = ax_p.imshow(prep_p(x[0])        , origin='upper',cmap=cmap)
+  im_q = ax_q.imshow(prep_q(x[0])        , origin='upper',cmap=cmap)
+  im_m = ax_m.imshow(prep_m(mu[0])       , origin='upper',cmap=cmap)
+  im_v = ax_v.imshow(prep_v(sqrt(var[0])), origin='upper',cmap=cmap)
+  #s_yy = ax_p.scatter
   ax_p.set_xlim(0,129)
   ax_p.set_ylim(0,129)
   im_p.set_clim(-35,30)
   im_q.set_clim(-1.2e5,1.2e5)
   im_m.set_clim(-35,30)
   im_v.set_clim(0,1.5)
-  def setter(x,mu=None,var=None,jj=None):
-    im_p.set_data(prep_p(x))
-    im_q.set_data(prep_q(x))
-    im_m.set_data(prep_m(mu))
-    im_v.set_data(prep_v(sqrt(var)))
-    s_yy.set_offsets(array(np.unravel_index(jj,(nx,ny))).T)
-    plt.pause(0.01)
-  return setter
+  #plt.savefig('QGtestinimap.png')
+  k=getch()
+  if k == 'p':
+    for i in range(1,x.shape[0]-1):
+      im_p.set_data(prep_p(x[i]))
+      im_q.set_data(prep_q(x[i]))
+      im_m.set_data(prep_m(mu[i]))
+      im_v.set_data(prep_v(sqrt(var[i])))
+      #s_yy.set_offsets(array(np.unravel_index(jj,(nx,ny))).T)
+      plt.pause(0.01)
+  else :
+    return None
+
+def show_error_map(stats):
+  error=stats.err.a
+  im_err = plt.imshow(error[0].reshape((129,129),order='F'),origin='upper',cmap=plt.cm.viridis)
+  for r in error[1:]:
+      plt.pause(0.01)
+      im_err.set_data(r.reshape((129,129),order='F'))
+
+
+  
+#Show tracking of the observations on the map
+#Satisfying number of diags for QG constraints are multiples of 2 (divisors of 128)
+#Suggested params: diags=16,angle=-1, lighten_factor=3 or diags=8,angle=[-1,1],lighten_factor=3
+def show_tracking(m=16641,diags=16,angle=-1,lighten_factor=3):
+
+  jjs = generate_diags(**locals())
+
+  d = int(m**0.5)
+
+  ll=[0]*m
+
+  for i in jjs:
+    ll[i]=1
+
+  plt.imshow(reshape(ll,(d,d)),cmap=plt.cm.YlGnBu)
+  plt.title('%i points tracked'%sum(ll))
+  plt.show()
+
+def generate_diags(m=16641,diags=16,angle=-1,lighten_factor=3):
+  if not hasattr(angle,'__iter__'):
+    angle = [angle]
+  
+  jjs = [] 
+
+  d = int(m**0.5)
+  for a in angle:
+    points = range(m)
+    diagos = range(-(d//2)-a*(d//2),d+d//2+1-a*(d//2),(2*(d-1)) // diags)
+    tracks = filter(lambda x : x%d - a * (x//d) in diagos, points)
+    tracks = filter(lambda x : ( x%d + x%d - a * (x//d) )%lighten_factor == 0,tracks)
+    jjs+=tracks
+
+  return array(jjs)
+
 
 

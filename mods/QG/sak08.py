@@ -2,7 +2,7 @@
 
 from common import *
 
-from mods.QG.core import step, dt, nx, ny, m, square, sample_filename, show, generate_diags
+from mods.QG.core import step, dt, nx, ny, m, square, sample_filename, generate_diags
 
 
 # As specified in core.py: dt = 4*1.25 = 5.0.

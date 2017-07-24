@@ -17,7 +17,6 @@ def simulate(setup,desc='Truth & Obs',reorder=False):
 
       if reorder:
         from mods.QG.sak08 import jj,params
-        #Only supports counter-diagonals for now
         angle = params['angle']
         out = array([])
         if not hasattr(angle,'__iter__'):

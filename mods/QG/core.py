@@ -191,6 +191,7 @@ def show_map(stats):
   im_q = ax_q.imshow(prep_q(x[0])        , origin='upper',cmap=cmap)
   im_m = ax_m.imshow(prep_m(mu[0])       , origin='upper',cmap=cmap)
   im_v = ax_v.imshow(prep_v(sqrt(var[0])), origin='upper',cmap=cmap)
+  supt = f.suptitle('step 0/%i'%(x.shape[0]-1))
   #s_yy = ax_p.scatter
   ax_p.set_xlim(0,129)
   ax_p.set_ylim(0,129)
@@ -198,25 +199,95 @@ def show_map(stats):
   im_q.set_clim(-1.2e5,1.2e5)
   im_m.set_clim(-35,30)
   im_v.set_clim(0,1.5)
+  plt.pause(0.01)
+  print('Type in:\n-"e" to jump to final step,\n-"p" to visualize step-by-step evolution, and "enter" to pause\n-Space to view the first step,\n-"q" to quit.')
   #plt.savefig('QGtestinimap.png')
-  k=getch()
-  if k == 'p':
-    for i in range(1,x.shape[0]-1):
-      im_p.set_data(prep_p(x[i]))
-      im_q.set_data(prep_q(x[i]))
-      im_m.set_data(prep_m(mu[i]))
-      im_v.set_data(prep_v(sqrt(var[i])))
+  
+  def setter():
+    
+    k = getch()
+    
+    if k == 'p':
+      for i in range(1,x.shape[0]-1):
+        c = poll_input()
+        if c == '\n':
+          break
+          setter()
+        im_p.set_data(prep_p(x[i]))
+        im_q.set_data(prep_q(x[i]))
+        im_m.set_data(prep_m(mu[i]))
+        im_v.set_data(prep_v(sqrt(var[i])))
+        supt.set_text('step %i/%i'%(i,x.shape[0]-1))
+        #s_yy.set_offsets(array(np.unravel_index(jj,(nx,ny))).T)
+        plt.pause(0.01)
+      setter()
+    
+    elif k == 'e' :
+      im_p.set_data(prep_p(x[-1]))
+      im_q.set_data(prep_q(x[-1]))
+      im_m.set_data(prep_m(mu[-1]))
+      im_v.set_data(prep_v(sqrt(var[-1])))
+      supt.set_text('step %i/%i'%(x.shape[0]-1,x.shape[0]-1))
+      plt.pause(0.01)
+      setter()
+    
+    elif k == ' ':
+      im_p.set_data(prep_p(x[0]))
+      im_q.set_data(prep_q(x[0]))
+      im_m.set_data(prep_m(mu[0]))
+      im_v.set_data(prep_v(sqrt(var[0])))
+      supt.set_text('step %i/%i'%(0,x.shape[0]-1))
       #s_yy.set_offsets(array(np.unravel_index(jj,(nx,ny))).T)
       plt.pause(0.01)
-  else :
-    return None
+      setter()
+    
+    elif k == 'q':
+      #plt.close()
+      return None
+
+    else :
+      setter()
+
+  return setter()
 
 def show_error_map(stats):
   error=stats.err.a
-  im_err = plt.imshow(error[0].reshape((129,129),order='F'),origin='upper',cmap=plt.cm.viridis)
-  for r in error[1:]:
+  f2, ax = plt.subplots(1, 1, figsize=(6,6))
+  supt = f2.suptitle('Time evolution of RMSE\nstep 0/%i'%(error.shape[0]))
+  im_err = ax.imshow(error[0].reshape((129,129),order='F'),origin='upper',cmap=plt.cm.viridis)
+  plt.pause(0.01)
+  print('Type in:\n-"e" to jump to final step,\n-"p" to visualize step-by-step evolution, and "enter" to pause\n-Space to view the first step,\n-"q" to quit.')
+  #plt.savefig('QGtestinimap.png')
+  def setter():
+
+    k=getch()
+    if k == 'p':
+      for (i,r) in enumerate(error[1:]):
+        c = poll_input()
+        if c == '\n':
+          break
+          setter()
+        im_err.set_data(r.reshape((129,129),order='F'))
+        supt.set_text('Time evolution of RMSE\nstep %i/%i'%(i,error.shape[0]))
+        plt.pause(0.01)
+      setter()
+    elif k == 'e' :
+      im_err.set_data(error[-1].reshape((129,129),order='F'))
+      supt.set_text('Time evolution of RMSE\nstep %i/%i'%(error.shape[0],error.shape[0]))
       plt.pause(0.01)
-      im_err.set_data(r.reshape((129,129),order='F'))
+      setter()
+    elif k == ' ':
+      im_err.set_data(error[0].reshape((129,129),order='F'))
+      supt.set_text('Time evolution of RMSE\nstep 0/%i'%(error.shape[0]))
+      plt.pause(0.01)
+      setter()
+    elif k == 'q':
+      return None
+    else:
+      setter()
+
+  return setter()
+
 
 
   

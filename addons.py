@@ -69,7 +69,7 @@ class Benchmark(object):
     setup=setup,
     config=EnKF('Sqrt', N=50, infl=1.0, rot=True, liveplotting=False),
     Rt=MARKOV(size=setup.h.m,deltax=1,Lr=1),
-    tunning=True,
+    tunning=None,
     assimcycles=10**4
     ):
 
@@ -103,16 +103,27 @@ class Benchmark(object):
     #Ugly as possible, should need rework
 
     r=dict(m.experiment(xx,yy,setup=self.setup,config=self.config))
-    if self.tunning:
+    if self.tunning is not None:
+      word=self.tunning
+
+      def criterion(r,s):
+        if word=='Gain':
+          return s['RMSE']<=r['RMSE']
+        if word=='Trust':
+          return s['RMSE']*0.95>s['Spread']
+
       #t=0
       s=r.copy()
       #Allow a more flexible criterion
-      while r['RMSE']>=s['RMSE']*0.95: #or s['RMSE']>s['Spread']):
+      while criterion(r,s):
         #t+=1
         r=s.copy()
         temp+=0.01
         s=dict(m.experiment(xx,yy,setup=self.setup,config=self.config.update_settings(infl=temp)))
-    return [('DA',self.config.update_settings(infl=temp-0.01))]+list(r.items())
+
+      temp-=0.01
+
+    return [('DA',self.config.update_settings(infl=temp))]+list(r.items())
 
 
   def run(self):

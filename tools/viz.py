@@ -1356,8 +1356,8 @@ def set_figpos(loc):
   # By chance it seems to work (if several monitors are used, it only returns dimensions of the main monitor, even if it should not work but display sum of all monitor dimensions)
   x0 = 0
   y0 = 0
-  w0 = tkinter.Tk().winfo_screenwidth()
-  h0 = tkinter.Tk().winfo_screenheight()
+  w0 = 1680
+  h0 = 1050
 
   
   # Def place function with offsets

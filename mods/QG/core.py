@@ -252,9 +252,13 @@ def show_map(stats):
 
 def show_error_map(stats):
   error=stats.err.a
-  f2, ax = plt.subplots(1, 1, figsize=(6,6))
+  spread=stats.mad.a
+  f2, (ax1,ax2) = plt.subplots(1, 2, figsize=(10,6))
   supt = f2.suptitle('Time evolution of RMSE\nstep 0/%i'%(error.shape[0]))
-  im_err = ax.imshow(error[0].reshape((129,129),order='F'),origin='upper',cmap=plt.cm.viridis)
+  im_err = ax1.imshow(error[0].reshape((129,129),order='F'),origin='upper',cmap=plt.cm.viridis)
+  im_sp = ax2.imshow(spread[0].reshape((129,129),order='F'),origin='upper',cmap=plt.cm.viridis)
+  ax1.set_title('RMSE')
+  ax2.set_title('Spread')
   plt.pause(0.01)
   print('Type in:\n-"e" to jump to final step,\n-"p" to visualize step-by-step evolution, and "enter" to pause\n-Space to view the first step,\n-"q" to quit.')
   #plt.savefig('QGtestinimap.png')
@@ -262,22 +266,25 @@ def show_error_map(stats):
 
     k=getch()
     if k == 'p':
-      for (i,r) in enumerate(error[1:]):
+      for (i,(r,s)) in enumerate(zip(error[1:],spread[1:])):
         c = poll_input()
         if c == '\n':
           break
           setter()
         im_err.set_data(r.reshape((129,129),order='F'))
+        im_sp.set_data(s.reshape((129,129),order='F'))
         supt.set_text('Time evolution of RMSE\nstep %i/%i'%(i,error.shape[0]))
         plt.pause(0.01)
       setter()
     elif k == 'e' :
       im_err.set_data(error[-1].reshape((129,129),order='F'))
+      im_sp.set_data(spread[-1].reshape((129,129),order='F'))
       supt.set_text('Time evolution of RMSE\nstep %i/%i'%(error.shape[0],error.shape[0]))
       plt.pause(0.01)
       setter()
     elif k == ' ':
       im_err.set_data(error[0].reshape((129,129),order='F'))
+      im_sp.set_data(spread[0].reshape((129,129),order='F'))
       supt.set_text('Time evolution of RMSE\nstep 0/%i'%(error.shape[0]))
       plt.pause(0.01)
       setter()
@@ -288,7 +295,15 @@ def show_error_map(stats):
 
   return setter()
 
-
+def plot_err(stats,supt=None):
+    f,ax = plt.subplots()
+    ax.plot(stats.rmse.a,label='RMSE')
+    ax.plot(mean(stats.mad.a,axis=1),label='Spread')
+    ax.legend()
+    ax.set_title('Time through evol. RMSE & Spread')
+    ax.set_ylabel('RMSE/Spread')
+    if type(supt) == str:
+      f.suptitle(supt)
 
   
 #Show tracking of the observations on the map
@@ -304,10 +319,9 @@ def show_tracking(m=16641,diags=16,angle=-1,lighten_factor=3):
 
   for i in jjs:
     ll[i]=1
-
-  plt.imshow(reshape(ll,(d,d)),cmap=plt.cm.YlGnBu)
-  plt.title('%i points tracked'%sum(ll))
-  plt.show()
+  f , ax= plt.subplots()
+  ax.imshow(reshape(ll,(d,d)),cmap=plt.cm.YlGnBu)
+  ax.set_title('%i points tracked'%sum(ll))
 
 def generate_diags(m=16641,diags=16,angle=-1,lighten_factor=3):
   if not hasattr(angle,'__iter__'):

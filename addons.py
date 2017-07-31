@@ -68,7 +68,7 @@ class Benchmark(object):
     self,
     setup=setup,
     config=EnKF('Sqrt', N=50, infl=1.0, rot=True, liveplotting=False),
-    Rt=MARKOV(size=setup.h.m,deltax=1,Lr=1),
+    Rt=Sparse(size = setup.h.m),
     tunning=None,
     assimcycles=10**4
     ):
@@ -96,7 +96,6 @@ class Benchmark(object):
     MARKOV=functools.partial(MARKOV,size=self.setup.h.m)
     """
 
-  #Be careful when changing the opti criterion. Need to change both *while* condition and the r or s returned and temp+-0.01.
   def assess_matrix(self,m,xx,yy):
     #Function aimed at tunning the inflation factor:
     temp=self.config.infl
@@ -121,7 +120,7 @@ class Benchmark(object):
         temp+=0.01
         s=dict(m.experiment(xx,yy,setup=self.setup,config=self.config.update_settings(infl=temp)))
 
-      temp-=0.01
+      temp=max([temp-0.01,1.0])
 
     return [('DA',self.config.update_settings(infl=temp))]+list(r.items())
 
@@ -254,3 +253,7 @@ class Benchmark(object):
   @property
   def output(self):
     return self._output
+
+
+
+#Wrapper for extra setups:

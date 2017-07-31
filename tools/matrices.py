@@ -700,7 +700,7 @@ class BlockDiag(CorrMat):
     
 class Sparse(CorrMat):
 
-  def __init__(self,size,deltax=1,Lr=1,thin=0.999999):
+  def __init__(self,size,deltax=1,Lr=1,thin=0.99):
     
     A=zeros((size,size))
     for (i,j) in product(range(size),repeat=2):
@@ -1005,11 +1005,11 @@ class BlockDiag(CorrMat):
     
 class Sparse(CorrMat):
 
-  def __init__(self,size,deltax=1,Lr=1,thin=0.999999):
+  def __init__(self,size,deltax=1,Lr=1,thin=0.98):
     
     A=zeros((size,size))
     for (i,j) in product(range(size),repeat=2):
-      A[i,j]=1/(1+abs(abs(abs(i-j-1)-(size-1)/2)-(size-1)/2)/2)
+      A[i,j]=1/(1+abs(abs(abs(i-j)-(size-1)/2)-(size-1)/2)/2)
     CorrMat.__init__(self,data=A,thin=thin)
     del(i,j,A)
     l=[t for t in locals().items() if t[0] not in ['self','size']]

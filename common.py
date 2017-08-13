@@ -62,6 +62,8 @@ from itertools import product
 from time import time,strftime
 from pandas import DataFrame,read_csv
 from functools import partial
+from matplotlib.colors import LinearSegmentedColormap
+
 
 
 ##################################

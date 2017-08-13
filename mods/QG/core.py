@@ -302,26 +302,29 @@ def plot_err(stats,supt=None):
     ax.legend()
     ax.set_title('Time through evol. RMSE & Spread')
     ax.set_ylabel('RMSE/Spread')
-    if type(supt) == str:
-      f.suptitle(supt)
+    if type(supt)== str:
+      f.suptitle(supt,fontweight='bold')
 
   
 #Show tracking of the observations on the map
 #Satisfying number of diags for QG constraints are multiples of 2 (divisors of 128)
 #Suggested params: diags=16,angle=-1, lighten_factor=3 or diags=8,angle=[-1,1],lighten_factor=3
 def show_tracking(m=16641,diags=16,angle=-1,lighten_factor=3):
+  if not hasattr(angle,'__iter__'):
+    angle = [angle] 
 
   jjs = generate_diags(**locals())
-
+  colors = [(0.95, 0.95, 0.95), (0.90, 0.50, 0), (0.20, 0, 0.80)]
+  cm=LinearSegmentedColormap.from_list('mylist',colors,100)
   d = int(m**0.5)
 
   ll=[0]*m
 
-  for i in jjs:
-    ll[i]=1
+  for (p,i) in enumerate(jjs):
+    ll[i]=2 if len(angle)>1 and p>=len(jjs)//2 else 1 
   f , ax= plt.subplots()
-  ax.imshow(reshape(ll,(d,d)),cmap=plt.cm.YlGnBu)
-  ax.set_title('%i points tracked'%sum(ll))
+  ax.imshow(reshape(ll,(d,d)),cmap=cm)
+  ax.set_title('%i points tracked'%len(jjs))
 
 def generate_diags(m=16641,diags=16,angle=-1,lighten_factor=3):
   if not hasattr(angle,'__iter__'):

@@ -1162,7 +1162,7 @@ def plot_benchmark_analysis(entry,loc1='1211',loc2='1212',skip=False):
       return 'Identity'+('\nRinfl='+str(x.Rinfl) if float(x.Rinfl)!=1.0 else '')
     else: 
       y=x.kind \
-      +(', '+str(x.thin) if float(x.thin)<0.9 else '') \
+      +(', '+str(x.thin)) \
       +(',\n'+str(x.submat) if not x.submat=='' else '') \
       +('*'+str(x.Subdiv) if not '[' in str(x.submat) and not str(x.submat)=='' else '') \
       +('\n#d='+str(x.diags) if not str(x.diags)=='' and not str(x.diags)=='None' else '')

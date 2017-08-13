@@ -59,10 +59,12 @@ diags:16, lighten_factor:5, obs:208
 diags:16, lighten_factor:6, obs:176
 
 """
-params={'m':16641,'diags':8,'angle':-1,'lighten_factor':2}
+params={'m':16641,'diags':8,'angle':[-1,1],'lighten_factor':3}
 jj = generate_diags(**params)
 p = len(jj)
 
+#Create a reordering (base-changing matrix)
+s = sorted(enumerate(jj))
 
 def random_offset(t):
   rstream.seed(int(t/dt*100))

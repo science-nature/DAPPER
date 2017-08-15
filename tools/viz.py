@@ -1159,7 +1159,7 @@ def plot_benchmark_analysis(entry,loc1='1211',loc2='1212',skip=False):
   
   def disp(x):
     if str(x.diags)=='1' and x.kind=='MultiDiag':
-      return 'Identity'+('\nRinfl='+str(x.Rinfl) if float(x.Rinfl)!=1.0 else '')
+      return 'Identity'+('*'+str(x.Rinfl) if float(x.Rinfl)!=1.0 else '')
     else: 
       y=x.kind \
       +(', '+str(x.thin)) \

@@ -1,0 +1,7 @@
+,Setup,R,DA,RMSE,Spread,CPU_Time,kind,thin,deltax,Lr
+2,Lorenz95/sak08.py,<class 'tools.matrices.Sparse'>,"EnKF(upd_a='Sqrt', N=50, infl=1.03, rot=True)",0.07520163603853112,0.06906596316160117,80.89889574050903,Sparse,0.8,1.0,1.0
+3,Lorenz95/sak08.py,<class 'tools.matrices.Sparse'>,"EnKF(upd_a='Sqrt', N=50, infl=1.02, rot=True)",0.09301915942896591,0.08492601058721994,72.14691114425659,Sparse,0.6,1.0,1.0
+4,Lorenz95/sak08.py,<class 'tools.matrices.Sparse'>,"EnKF(upd_a='Sqrt', N=50, infl=1.02, rot=True)",0.1146112999527313,0.1054363143674343,72.01876831054688,Sparse,0.4,1.0,1.0
+5,Lorenz95/sak08.py,<class 'tools.matrices.Sparse'>,"EnKF(upd_a='Sqrt', N=50, infl=1.02, rot=True)",0.12593707213769936,0.11662686701557305,72.12166404724121,Sparse,0.3,1.0,1.0
+6,Lorenz95/sak08.py,<class 'tools.matrices.Sparse'>,"EnKF(upd_a='Sqrt', N=50, infl=1.02, rot=True)",0.12570006658446595,0.11664346874976719,73.3318350315094,Sparse,0.2,1.0,1.0
+7,Lorenz95/sak08.py,<class 'tools.matrices.Sparse'>,"EnKF(upd_a='Sqrt', N=50, infl=1.02, rot=True)",0.12580017697695536,0.11662616567123224,72.63646483421326,Sparse,0.1,1.0,1.0

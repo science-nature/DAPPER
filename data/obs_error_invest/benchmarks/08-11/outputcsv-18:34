@@ -1,0 +1,3 @@
+,Setup,R,DA,RMSE,Spread,CPU_Time,kind,thinning,diags,decay,Rinfl,thin
+1,QG/sak08.py,<class 'tools.matrices.Custom'>,"LETKF(loc_rad=15, N=25, taper='Gauss', infl=1.07, rot=True)",1.0012272116713512,0.7939886199107704,2303.9495589733124,Custom (Rt),0.999999,,,,
+3,QG/sak08.py,<class 'tools.matrices.MultiDiag'>,"LETKF(loc_rad=15, N=25, taper='Gauss', infl=1.07, rot=True)",1.5037037095543109,0.7632372264377075,2302.112622022629,MultiDiag,,1,1,4,0.999999

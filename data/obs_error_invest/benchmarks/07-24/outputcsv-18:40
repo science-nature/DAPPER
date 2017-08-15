@@ -1,0 +1,8 @@
+,Setup,R,DA,RMSE,Spread,CPU_Time,Lr,deltax,thin,kind
+1,Lorenz95/sak08.py,<class 'tools.matrices.MARKOV'>,"EnKF(upd_a='Sqrt', N=50, infl=1.03, rot=True)",0.1669498025967767,0.1474549339218328,79.10807299613953,1.0,1.0,0.999999,MARKOV (Rt)
+2,Lorenz95/sak08.py,<class 'tools.matrices.MARKOV'>,"EnKF(upd_a='Sqrt', N=50, infl=1.03, rot=True)",0.16657663180213633,0.1447509388051556,73.98207592964172,1.0,1.0,0.8,MARKOV
+3,Lorenz95/sak08.py,<class 'tools.matrices.MARKOV'>,"EnKF(upd_a='Sqrt', N=50, infl=1.04, rot=True)",0.17913806848459948,0.16035014166409467,73.44396710395813,1.0,1.0,0.6,MARKOV
+4,Lorenz95/sak08.py,<class 'tools.matrices.MARKOV'>,"EnKF(upd_a='Sqrt', N=50, infl=1.04, rot=True)",0.18419491223835718,0.16541116702597797,74.14377522468567,1.0,1.0,0.4,MARKOV
+5,Lorenz95/sak08.py,<class 'tools.matrices.MARKOV'>,"EnKF(upd_a='Sqrt', N=50, infl=1.03, rot=True)",0.17746863406135446,0.15393774136571317,75.39125108718872,1.0,1.0,0.3,MARKOV
+6,Lorenz95/sak08.py,<class 'tools.matrices.MARKOV'>,"EnKF(upd_a='Sqrt', N=50, infl=1.03, rot=True)",0.18026523332361666,0.15721288582455809,74.48032999038696,1.0,1.0,0.2,MARKOV
+7,Lorenz95/sak08.py,<class 'tools.matrices.MARKOV'>,"EnKF(upd_a='Sqrt', N=50, infl=1.03, rot=True)",0.1833054246539447,0.1606355559687689,74.5091609954834,1.0,1.0,0.1,MARKOV

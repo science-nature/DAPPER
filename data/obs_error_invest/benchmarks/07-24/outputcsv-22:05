@@ -1,0 +1,16 @@
+,Setup,R,DA,RMSE,Spread,CPU_Time,Lr,deltax,thin,kind,decay,Rinfl,diags
+1,Lorenz95/sak08.py,<class 'tools.matrices.MARKOV'>,"EnKF(upd_a='Sqrt', N=50, infl=1.03, rot=True)",0.1654465755203296,0.14748066885851482,75.15915894508362,1.0,1.0,0.999999,MARKOV (Rt),,,
+2,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.02, rot=True)",0.17481148264946017,0.14912818555633028,74.63765692710876,,,0.999999,MultiDiag,1,1,1
+3,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.02, rot=True)",0.17538719899633615,0.15667445109776482,74.67134714126587,,,0.999999,MultiDiag,1,1.1,1
+4,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.01, rot=True)",0.16978850769236392,0.1451413321532869,73.96626400947571,,,0.999999,MultiDiag,1,1.2,1
+5,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.01, rot=True)",0.1705703077424243,0.15143186546707565,74.06683087348938,,,0.999999,MultiDiag,1,1.3,1
+6,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.0, rot=True)",3.7074998629175417,0.14590746156866843,74.18052387237549,,,0.999999,MultiDiag,1,1.4,1
+7,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.0, rot=True)",3.6167807752299295,0.15136702444015426,73.56793189048767,,,0.999999,MultiDiag,1,1.5,1
+8,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.0, rot=True)",0.18098895366538795,0.1471655494948725,73.88661670684814,,,0.999999,MultiDiag,1,1.6,1
+9,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.0, rot=True)",3.428291854395608,0.16000889301690566,73.62075805664062,,,0.999999,MultiDiag,1,1.7,1
+10,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.0, rot=True)",3.3438868455561725,0.16410758762680716,74.43254017829895,,,0.999999,MultiDiag,1,1.8,1
+11,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.0, rot=True)",0.19013702733414936,0.16140385312572053,73.49242806434631,,,0.999999,MultiDiag,1,1.9,1
+12,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.0, rot=True)",3.9800277867630784,0.17837900425020245,74.41356587409973,,,0.999999,MultiDiag,1,2.0,1
+13,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.0, rot=True)",3.282501339231133,0.218071482680482,73.51011490821838,,,0.999999,MultiDiag,1,3.0,1
+14,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.0, rot=True)",2.9968218758604075,0.2513025680272452,73.70981287956238,,,0.999999,MultiDiag,1,4.0,1
+15,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.0, rot=True)",3.8517367707330865,0.28774882510616684,73.73356485366821,,,0.999999,MultiDiag,1,5.0,1

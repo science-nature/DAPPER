@@ -1,0 +1,4 @@
+,Setup,R,DA,RMSE,Spread,CPU_Time,deltax,kind,Lr,thin,diags,Rinfl,decay
+1,Lorenz95/sak08.py,<class 'tools.matrices.MARKOV'>,"EnKF(upd_a='Sqrt', N=50, infl=1.03, rot=True)",0.16856194413487796,0.14779066484595604,71.95798087120056,1.0,MARKOV (Rt),1.0,0.999999,,,
+2,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.03, rot=True)",0.18790244120744412,0.16639842993521625,71.95841979980469,,MultiDiag,,0.999999,1,1.0,1
+3,Lorenz95/sak08.py,<class 'tools.matrices.MultiDiag'>,"EnKF(upd_a='Sqrt', N=50, infl=1.03, rot=True)",0.1908775638013597,0.19099542082850493,72.2501871585846,,MultiDiag,,0.999999,1,1.3,1

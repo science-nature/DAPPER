@@ -1,0 +1,9 @@
+,Setup,R,DA,RMSE,Spread,CPU_Time,Lr,deltax,thin,kind
+1,Lorenz95/sak08.py,<class 'tools.matrices.MARKOV'>,"EnKF(upd_a='Sqrt', N=50, infl=1.03, rot=True)",0.16553183544886574,0.14626274328736533,74.76085186004639,1.0,1.0,0.999999,MARKOV (Rt)
+2,Lorenz95/sak08.py,<class 'tools.matrices.SOAR'>,"EnKF(upd_a='Sqrt', N=50, infl=1.3800000000000003, rot=True)",0.4936279858992369,0.44141628491540397,75.36903977394104,1.0,1.0,0.999999,SOAR
+3,Lorenz95/sak08.py,<class 'tools.matrices.SOAR'>,"EnKF(upd_a='Sqrt', N=50, infl=1.2600000000000002, rot=True)",0.39664810113151483,0.35557325745340135,75.12830400466919,1.0,1.0,0.8,SOAR
+4,Lorenz95/sak08.py,<class 'tools.matrices.SOAR'>,"EnKF(upd_a='Sqrt', N=50, infl=1.1500000000000001, rot=True)",0.30617934275686265,0.27233754914292674,75.17251873016357,1.0,1.0,0.6,SOAR
+5,Lorenz95/sak08.py,<class 'tools.matrices.SOAR'>,"EnKF(upd_a='Sqrt', N=50, infl=1.09, rot=True)",0.2481109327214147,0.22072059233576663,74.42814517021179,1.0,1.0,0.4,SOAR
+6,Lorenz95/sak08.py,<class 'tools.matrices.SOAR'>,"EnKF(upd_a='Sqrt', N=50, infl=1.07, rot=True)",0.22615893625011624,0.2001187056033357,74.80254483222961,1.0,1.0,0.3,SOAR
+7,Lorenz95/sak08.py,<class 'tools.matrices.SOAR'>,"EnKF(upd_a='Sqrt', N=50, infl=1.06, rot=True)",0.21554739280867893,0.1926909973719505,74.74790024757385,1.0,1.0,0.2,SOAR
+8,Lorenz95/sak08.py,<class 'tools.matrices.SOAR'>,"EnKF(upd_a='Sqrt', N=50, infl=1.05, rot=True)",0.20469671415720384,0.18413404040004022,74.0108711719513,1.0,1.0,0.1,SOAR

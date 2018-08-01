@@ -4,20 +4,17 @@ from IPython.display import HTML, display
 
 bg_color = 'background-color:#d8e7ff;' #e2edff;'
 def show_answer(excercise_tag):
-    form, ans = answers[excercise_tag]
-    ans = ans[1:] # Remove newline
-    if   form == "HTML":
-        source = ans
-    elif form == "MD":
-        source = md2html(ans)
-    elif form == "TXT":
-        source = '<code style="'+bg_color+'">'+ans+'</code>'
-    source = ''.join([
+    TYPE, s = answers[excercise_tag]
+    s = s[1:] # Remove newline
+    if   TYPE == "HTML": s = s
+    elif TYPE == "MD"  : s = md2html(s)
+    elif TYPE == "TXT" : s = '<code style="'+bg_color+'">'+s+'</code>'
+    s = ''.join([
         '<div ',
         'style="',bg_color,'padding:0.5em;">',
-        str(source),
+        str(s),
         '</div>'])
-    display(HTML(source))
+    display(HTML(s))
         
 
 answers = {}
@@ -240,6 +237,7 @@ answers["error evolution"] = ["MD",r"""
 
 answers["doubling time"] = ["MD",r"""
     xx   = output_63[0][:,-1]      # Ensemble of particles at the end of integration
+    v    = np.var(xx, axis=0)      # Variance (spread^2) of final ensemble
     v    = mean(v)                 # homogenize
     d    = sqrt(v)                 # std. dev.
     eps  = [FILL IN SLIDER VALUE]  # initial spread

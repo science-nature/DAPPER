@@ -1370,3 +1370,37 @@ def savefig_n(f=None):
 savefig_n.index = -1
 
 
+from matplotlib.gridspec import GridSpec
+def axes_with_marginals(n_joint, n_marg,**kwargs):
+  """
+  Create a joint axis along with two marginal axes.
+
+  Example:
+  >>> ax_s, ax_x, ax_y = axes_with_marginals(4, 1)
+  >>> x, y = np.random.randn(2,500)
+  >>> ax_s.scatter(x,y)
+  >>> ax_x.hist(x)
+  >>> ax_y.hist(y,orientation="horizontal")
+  """
+
+  N = n_joint + n_marg
+
+  # Method 1
+  #fig, ((ax_s, ax_y), (ax_x, _)) = plt.subplots(2,2,num=plt.gcf().number,
+      #sharex='col',sharey='row',gridspec_kw={
+        #'height_ratios':[n_joint,n_marg],
+        #'width_ratios' :[n_joint,n_marg]})
+  #_.set_visible(False) # Actually removing would bug the axis ticks etc.
+  
+  # Method 2
+  gs   = GridSpec(N,N,**kwargs)
+  fig  = plt.gcf()
+  ax_s = fig.add_subplot(gs[n_marg:N     ,0      :n_joint])
+  ax_x = fig.add_subplot(gs[0     :n_marg,0      :n_joint],sharex=ax_s)
+  ax_y = fig.add_subplot(gs[n_marg:N     ,n_joint:N      ],sharey=ax_s)
+  # Cannot delete ticks coz axis are shared
+  plt.setp(ax_x.get_xticklabels(), visible=False)
+  plt.setp(ax_y.get_yticklabels(), visible=False)
+
+  return ax_s, ax_x, ax_y
+

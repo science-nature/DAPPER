@@ -113,7 +113,7 @@ def DA_Config(da_method):
               assimilator(stats,setup,xx,yy)
           except (AssimFailedError,ValueError,np.linalg.LinAlgError) as ERR:
               if getattr(cfg,'fail_gently',True):
-                msg  = ["\nCaught exception during assimilation. Printing traceback:"]
+                msg  = ["\n\nCaught exception during assimilation. Printing traceback:"]
                 msg += ["<"*20 + "\n"]
                 msg += crop_traceback(ERR,1) + [str(ERR)]
                 msg += ["\n" + ">"*20]

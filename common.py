@@ -21,6 +21,7 @@ from numpy import \
     log, log10, exp, sin, cos, tan, \
     sqrt, floor, ceil, \
     mean, prod, \
+    diff, cumsum, \
     array, asarray, asmatrix, \
     linspace, arange, reshape, \
     eye, zeros, ones, diag, trace \

@@ -1404,3 +1404,28 @@ def axes_with_marginals(n_joint, n_marg,**kwargs):
 
   return ax_s, ax_x, ax_y
 
+from matplotlib.patches import Ellipse
+def cov_ellipse(mu, sigma, **kwargs):
+    """
+    Draw ellipse corresponding to (Gaussian) 1-sigma countour of cov matrix.
+
+    Inspired by stackoverflow.com/q/17952171
+
+    Example:
+    ax.add_patch(cov_ellipse(y, R, facecolor='none', edgecolor='y',lw=4,label='$1\\sigma$))
+    """
+
+    # Cov --> Width, Height, Theta
+    vals, vecs = np.linalg.eigh(sigma)
+    x, y       = vecs[:, -1] # x-y components of largest (last) eigenvector
+    theta      = np.degrees(np.arctan2(y, x))
+    theta      = theta % 180
+
+    h, w       = 2 * np.sqrt(vals.clip(0))
+
+    # Return artist
+    return Ellipse(mu, w, h, theta, **kwargs)
+    
+
+
+

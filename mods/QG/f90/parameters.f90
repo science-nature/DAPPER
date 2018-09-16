@@ -19,6 +19,8 @@
 ! Description:    
 !
 ! Revisions:
+!     - Patrick N. Raanes, Sept 2018:
+!       Swapped NY1 and NX1 in definitions of M,N.
 
 module parameters_mod
 
@@ -39,8 +41,8 @@ module parameters_mod
   integer, parameter, public :: MREFIN = 7
   integer, parameter, public :: NX1 = 2
   integer, parameter, public :: NY1 = 2
-  integer, parameter, public :: M = NX1 * 2 ** (MREFIN - 1) + 1
-  integer, parameter, public :: N = NY1 * 2 ** (MREFIN - 1) + 1
+  integer, parameter, public :: M = NY1 * 2 ** (MREFIN - 1) + 1
+  integer, parameter, public :: N = NX1 * 2 ** (MREFIN - 1) + 1
 
   real(8), parameter, public :: PI = 3.14159265358979323d0
 

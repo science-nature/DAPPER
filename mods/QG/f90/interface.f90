@@ -11,27 +11,29 @@ module interface_mod
 contains
 
   subroutine step(t, PSI, prmfname)
-    real(8), dimension(1), intent(inout) :: t
-    real(8), dimension(M, N), intent(inout) :: PSI
+    real(8), intent(inout) :: t
+    real(8), dimension(N, M), intent(inout) :: PSI
     character(STRLEN) :: prmfname
 
-    real(8), dimension(M, N) :: Q
+    ! 1st axis (len N) is the x-axis
+    ! 2nd axis (len M) is the y-axis (curl = sin(...y))
+    real(8), dimension(N, M) :: Q
     real(8) :: tstop
 
     call parameters_read(prmfname)
   
-    tstop = t(1) + dtout
+    tstop = t + dtout
 
     call laplacian(PSI, dx, dy, Q)
     Q = Q - F * PSI
 
-    do while (t(1) < tstop)
+    do while (t < tstop)
        if (strcmp(scheme, '2ndorder') == 0) then
-          call qg_step_2ndorder(t(1), PSI, Q)
+          call qg_step_2ndorder(t, PSI, Q)
        elseif (strcmp(scheme, 'rk4') == 0) then
-          call qg_step_rk4(t(1), PSI, Q)
+          call qg_step_rk4(t, PSI, Q)
        elseif (strcmp(scheme, 'dp5') == 0) then
-          call qg_step_dp5(t(1), PSI, Q)
+          call qg_step_dp5(t, PSI, Q)
        else
           write(stdout, *) 'Error: unknown scheme "', trim(scheme), '"'
           stop

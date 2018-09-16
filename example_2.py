@@ -36,7 +36,6 @@ cfgs += PartFilt(      N=800 ,reg=0.9  ,NER=0.2)          # 0.28
 #cfgs += iEnKS('Sqrt',N=40,infl=1.01,rot=True)             # 0.17
 #
 #cfgs += LETKF(         N=7,rot=True,infl=1.04,loc_rad=4)  # 0.22
-#cfgs += LETKF(approx=1,N=8,rot=True,infl=1.25,loc_rad=4)  # 0.36
 #cfgs += SL_EAKF(       N=7,rot=True,infl=1.07,loc_rad=6)  # 0.23
 
 

@@ -404,38 +404,39 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
         y    = yy[kObs]
         inds = serial_inds(ordr, y, R, anom(E)[0])
             
-        locf_at = h.loc_f(loc_rad, 'y2x', t, taper)
-        for i,j in enumerate(inds):
+        state_localizer = h.loc_f(loc_rad, 'y2x', t, taper)
+        for j in inds:
+          # Prep:
+          # ------------------------------------------------------
           hE = h(E,t)
           hx = mean(hE,0)
           Y  = hE - hx
           mu = mean(E ,0)
           A  = E-mu
-
-          # Update j-th component of observed ensemble
-          Yj    = Rm12[j,:] @ Y.T
-          dyj   = Rm12[j,:] @ (y - hx)
-          #
-          skk   = Yj@Yj                # N1 * prior var
-          su    = 1/( 1/skk + 1/N1 )   # N1 * KG
-          alpha = (N1/(N1+skk))**(0.5) # update contraction factor
-          #
-          dy2   = su*dyj/N1 # mean update
-          Y2    = alpha*Yj  # anomaly update
-
-          if skk<1e-9: continue
-
+          # Update j-th component of observed ensemble:
+          # ------------------------------------------------------
+          Y_j    = Rm12[j,:] @ Y.T
+          dy_j   = Rm12[j,:] @ (y - hx)
+          # Prior var * N1:
+          sig2_j = Y_j@Y_j                
+          if sig2_j<1e-9: continue
+          # Update (below, we drop the locality subscript: _j)
+          sig2_u = 1/( 1/sig2_j + 1/N1 )   # KG * N1
+          alpha  = (N1/(N1+sig2_j))**(0.5) # Update contraction factor
+          dy2    = sig2_u * dy_j/N1        # Mean update
+          Y2     = alpha*Y_j               # Anomaly update
           # Update state (regress update from observation space)
-          # Localized
-          local, coeffs = locf_at(j)
-          if len(local) == 0: continue
-          Regression    = (A[:,local]*coeffs).T @ Yj/np.sum(Yj**2)
-          mu[ local]   += Regression*dy2
-          A[:,local]   += np.outer(Y2 - Yj, Regression)
-          # Without localization:
-          #Regression = A.T @ Yj/np.sum(Yj**2)
-          #mu        += Regression*dy2
-          #A         += np.outer(Y2 - Yj, Regression)
+          # ------------------------------------------------------
+          # --- Localized
+          ii, coeffs = state_localizer(j)
+          if len(ii) == 0: continue
+          Regression = (A[:,ii]*coeffs).T @ Y_j/np.sum(Y_j**2)
+          mu[ ii]   += Regression*dy2
+          A[:,ii]   += np.outer(Y2 - Y_j, Regression)
+          # --- Without localization:
+          # Regression = A.T @ Y_j/np.sum(Y_j**2)
+          # mu        += Regression*dy2
+          # A         += np.outer(Y2 - Y_j, Regression)
 
           E = mu + A
 
@@ -446,7 +447,11 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
 
 
 
-def infl_N_dual(YR,dyR,xN,g):
+def effective_N(YR,dyR,xN,g):
+  """
+  Effective ensemble size N,
+  as measured by the finite-size EnKF-N
+  """
   N, P = YR.shape
   N1 = N-1
 
@@ -477,8 +482,9 @@ def infl_N_dual(YR,dyR,xN,g):
   za = N1/l1**2
   return za
 
+
 @DA_Config
-def LETKF(N,loc_rad,taper='GC',approx=False,infl=1.0,rot=False,**kwargs):
+def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
   """
   Same as EnKF (sqrt), but with localization.
 
@@ -491,71 +497,78 @@ def LETKF(N,loc_rad,taper='GC',approx=False,infl=1.0,rot=False,**kwargs):
   def assimilator(stats,twin,xx,yy):
     f,h,chrono,X0,R,N1 = twin.f, twin.h, twin.t, twin.X0, twin.h.noise.C, N-1
 
+    _map = multiproc_map if mp else map
+
+    # Warning: if len(ii) is small, analysis may be slowed-down with '-N' infl
+    xN = kwargs.get('xN',1.0)
+    g  = kwargs.get('g',0)
+
     E = X0.sample(N)
     stats.assess(0,E=E)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
+      # Forecast
       E = f(E,t-dt,dt)
       E = add_noise(E, dt, f.noise, kwargs)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
+
+        # Decompose ensmeble
         mu = mean(E,0)
         A  = E - mu
-
+        # Obs space variables
         y    = yy[kObs]
         Y,hx = anom(h(E,t))
         # Transform obs space
         Y  = Y        @ R.sym_sqrt_inv.T
         dy = (y - hx) @ R.sym_sqrt_inv.T
 
-        if infl=='-N':
-          xN = kwargs.get('xN',1.0)
-          g  = kwargs.get('g',0)
-          za = infl_N_dual(Y,dy,xN,g)
-        else:
-          za = N1
+        state_batches, obs_localizer = h.loc_f(loc_rad, 'x2y', t, taper)
+        # for ii in state_batches:
+        def local_analysis(ii):
 
-        locf_at = h.loc_f(loc_rad, 'x2y', t, taper)
-        for i in range(f.m):
-          # Localize
-          local, coeffs = locf_at(i)
-          if len(local) == 0: continue
-          Y_i  = Y[:,local] * sqrt(coeffs)
-          dy_i = dy [local] * sqrt(coeffs)
+          # Locate local obs
+          jj, coeffs = obs_localizer(ii)
+          if len(jj) == 0: return
+          Y_jj   = Y[:,jj]
+          dy_jj  = dy [jj]
 
-          # Do analysis
-          if approx:
-            # Approximate alternative, derived by pretending that Y_loc = H @ A_i,
-            # even though the local cropping of Y happens after application of H.
-            # Anyways, with an explicit H, one can apply Woodbury
-            # to go to state space (dim==1), before reverting to HA_i = Y_loc.
-            B   = A[:,i]@A[:,i] / za
-            H   = A[:,i]@Y_i /B / za # H.T == H
-            HRH = H@H                # R^{-1} == Id coz of above
-            T2  = 1/(1 + B*HRH)
-            AT  = sqrt(T2)*A[:,i]
-            P   = T2 * B
-            dmu = P*H@dy_i
+          # Adaptive inflation
+          za = effective_N(Y_jj,dy_jj,xN,g) if infl=='-N' else N1
+
+          # Taper
+          Y_jj  *= sqrt(coeffs)
+          dy_jj *= sqrt(coeffs)
+
+          # Compute ETKF update
+          if len(jj) < N:
+            # SVD version
+            V,sd,_ = svd0(Y_jj)
+            d      = pad0(sd**2,N) + za
+            Pw     = (V * d**(-1.0)) @ V.T
+            T      = (V * d**(-0.5)) @ V.T * sqrt(za)
           else:
-            # Non-Approximate
-            if len(local) < N:
-              # SVD version
-              V,sd,_ = svd0(Y_i)
-              d      = pad0(sd**2,N) + za
-              Pw     = (V * d**(-1.0)) @ V.T
-              T      = (V * d**(-0.5)) @ V.T * sqrt(za)
-            else:
-              # EVD version
-              d,V   = eigh(Y_i @ Y_i.T + za*eye(N))
-              T     = V@diag(d**(-0.5))@V.T * sqrt(za)
-              Pw    = V@diag(d**(-1.0))@V.T
-            AT  = T@A[:,i]
-            dmu = dy_i@Y_i.T@Pw@A[:,i]
+            # EVD version
+            d,V   = eigh(Y_jj@Y_jj.T + za*eye(N))
+            T     = V@diag(d**(-0.5))@V.T * sqrt(za)
+            Pw    = V@diag(d**(-1.0))@V.T
+          AT  = T @ A[:,ii]
+          dmu = dy_jj @ Y_jj.T @ Pw @ A[:,ii]
+          Eii = mu[ii] + dmu + AT
+          return Eii, za
 
-          E[:,i] = mu[i] + dmu + AT
+        # Run local analyses
+        zz = []
+        result = _map(local_analysis, state_batches )
+        for ii, (Eii, za) in zip(state_batches, result):
+          zz += [za]
+          E[:,ii] = Eii
 
+        # Global post-processing
         E = post_process(E,infl,rot)
+
+        stats.infl[kObs] = sqrt(N1/mean(zz))
 
       stats.assess(k,kObs,E=E)
   return assimilator
@@ -1089,22 +1102,23 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,iMax=10,xN=1.0,infl=1.0,rot=False,**
         DAW    = arange(max(0,DAW_0),DAW_0+Lag)
         DAW_dt = chrono.ttObs[DAW[-1]] - chrono.ttObs[DAW[0]] + chrono.dtObs
 
+        # Get localization setup (at time t)
+        state_batches, obs_localizer = h.loc_f(loc_rad, 'x2y', chrono.ttObs[kObs], taper)
+        nBatch = len(state_batches)
+
         # Store 0th (iteration) estimate as (xf,Af)
         Af,xf  = anom(E)
         # Init iterations
-        w      = np.tile( zeros(N) , (f.m,1) )
-        Tinv   = np.tile( eye(N)   , (f.m,1,1) )
-        T      = np.tile( eye(N)   , (f.m,1,1) )
-
-        # Get localization func (at time t)
-        locf_at = h.loc_f(loc_rad, 'x2y', chrono.ttObs[kObs], taper)
+        w      = np.tile( zeros(N) , (nBatch,1) )
+        Tinv   = np.tile( eye(N)   , (nBatch,1,1) )
+        T      = np.tile( eye(N)   , (nBatch,1,1) )
 
         # Loop iterations
         for iteration in arange(iMax):
 
             # Assemble current estimate of E[kObs-Lag]
-            for i in range(f.m):
-              E[:,i] = xf[i] + w[i]@Af[:,i]+ T[i]@Af[:,i]
+            for ib, ii in enumerate(state_batches):
+              E[:,ii] = xf[ii] + w[ib]@Af[:,ii]+ T[ib]@Af[:,ii]
 
             # Forecast
             for kDAW in DAW:                        # Loop Lag cycles
@@ -1133,29 +1147,29 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,iMax=10,xN=1.0,infl=1.0,rot=False,**
               w_glob = Pw@grad 
               za     = zeta_a(*hyperprior_coeffs(s,N,xN), w_glob)
 
-            for i in range(f.m):
-              # Shift localization center (to adjust for time difference)
-              i_kObs = h.loc_shift(i, DAW_dt)
+            for ib, ii in enumerate(state_batches):
+              # Shift indices (to adjust for time difference)
+              ii_kObs = h.loc_shift(ii, DAW_dt)
               # Localize
-              local, coeffs = locf_at(i_kObs)
-              if len(local) == 0: continue
-              Y_i   = Y[:,local] * sqrt(coeffs)
-              dy_i  = dy[local]  * sqrt(coeffs)
+              jj, coeffs = obs_localizer(ii_kObs)
+              if len(jj) == 0: continue
+              Y_jj   = Y[:,jj] * sqrt(coeffs)
+              dy_jj  = dy[jj]  * sqrt(coeffs)
 
               # "Uncondition" the observation anomalies
               # (and yet this linearization of h improves with iterations)
-              Y_i     = Tinv[i] @ Y_i
+              Y_jj     = Tinv[ib] @ Y_jj
               # Prepare analysis: do SVD
-              V,s,UT  = svd0(Y_i)
+              V,s,UT   = svd0(Y_jj)
               # Gauss-Newton ingredients
-              grad    = -Y_i@dy_i + w[i]*za
-              Pw      = (V * (pad0(s**2,N) + za)**-1.0) @ V.T
+              grad     = -Y_jj@dy_jj + w[ib]*za
+              Pw       = (V * (pad0(s**2,N) + za)**-1.0) @ V.T
               # Conditioning for anomalies (discrete linearlizations)
-              T[i]    = (V * (pad0(s**2,N) + za)**-0.5) @ V.T * sqrt(N1)
-              Tinv[i] = (V * (pad0(s**2,N) + za)**+0.5) @ V.T / sqrt(N1)
+              T[ib]    = (V * (pad0(s**2,N) + za)**-0.5) @ V.T * sqrt(N1)
+              Tinv[ib] = (V * (pad0(s**2,N) + za)**+0.5) @ V.T / sqrt(N1)
               # Gauss-Newton step
-              dw      = Pw@grad
-              w[i]   -= dw
+              dw       = Pw@grad
+              w[ib]   -= dw
 
             # Stopping condition # TODO
             #if np.linalg.norm(dw) < N*1e-4:
@@ -1168,8 +1182,8 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,iMax=10,xN=1.0,infl=1.0,rot=False,**
         stats.iters[kObs] = iteration+1
 
         # Final (smoothed) estimate of E[kObs-Lag]
-        for i in range(f.m):
-          E[:,i] = xf[i] + w[i]@Af[:,i]+ T[i]@Af[:,i]
+        for ib, ii in enumerate(state_batches):
+          E[:,ii] = xf[ii] + w[ib]@Af[:,ii]+ T[ib]@Af[:,ii]
 
         E = post_process(E,infl,rot)
 
@@ -1930,7 +1944,7 @@ def Var3D(infl=1.0,**kwargs):
   Uses the Kalman filter equations,
   but with a prior covariance estimated from the Climatology
   and a scalar time-series approximation to the dynamics
-  (that does NOT use the innovation to estimate the backgroiund covariance).
+  (that does NOT use the innovation to estimate the background covariance).
   """
   # TODO: The wave-crest yields good results for sak08, but not for boc10 
   def assimilator(stats,twin,xx,yy):
@@ -2269,25 +2283,27 @@ def LNETF(N,loc_rad,taper='GC',infl=1.0,Rs=1.0,rot=False,**kwargs):
         YR = (hE-hx)  @ Rm12.T
         yR = (yy[kObs] - hx) @ Rm12.T
 
-        locf_at = h.loc_f(loc_rad, 'x2y', t, taper)
-        for i in range(f.m):
-          # Localize
-          local, coeffs = locf_at(i)
-          if len(local) == 0: continue
-          Y_i  = YR[:,local] * sqrt(coeffs)
-          dy_i = yR[local]   * sqrt(coeffs)
+        state_batches, obs_localizer = h.loc_f(loc_rad, 'x2y', t, taper)
+        for ii in state_batches:
+          # Localize obs
+          jj, coeffs = obs_localizer(ii)
+          if len(jj) == 0: return
+
+          Y_jj  = YR[:,jj] * sqrt(coeffs)
+          dy_jj = yR[jj]   * sqrt(coeffs)
 
           # NETF:
           # This "paragraph" is the only difference to the LETKF.
-          innovs = (dy_i-Y_i)/Rs
+          innovs = (dy_jj-Y_jj)/Rs
           if 'laplace' in str(type(h.noise)).lower():
             w    = laplace_lklhd(innovs)
           else: # assume Gaussian
             w    = reweight(ones(N),innovs=innovs)
-          dmu    = w@A[:,i]
-          AT     = sqrt(N)*funm_psd(diag(w) - np.outer(w,w), sqrt)@A[:,i]
+          dmu    = w@A[:,ii]
+          AT     = sqrt(N)*funm_psd(diag(w) - np.outer(w,w), sqrt)@A[:,ii]
 
-          E[:,i] = mu[i] + dmu + AT
+          E[:,ii] = mu[ii] + dmu + AT
+
         E = post_process(E,infl,rot)
       stats.assess(k,kObs,E=E)
   return assimilator

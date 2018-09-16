@@ -1,4 +1,5 @@
 # This file holds global (DAPPER-wide) imports and settings
+print("Initializing DAPPER...",end="", flush=True)
 
 ##################################
 # Scientific
@@ -47,15 +48,14 @@ olderr = np.geterr()
 import pandas as pd
 np.seterr(**olderr)
 
-# Profiling
+# Profiling. Decorate the function you wish to time with 'profile' below
+# Then launch program as: $ kernprof -l -v myprog.py
 import builtins
 try:
-    # This will be available if launched as (e.g.)
-    # (bash)$ kernprof -l -v example_1.py
-    profile = builtins.profile
+    profile = builtins.profile     # will exists if launched via kernprof
 except AttributeError:
-    # Otherwise: provide a pass-through version.
-    def profile(func): return func
+    def profile(func): return func # provide a pass-through version.
+
 
 # Installation suggestions
 def install_msg(package):
@@ -120,6 +120,7 @@ plt.style.use(['seaborn-darkgrid','tools/DAPPER.mplstyle'])
 ##################################
 from tools.colors import *
 from tools.utils import *
+from tools.multiprocessing import *
 from tools.math import *
 from tools.chronos import *
 from tools.stoch import *
@@ -132,5 +133,9 @@ from tools.admin import *
 from tools.convenience import *
 from tools.data_management import *
 from da_methods import *
+
+
+print("Done") # ... initializing DAPPER
+
 
 

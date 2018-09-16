@@ -4,45 +4,24 @@ from common import *
 CUTOFF   = 1e-3
 TAG      = 'GC'
 
-def unravel(inds, shape, order='C'):
+
+def distance_nd(centr, pts, shape, periodic=True):
   """
-  Compute (i,j) subscripts of
-  the ravelled (i.e. vectorized) <inds>
-  of a <shape> matrix.
-
-  Note that unravelling is slow, and should only be done once.
-  By contrast, the dist/coeff computations are faster,
-  but could require much memory to pre-compute
-  and so should be computed on the fly.
+  Euclidian distance between centr and pts,
+  where pts is an ndim-by-npts array.
+  Supports periodicity.
   """
-  inds  = np.atleast_1d(inds)
-  shape = np.atleast_1d(shape)
 
-  IJ = asarray(np.unravel_index(inds, shape, order=order))
+  # Make col vectors, to enable (ensure) broadcasting...
+  centr = np.reshape(centr,(-1,1))
+  shape = np.reshape(shape,(-1,1))
+  # ... in this subtraction
+  d = abs(centr - pts)
 
-  for i,dim in enumerate(IJ): assert dim.max() < shape[i]
-  return IJ
-
-
-# TODO: Can replace by from scipy.spatial.distance ?
-def distance_nD(centr, domain, shape, periodic=True):
-  """
-  Euclidian distance between centr and domain,
-  both of which are indices of x.ravel(order='C'),
-  where x.shape==<shape>.
-  Vectorized for multiple domain pts.
-  """
-  shape = np.atleast_1d(shape)
-
-  cIJ = centr.reshape((-1,1))
-  dIJ = domain
-
-  delta = abs(cIJ - dIJ)
   if periodic:
-    shape = shape[:,np.newaxis]
-    delta = numpy.where(delta>shape/2, shape-delta, delta)
+    d = np.minimum(d, shape-d)
 
-  return sla.norm(delta,axis=0)
+  return sla.norm(d,axis=0)
 
 
 def dist2coeff(dists, radius, tag=None):
@@ -97,57 +76,146 @@ def dist2coeff(dists, radius, tag=None):
   return coeffs
 
 
-def inds_and_coeffs(centr, domain, domain_shape,
-    radius, cutoff=None, tag=None):
+def inds_and_coeffs(dists, radius, cutoff=None, tag=None):
   """
-  Returns:
-  inds   = the **indices of** domain that "close to" centr,
-           such that the local domain is: domain[inds].
-  coeffs = the corresponding coefficients.
+  Returns
+  inds   : the indices of pts that are "close to" centr.
+  coeffs : the corresponding coefficients.
   """
   if cutoff is None:
     cutoff = CUTOFF
 
-  dists  = distance_nD(centr, domain, domain_shape)
-
   coeffs = dist2coeff(dists, radius, tag)
 
-  # Truncate with cut-off
+  # Truncate using cut-off
   inds   = arange(len(dists))[coeffs > cutoff]
   coeffs = coeffs[inds]
 
   return inds, coeffs
 
 
-def partial_direct_obs_1d_loc_setup(m,jj):
-  "m: state length. jj: indices of direct obs in state."
-  ii  = arange(m)      # state inds
-  dIJ = unravel(ii, m) # cartesian indices
-  oIJ = unravel(jj, m) # cartesian indices
-  def locf(radius,direction,t,tag=None):
-    "return function that returns indices_and_coeffs for Lorenz95"
-    if direction is 'x2y':
-      def locf_at(i):
-        return inds_and_coeffs(dIJ[:,i], oIJ, m, radius, tag=tag)
-    elif direction is 'y2x':
-      def locf_at(j):
-        return inds_and_coeffs(oIJ[:,j], dIJ, m, radius, tag=tag)
-    else: raise KeyError
-    return locf_at
-  return locf
+
+def rectangular_partitioning(shape,steps):
+  """
+  N-D rectangular batch generation.
+
+  shape: [len(grid[dim]) for dim in range(ndim)]
+  steps: [step_len[dim]  for dim in range(ndim)]
+
+  returns a list of batches,
+  where each element (batch) is an ndim-list,
+  where each element is an array of ordinates (length == #gridpoints in batch).
+
+  # Example, with visualization:
+  >>> shape   = [4,13]
+  >>> steps   = [2,4]
+  >>> batches = rectangular_partitioning(shape, steps)
+  >>> m       = np.prod(shape)
+  >>> nB      = len(batches)
+  >>> values  = np.random.choice(arange(nB),nB,0)
+  >>> Z       = zeros(shape)
+  >>> for ib,b in enumerate(batches):
+  >>>   Z[b] = values[ib]
+  >>> plt.imshow(Z)
+  """
+  assert len(shape)==len(steps)
+  ndim = len(steps)
+
+  # An ndim list of (average) local grid lengths:
+  nLocs = [round(n/d) for n,d in zip(shape,steps)]
+  # An ndim list of (marginal) grid partitions [array_split() handles non-divisibility]:
+  edge_partitions = [np.array_split(np.arange(n),nLoc) for n,nLoc in zip(shape,nLocs)]
+
+  batches = []
+  from itertools import product as outer
+  for batch_edges in outer(*edge_partitions):
+    # The 'indexing' argument below is actually inconsequential:
+    # it merely changes batch's internal ordering.
+    batch_rect    = np.meshgrid(*batch_edges, indexing='ij')
+    coords        = [ ii.flatten() for ii in batch_rect]
+    batches      += [ coords ]
+
+  return batches
 
 
-def no_localization(m,jj):
-  def locf(radius,direction,t,tag=None):
-    "For testing LETKF, LNETF, etc... but with no actual localization."
+# NB: Don't try to put the time-dependence of obs_inds inside obs_localizer().
+# That would require calling ind2sub len(batches) times per analysis,
+# and the result cannot be easily cached, because of multiprocessing.
+def obs_inds_safe(obs_inds, t):
+  "Support time-dependent obs_inds."
+  try:              return obs_inds(t)
+  except TypeError: return obs_inds
+
+
+# NB: Why is the 'order' argument not supported by this module? Because:
+#  1) Assuming only order (orientation) 'C' simplifies the module's code.
+#  2) It's not necessary, because the module only communicates to *exterior* via indices
+#     [of what assumes to be X.flatten(order='C')], and not coordinates!
+#     Thus, the only adaptation necessary if the order is 'F' is to reverse
+#     the shape parameter passed to these functions (example: mods/QG/sak08).
+
+
+def partial_direct_obs_nd_loc_setup(shape,batch_shape,obs_inds,periodic):
+  "N-D rectangle"
+
+  def sub2ind(sub): return np.ravel_multi_index(sub, shape)
+  def ind2sub(ind): return np.    unravel_index(ind, shape)
+
+
+  m = np.prod(shape)
+  state_coord = ind2sub(arange(m))
+
+  batches = rectangular_partitioning(shape, batch_shape)
+  batches = [sub2ind(b) for b in batches]
+
+  def loc_setup(radius,direction,t,tag=None):
+    "Provide localization setup for time t."
+    obs_inds_now = obs_inds_safe(obs_inds,t)
+    obs_coord = ind2sub( obs_inds_now )
+
     if direction is 'x2y':
-      no_localization = lambda i: ( jj, ones(len(jj)) )
+      def obs_localizer(batch):
+        # Don't use "batch = batches[iBatch]" (with iBatch as this function's input).
+        # This would slow down multiproc., coz batches gets copied to each process.
+        batch_center_coord = array(ind2sub(batch)).mean(axis=1)
+        dists = distance_nd(batch_center_coord, obs_coord, shape, periodic)
+        return inds_and_coeffs(dists, radius, tag=tag)
+      return batches, obs_localizer
+
     elif direction is 'y2x':
-      # TODO: Not tested
-      no_localization = lambda j: ( arange(m), ones(m) )
-    else: raise KeyError
-    return no_localization
-  return locf
+      def state_localizer(iObs):
+        obs_j_coord = ind2sub(obs_inds_now[iObs])
+        dists = distance_nd(obs_j_coord, state_coord, shape, periodic)
+        return inds_and_coeffs(dists, radius, tag=tag)
+    return state_localizer
+
+  return loc_setup
+
+
+
+def no_localization(shape,obs_inds):
+
+  def loc_setup(radius,direction,t,tag=None):
+    """
+    Returns all indices, with all coeffs=1.
+    Useful for testing local DA methods without localization. Examples:
+     - To test if LETKF <==> EnKF('Sqrt') -- alternatively: set loc_rad=inf;
+     - Pretend that Lorenz63 has localization.
+    """
+
+    m = np.prod(shape)
+    batches = [arange(m)]
+    jj = obs_inds_t(obs_inds,t)
+
+    if direction is 'x2y':
+      obs_localizer = lambda batch: ( jj, ones(len(jj)) )
+      return batches, obs_localizer
+
+    elif direction is 'y2x':
+      state_localizer = lambda iObs: ( arange(m), ones(m) )
+    return state_localizer
+
+  return loc_setup
 
 
 

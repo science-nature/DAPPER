@@ -250,7 +250,7 @@ class FAU_series(MLR_Print):
         return self.u[k]
       else:
         k0, k1 = self.split_dims(k)
-        if self.k_tmp is not k0:
+        if self.k_tmp != k0:
           msg = "Only item [" + str(self.k_tmp) + "] is available from "+\
           "the universal (.u) series. One possible source of error "+\
           "is that the data has not been computed for k="+str(k)+". "+\

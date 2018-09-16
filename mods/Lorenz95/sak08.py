@@ -5,7 +5,7 @@
 from common import *
 
 from mods.Lorenz95.core import step, dfdx, typical_init_params
-from tools.localization import partial_direct_obs_1d_loc_setup as loc
+from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 
 t = Chronology(0.05,dkObs=1,T=4**5,BurnIn=20)
 
@@ -26,7 +26,7 @@ h = {
     'jacob': Id_mat(m),
     'noise': 1, # abbrev GaussRV(C=CovMat(eye(m)))
     'plot' : lambda y: plt.plot(y,'g')[0],
-    'loc_f': loc(m,arange(m)),
+    'loc_f': loc_setup( (m,), (2,), arange(m), periodic=True )
     }
 
 
@@ -51,7 +51,6 @@ setup = TwinSetup(f,h,t,X0,**other)
 
 # Localized
 #cfgs += LETKF(         N=7,rot=True,infl=1.04,loc_rad=4) # 0.22
-#cfgs += LETKF(approx=1,N=8,rot=True,infl=1.25,loc_rad=4) # 0.36
 #cfgs += SL_EAKF(       N=7,rot=True,infl=1.07,loc_rad=6) # 0.23
 # Reproduce LETKF scores from Bocquet'2011 "EnKF-N" fig 6:
 #cfgs += LETKF(N=6,rot=True,infl=1.05,loc_rad=4,taper='Step')

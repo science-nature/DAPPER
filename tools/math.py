@@ -126,7 +126,7 @@ def with_rk4(dxdt,autonom=False,order=4):
   step = NamedFunc(step,name)
   return step
 
-def make_recursive(func,with_prog=False):
+def make_recursive(func,prog=False):
   """
   Return a version of func() whose 2nd argument (k)
   is the number of times to times apply func on its output.
@@ -139,10 +139,14 @@ def make_recursive(func,with_prog=False):
     xx    = zeros((k+1,)+x0.shape)
     xx[0] = x0
     rg    = range(k)
-    rg    = progbar(rg,'Recurs.') if with_prog else rg
+
+    if isinstance(prog,str): rg = progbar(rg,prog)
+    elif prog:               rg = progbar(rg,'Recurs.')
+
     for i in rg:
       xx[i+1] = func(xx[i],*args,**kwargs)
     return xx
+
   return fun_k
 
 def integrate_TLM(M,dt,method='approx'):
@@ -488,12 +492,10 @@ def partial_direct_obs_setup(m,jj):
   @ens_compatible
   def model(x,t): return x[jj]
   def jacob(x,t): return H
-  def plot(y):    return plt.plot(jj,y,'g*',ms=8)[0]
   h = {
       'm'    : p,
       'model': model,
       'jacob': jacob,
-      'plot' : plot,
       }
   return h
 

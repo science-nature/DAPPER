@@ -5,7 +5,7 @@
 from common import *
 
 from mods.Lorenz63.core import step, dfdx
-from tools.localization import no_localization as loc
+from tools.localization import no_localization
 
 m = 3
 p = m
@@ -23,7 +23,7 @@ X0 = GaussRV(C=1,mu=ones(m))
 
 h = partial_direct_obs_setup(m,arange(m))
 h['noise'] = 8.0
-h['loc_f'] = loc(m,arange(m))
+h['loc_f'] = no_localization([m],arange(m))
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 

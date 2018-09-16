@@ -113,22 +113,43 @@ def print_c(*args,color='blue',**kwargs):
 
 
 import inspect
-def spell_out(*args,sep=",   ",end='\n'):
-  "Print (args), including its variable name."
-  flocs = inspect.stack()[1].frame.f_locals # get caller's namespace
+def spell_out(*args):
+  """
+  Print (args) including variable names.
+  Example:
+  >>> print(3*2)
+  >>> 3*2:
+  >>> 6
+  """
+  frame  = inspect.stack()[1].frame
+  lineno = frame.f_lineno
 
-  for i,x in enumerate(args):
-    sep_ = end if i==len(args)-1 else sep
+  # This does not work coz they (both) end reading when encountering a func def
+  # code  = inspect.getsourcelines(frame)
+  # code  = inspect.getsource(frame)
 
-    # Find all matches.
-    # It's impossible to distinguish between them, all should be listed.
-    ks = [k for k in flocs if flocs[k] is x]
+  # Instead, read the source manually...
+  f = inspect.getfile(frame)
+  if "ipython-input" in f:
+    # ( does not work with pure python where f == "<stdin>" )
+    line = inspect.getsource(frame)
+  else:
+    try:
+      f = os.path.relpath(f)
+      with open(f) as stream:
+        line = stream.readlines()[lineno-1]
+    except FileNotFoundError:
+      line = "(Print command on line number " + str(lineno) + " [of unknown source])"
 
-    # Don't use sep.join() coz print() can hook into
-    # ipython's pretty print, which is better than str().
-    if   len(ks)==0: print(             x,         end=sep_)
-    elif len(ks)==1: print(ks[0], ": ", x, sep="", end=sep_)
-    elif len(ks)>=2: print(ks   , ": ", x, sep="", end=sep_)
+  # Find opening/closing brackets
+  left  = line. find("(")
+  right = line.rfind(")")
+
+  # Print header
+  with coloring(cFG.MAGENTA):
+    print(line[left+1:right] + ":")
+  # Print (normal)
+  print(*args)
 
 
 def print_together(*args):
@@ -315,227 +336,6 @@ class NameFunc():
       return NamedFunc(fn,self.fn_name)
 
 
-#########################################
-# Writing / Loading Independent experiments
-#########################################
-
-import glob
-def get_numbering(glb):
-  ls = glob.glob(glb+'*')
-  return [int(re.search(glb+'([0-9]*).*',f).group(1)) for f in ls]
-
-def rel_path(path,start=None,ext=False):
-  path = os.path.relpath(path,start)
-  if not ext:
-    path = os.path.splitext(path)[0]
-  return path
-
-import socket
-def save_dir(filepath,pre=''):
-  """Make dir DAPPER/data/filepath_without_ext/hostname"""
-  host = socket.gethostname().split('.')[0]
-  path = rel_path(filepath)
-  dirpath  = os.path.join(pre,'data',path,host,'')
-  os.makedirs(dirpath, exist_ok=True)
-  return dirpath
-
-def prep_run(path,prefix):
-  "Create data-dir, create (and reserve) path (with its prefix and RUN)"
-  path  = save_dir(path)
-  path += prefix+'_' if prefix else ''
-  path += 'run'
-  RUN   = str(1 + max(get_numbering(path),default=0))
-  path += RUN
-  print("Will save to",path+"...")
-  subprocess.run(['touch',path]) # reserve filename
-  return path, RUN
-
-
-import subprocess
-def distribute(script,sysargs,xticks,prefix='',nCore=0.99,xCost=None):
-  """
-  Parallelization.
-
-  Runs 'script' either as master, worker, or stand-alone,
-  depending on 'sysargs[2]'.
-
-  Return corresponding
-   - portion of 'xticks'
-   - portion of 'rep_inds' (setting repeat indices)
-   - save_path.
-
-  xCost: The computational assumed: [(1-xCost) + xCost*S for S in xticks].
-  This controls how the xticks array gets distributed to nodes. Example:
-   - Set xCost to 0 for uniform distribution of xticks array.
-   - Set xCost to 1 if the costs scale linearly with the setting.
-  """
-
-  # Make running count (rep_inds) of repeated xticks.
-  # This is typically used to modify the experiment seeds.
-  rep_inds = [ list(xticks[:i]).count(x) for i,x in enumerate(xticks) ]
-
-  if len(sysargs)>2:
-    if sysargs[2]=='PARALLELIZE':
-      save_path, RUN = prep_run(script,prefix)
-
-      # THIS SECTION CAN BE MODIFIED TO YOUR OWN QUEUE SYSTEM, etc.
-      # ------------------------------------------------------------
-      # The implemention here-below does not use any queing system,
-      # but simply launches a bunch of processes.
-      # It uses (gnu's) screen for coolness, coz then individual
-      # worker progress and printouts can be accessed using 'screen -r'.
-
-      # screenrc path. This config is the "master".
-      rcdir = os.path.join('data','screenrc')
-      os.makedirs(rcdir, exist_ok=True)
-      screenrc  = os.path.join(rcdir,'tmp_screenrc_')
-      screenrc += os.path.split(script)[1].split('.')[0] + '_run'+RUN
-
-      HEADER = """
-      # Auto-generated screenrc file for experiment parallelization.
-      source $HOME/.screenrc
-      screen -t bash bash # make one empty bash session
-      """.replace('/',os.path.sep)
-      import textwrap
-      HEADER = textwrap.dedent(HEADER)
-      # Other useful screens to launch
-      #screen -t IPython ipython --no-banner # empty python session
-      #screen -t TEST bash -c 'echo nThread $MKL_NUM_THREADS; exec bash'
-
-      # Decide number of batches (i.e. processes) to split xticks into.
-      from psutil import cpu_percent, cpu_count
-      if isinstance(nCore,float): # interpret as ratio of total available CPU
-        nBatch = round( nCore * (1 - cpu_percent()/100) * cpu_count() )
-      else:       # interpret as number of cores
-        nBatch = min(nCore, cpu_count())
-      nBatch = min(nBatch, len(xticks))
-
-      # Write workers to screenrc
-      with open(screenrc,'w') as f:
-        f.write(HEADER)
-        for i in range(nBatch):
-          iWorker = i + 1 # start indexing from 1
-          f.write('screen -t W'+str(iWorker)+' ipython -i --no-banner '+
-              ' '.join([script,sysargs[1],'WORKER',str(iWorker),str(nBatch),save_path])+'\n')
-          # sysargs:      0        1         2            3        4            5
-        f.write("")
-      sleep(0.2)
-      # Launch
-      subprocess.run(['screen', '-dmS', 'run'+RUN,'-c', screenrc])
-      print("Experiments launched. Use 'screen -r' to view their progress.")
-      sys.exit(0)
-
-    elif sysargs[2] == 'WORKER':
-      iWorker   = int(sysargs[3])
-      nBatch    = int(sysargs[4])
-
-      # xCost defaults
-      if xCost==None:
-        if prefix=='N':
-          xCost = 0.02
-        elif prefix=='F':
-          xCost = 0
-
-      # Split xticks array to this "worker":
-      if xCost==None:
-        # Split uniformly
-        xticks   = np.array_split(xticks,nBatch)[iWorker-1]
-        rep_inds = np.array_split(rep_inds,nBatch)[iWorker-1]
-      else:
-        # Weigh xticks by costs, before splitting uniformly
-        eps = 1e-6                       # small number
-        cc  = (1-xCost) + xCost*xticks   # computational cost,...
-        cc  = np.cumsum(cc)              # ...cumulatively
-        cc /= cc[-1]                     # ...normalized
-        # Find index dividors between cc such that cumsum deltas are approx const:
-        divs     = [find_1st_ind(cc>c+1e-6) for c in linspace(0,1,nBatch+1)]
-        divs[-1] = len(xticks)
-        # Split
-        xticks   = array(xticks)[divs[iWorker-1]:divs[iWorker]]
-        rep_inds = array(rep_inds)[divs[iWorker-1]:divs[iWorker]]
-
-      print("xticks partition index:",iWorker)
-      print("=> xticks array:",xticks)
-
-      # Append worker index to save_path
-      save_path = sysargs[5] + '_W' + str(iWorker)
-      print("Will save to",save_path+"...")
-      
-      # Enforcing individual core usage.
-      # --------------------------------
-      # Issue: numpy often tries to distribute calculations accross cores.
-      #    This may yield some performance gain, but not much compared to
-      #    experiment parallelization (as we do here), coz of overhead.
-      # Solution: force numpy to only use a single core.
-      # Unfortunately: it's platform-dependent
-      #    => you might have to adapt the code to your platform.
-      # Testing: set nBatch=1. Only a single core should be in use.
-      #    Check using your system's process manager, e.g., 'top'.
-      try: 
-        import mkl
-        mkl.set_num_threads(1) # For Mac with Anaconda
-      except ImportError:
-        os.environ["MKL_NUM_THREADS"] = "1" # For Linux with Anaconda
-        # NB: This might not work. => Try to set it in your .bashrc instead.
-
-    elif sysargs[2]=='EXPENDABLE' or sysargs[2]=='DISPOSABLE':
-      save_path = os.path.join('data','expendable')
-
-    else: raise ValueError('Could not interpret sys.args[1]')
-
-  else:
-    # No args => No parallelization
-    save_path, _ = prep_run(script,prefix)
-
-  return xticks, save_path, rep_inds
-
-
-
-#########################################
-# Multiprocessing
-#########################################
-import multiprocessing, signal
-
-def multiproc_map(func,xx,**kwargs):
-  """
-  Multiprocessing.
-  Basically a wrapper for multiprocessing.pool.map(). Deals with
-   - additional, fixed arguments.
-   - KeyboardInterruption (python bug?)
-
-  See example use in mods/QG/core.py.
-  """
-  NPROC = multiprocessing.cpu_count()-1
-
-  # stackoverflow.com/a/35134329/38281
-  orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
-  pool = multiprocessing.Pool(NPROC)
-  signal.signal(signal.SIGINT, orig)
-  try:
-    # stackoverflow.com/a/5443941/38281
-    f   = functools.partial(func,**kwargs)
-    res = pool.map_async(f, xx)
-    res = res.get(60)
-  except KeyboardInterrupt as e:
-    # Not sure why, but something this hangs,
-    # so we repeat the try-block to catch another interrupt.
-    try:
-      traceback.print_tb(e.__traceback__)
-      pool.terminate()
-      sys.exit(0)
-    except KeyboardInterrupt as e2:
-      traceback.print_tb(e2.__traceback__)
-      pool.terminate()
-      sys.exit(0)
-  else:
-    pool.close()
-  pool.join()
-  return res
-
-
-
-
-
 
 #########################################
 # Misc
@@ -612,6 +412,15 @@ def keep_order_unique(arr):
   "Undo the sorting that np.unique() does."
   _, inds = np.unique(arr,return_index=True)
   return arr[np.sort(inds)]
+
+def de_abbreviate(abbrev_d, abbreviations):
+  "Expand any abbreviations (list of 2-tuples) that occur in abbrev_d (dict)."
+  for a,b in abbreviations:
+    if a in abbrev_d:
+      abbrev_d[b] = abbrev_d[a]
+      del abbrev_d[a]
+
+
 
 def filter_out(orig_list,*unwanted,INV=False):
   """

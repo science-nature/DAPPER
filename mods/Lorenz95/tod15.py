@@ -4,7 +4,7 @@
 from common import *
 
 from mods.Lorenz95 import core
-from tools.localization import partial_direct_obs_1d_loc_setup as loc
+from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 
 t = Chronology(0.05,dkObs=2,T=4**5,BurnIn=20)
 
@@ -19,7 +19,7 @@ X0 = GaussRV(m=m, C=0.001)
 
 jj = arange(0,m,2)
 h = partial_direct_obs_setup(m,jj)
-h['loc_f'] = loc(m,jj)
+h['loc_f'] = loc_setup( (m,), (1,), jj, periodic=True )
 #h['noise'] = LaplaceRV(C=1,m=len(jj))
 h['noise'] = LaplaceParallelRV(C=1,m=len(jj))
 
@@ -34,7 +34,7 @@ setup = TwinSetup(f,h,t,X0,**other)
 #cfgs += LETKF(N=20,rot=True,infl=1.04       ,loc_rad=5) # 0.44
 #cfgs += LETKF(N=40,rot=True,infl=1.04       ,loc_rad=5) # 0.44
 #cfgs += LETKF(N=80,rot=True,infl=1.04       ,loc_rad=5) # 0.43
-#
+# These scores are quite variable:
 #cfgs += LNETF(N=40,rot=True,infl=1.10,Rs=2.5,loc_rad=5) # 0.57
 #cfgs += LNETF(N=80,rot=True,infl=1.10,Rs=1.6,loc_rad=5) # 0.45
 

@@ -17,7 +17,7 @@
 from common import *
 
 from mods.Lorenz95.core import step, dfdx
-from tools.localization import partial_direct_obs_1d_loc_setup as loc
+from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 
 t = Chronology(0.05,dtObs=0.4,T=4**5,BurnIn=20)
 
@@ -34,7 +34,7 @@ X0 = GaussRV(m=m, C=0.001)
 jj = 1 + arange(0,m,2)
 h = partial_direct_obs_setup(m,jj)
 h['noise'] = 0.5
-h['loc_f'] = loc(m,jj)
+h['loc_f'] = loc_setup( (m,), (2,), jj, periodic=True )
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 setup = TwinSetup(f,h,t,X0,**other)

@@ -79,6 +79,12 @@ class ResultsTable():
 
     return self # for chaining
 
+  # NB: Writes to file. Dangerous!
+  def write2all(self,**kwargs):
+    for key in list(self.datasets):
+      tmp = np.load(key)
+      np.savez(key, **tmp, **kwargs)
+
   def rm_dataset(self,pattern):
     for key in list(self.datasets):
       if re.search(pattern,key):
@@ -432,16 +438,15 @@ class ResultsTable():
 
     Z = self.mean_field(field)[0]
 
-    if self.tuning_tag:
+    labels = self.labels
+    title_ = ""
+    if self.tuning_tag and not any(np.isnan(self.tuning_vals())):
       labels = self.tuning_vals()
       title_ = "\nLegend: " + self.tuning_tag
       #
       from cycler import cycler
       colors = plt.get_cmap('jet')(linspace(0,1,len(labels)))
       ax.set_prop_cycle(cycler('color',colors))
-    else:
-      labels = self.labels
-      title_ = ""
 
     lhs = []
     for iC,(row,name) in enumerate(zip(Z,labels)): 
@@ -452,6 +457,49 @@ class ResultsTable():
     ax.set_title(self._headr() + title_)
 
     return lhs
+
+
+  def plot_1d_minz(self,field='rmse_a',**kwargs):
+    assert self.tuning_tag
+
+    fig = plt.gcf()
+    fig.clear()
+    fig, axs = plt.subplots(nrows=2,ncols=1,sharex=True,gridspec_kw={'height_ratios':[3, 1]},num=fig.number)
+    ax , ax_   = axs
+    lhs, lhs_  = [], []
+
+    # Remove tuning_tag
+    names = [re.sub(' *'+self.tuning_tag+':\S*','',n) for n in self.labels]
+
+    Z = self.mean_field(field)[0]
+
+    c  = deepcopy(plt.rcParams["axes.prop_cycle"])
+    c += plt.cycler(marker=(['o','s','x','+','*'   ]*99)[:len(c)])
+    c += plt.cycler(ls    =(['-','--','-.',':','--']*99)[:len(c)])
+    ax .set_prop_cycle(c)
+    ax_.set_prop_cycle(c)
+
+    from numpy import ma
+    unique = OrderedDict.fromkeys(n for n in names)
+    for group_name in unique:
+      gg = [i for i, n in enumerate(names) if n==group_name]
+
+      Zg = ma.masked_invalid(Z[gg])
+
+      fieldvals   = Zg.min(axis=0)
+      tuning_inds = Zg.argmin(axis=0)
+      tuning_vals = self.tuning_vals()[gg][tuning_inds]
+      tuning_vals = ma.masked_array(tuning_vals, mask=fieldvals.mask)
+      
+      lhs  += [ ax .plot(self.xticks,fieldvals  ,label=group_name,**kwargs)[0] ]
+      lhs_ += [ ax_.plot(self.xticks,tuning_vals,                 **kwargs)[0] ]
+
+    ax_.set_xlabel(self.xlabel)
+    ax_.set_ylabel("opt. " + self.tuning_tag)
+    ax .set_ylabel(field)
+    ax .set_title(self._headr())
+
+    return ax, ax_, lhs
 
 
   def plot_2d(self,field='rmse_a',log=False,cMin=None,cMax=None,

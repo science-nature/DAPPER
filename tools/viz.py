@@ -39,10 +39,10 @@ class LivePlot:
     mu = stats.mu
 
     # Set up prompts
-    self.is_on     = False
+    self.is_on     = True
     self.is_paused = False
     print('Initializing liveplotting...')
-    print('Press <Enter> to toggle live plot ON/OFF.')
+    print('Press <Enter> to toggle live plot OFF/ON.')
     print('Press <Space> and then <Enter> to pause.')
 
     #ens_props = {} yields rainbow
@@ -55,7 +55,7 @@ class LivePlot:
     #####################
     # Dashboard
     #####################
-    if 1 in only and m<4001:
+    if 1 in only and m<1001:
       self.fga = plt.figure(1,figsize=(6,6))
       self.fga.clf()
       win_title(self.fga, "Dashboard")
@@ -245,7 +245,7 @@ class LivePlot:
           ('infl'   , dict(c='c', label='(Infl-1)*10',transf=lin(-10,10))),
           ('N_eff'  , dict(c='y', label='N_eff/N'    ,transf=divN(),    step=True)),
           ('iters'  , dict(c='m', label='Iters/2'    ,transf=lin(0,.5), step=True)),
-          ('trHK'   , dict(c='k', label='tr(HK)')),
+          ('trHK'   , dict(c='k', label='HK')),
           ('resmpl' , dict(c='k', label='Resampl?')),
         ])
 
@@ -293,13 +293,17 @@ class LivePlot:
         return new
 
 
-      self.ax_d1 = plt.subplot(211)
+      fig, (self.ax_d1, self.ax_d2) = plt.subplots(2,1,sharex=True,
+          num=plt.gcf().number,
+          gridspec_kw={'left':0.125+0.04,'right':0.9+0.04})
+
       self.d1    = init_axd(self.ax_d1, d1)
       self.ax_d1.set_ylabel('RMS')
-      self.ax_d1.set_xticklabels([])
 
-      self.ax_d2 = plt.subplot(212)
       self.d2    = init_axd(self.ax_d2, d2)
+      self.ax_d2.set_ylabel('mean of marginal\n $\sigma$-normalized values',
+          fontsize='small', labelpad=0)
+      
       self.ax_d2.set_xlabel('time (t)')
 
 
@@ -384,27 +388,12 @@ class LivePlot:
     # User-defined state
     #####################
     if 9 in only:
-      if hasattr(setup.f,'plot'):
+      if hasattr(setup,'liveplotting'):
         self.fgu = plt.figure(9,figsize=(6,6))
         self.fgu.clf()
         win_title(self.fgu,"Custom")
         set_figpos('2322')
-
-        # --------------
-        # Truth
-        # --------------
-        self.axu1 = plt.subplot(211)
-        self.setter_truth = setup.f.plot(xx[0])
-        self.axu1.set_title('Truth')
-
-        # --------------
-        # Mean
-        # --------------
-        self.axu2 = plt.subplot(212)
-        plt.subplots_adjust(hspace=0.3)
-        self.setter_mean = setup.f.plot(mu[0])
-        self.axu2.set_title('Mean')
-
+        self.custom = setup.liveplotting(stats)
 
     self.prev_k = 0
     plot_pause(0.01)
@@ -444,7 +433,7 @@ class LivePlot:
 
 
   def update(self,k,kObs,E=None,P=None,**kwargs):
-    """Plot forecast state"""
+    """Update liveplots"""
     if self.skip_plotting(): return
 
     stats = self.stats
@@ -695,8 +684,7 @@ class LivePlot:
     #####################
     if hasattr(self,'fgu') and plt.fignum_exists(self.fgu.number):
       plt.figure(self.fgu.number)
-      self.setter_truth(self.xx[k])
-      self.setter_mean(mu[k])
+      self.custom(k,kObs)
       plot_pause(0.01)
 
     # Trackers
@@ -917,34 +905,35 @@ def plot_3D_trajectory(stats,dims=0,**kwargs):
   ax3.set_facecolor('w')
 
 
-def plot_time_series(stats,dim=0,**kwargs):
+def plot_time_series(stats,**kwargs):
   """
   Plot time series of various statistics.
   kwargs forwarded to get_plot_inds().
   """
-  s      = stats
-  xx     = stats.xx
-  chrono = stats.setup.t
 
-  fg = plt.figure(12,figsize=(6,6))
+  # Figure, axes
+  fg = plt.figure(12,figsize=(5,3.5))
   fg.clf()
   set_figpos('1313 mac')
-  fg, (ax_d, ax_K, ax_e) = plt.subplots(3,1,sharex=True,num=12)
+  fg, (ax_e,ax_K) = plt.subplots(2,1,sharex=True,num=12)
 
-  kk,kkA = get_plot_inds(xx[:,dim],chrono,mult=80,**kwargs)
+  # Time
+  chrono = stats.setup.t
+  xx     = stats.xx
+  m      = xx.shape[1]
+  dims   = equi_spaced_integers(m, min(m, 10))
+  kk,kkA = get_plot_inds(xx[:,dims],chrono,mult=80,**kwargs)
   tt,ttA = chrono.tt[kk], chrono.tt[kkA]
   KA     = len(kkA)      
 
+  # Stats
+  s = stats
   if s.mu.store_u:
     tt_  = tt 
-    xx   = xx    [kk]
-    mu   = s.mu  [kk]
     rmse = s.rmse[kk]
     rmv  = s.rmv [kk]
   else:
     tt_  = ttA
-    xx   = xx      [kkA]
-    mu   = s.mu  .a[:KA]
     rmse = s.rmse.a[:KA]
     rmv  = s.rmv .a[:KA]
 
@@ -952,24 +941,19 @@ def plot_time_series(stats,dim=0,**kwargs):
   skew   = s.skew.a[:KA]
   kurt   = s.kurt.a[:KA]
 
-  ax_d.plot(tt_,xx[:,dim],'k',lw=3,label='Truth')
-  ax_d.plot(tt_,mu[:,dim],    lw=2,label='DA estim.')
-  #ax_d.set_ylabel('$x_{' + str(dim) + '}$',usetex=True,size=20)
-  #ax_d.set_ylabel('$x_{' + str(dim) + '}$',size=20)
-  ax_d.set_ylabel('dim ' + str(dim))
-  ax_d.legend()
-
-  ax_K.plot(ttA, trKH,'k',lw=2,label='tr(HK)')
-  ax_K.plot(ttA, skew,'g',lw=2,label='Skew')
-  ax_K.plot(ttA, kurt,'r',lw=2,label='Kurt')
-  ax_K.legend()
-
   ax_e.plot(        tt_, rmse,'k',lw=2 ,label='Error')
   ax_e.fill_between(tt_, rmv ,alpha=0.7,label='Spread') 
   ax_e.set_ylim(0, 1.1*max(np.percentile(rmse,99), rmv.max()) )
   ax_e.set_ylabel('RMS')
-  ax_e.set_xlabel('time (t)')
   ax_e.legend()
+
+  ax_K.plot(ttA, trKH,'k',lw=2,label='HK')
+  ax_K.plot(ttA, skew,'g',lw=2,label='Skew')
+  ax_K.plot(ttA, kurt,'r',lw=2,label='Kurt')
+  ax_K.set_xlabel('time (t)')
+  ax_K.set_ylabel('mean of marginal\n $\sigma$-normalized values',
+      fontsize='small', labelpad=0)
+  ax_K.legend()
 
 
 def plot_hovmoller(xx,chrono=None,**kwargs):
@@ -1134,6 +1118,12 @@ def plot_rank_histogram(stats):
   else:
     not_available_text(ax_H)
   
+
+def adjustable_box_or_forced():
+  "For set_aspect(), adjustable='box-forced' replaced by 'box' since mpl 2.2.0."
+  from pkg_resources import parse_version as pv
+  return 'box-forced' if pv(mpl.__version__) < pv("2.2.0") else 'box'
+
 
 def show_figs(fignums=None):
   """Move all fig windows to top"""
@@ -1325,7 +1315,7 @@ def toggle_viz(h,prompt=True,legend=True):
   h.set_visible(is_viz)
 
   if prompt:
-    input("Press Enter to continue...")
+    input("Press <Enter> to continue...")
 
   if legend:
     if is_viz:
@@ -1368,5 +1358,64 @@ def savefig_n(f=None):
   savefig_n.index += 1                           # Increment index
   plt.pause(0.1)                                 # For safety?
 savefig_n.index = -1
+
+
+from matplotlib.gridspec import GridSpec
+def axes_with_marginals(n_joint, n_marg,**kwargs):
+  """
+  Create a joint axis along with two marginal axes.
+
+  Example:
+  >>> ax_s, ax_x, ax_y = axes_with_marginals(4, 1)
+  >>> x, y = np.random.randn(2,500)
+  >>> ax_s.scatter(x,y)
+  >>> ax_x.hist(x)
+  >>> ax_y.hist(y,orientation="horizontal")
+  """
+
+  N = n_joint + n_marg
+
+  # Method 1
+  #fig, ((ax_s, ax_y), (ax_x, _)) = plt.subplots(2,2,num=plt.gcf().number,
+      #sharex='col',sharey='row',gridspec_kw={
+        #'height_ratios':[n_joint,n_marg],
+        #'width_ratios' :[n_joint,n_marg]})
+  #_.set_visible(False) # Actually removing would bug the axis ticks etc.
+  
+  # Method 2
+  gs   = GridSpec(N,N,**kwargs)
+  fig  = plt.gcf()
+  ax_s = fig.add_subplot(gs[n_marg:N     ,0      :n_joint])
+  ax_x = fig.add_subplot(gs[0     :n_marg,0      :n_joint],sharex=ax_s)
+  ax_y = fig.add_subplot(gs[n_marg:N     ,n_joint:N      ],sharey=ax_s)
+  # Cannot delete ticks coz axis are shared
+  plt.setp(ax_x.get_xticklabels(), visible=False)
+  plt.setp(ax_y.get_yticklabels(), visible=False)
+
+  return ax_s, ax_x, ax_y
+
+from matplotlib.patches import Ellipse
+def cov_ellipse(mu, sigma, **kwargs):
+    """
+    Draw ellipse corresponding to (Gaussian) 1-sigma countour of cov matrix.
+
+    Inspired by stackoverflow.com/q/17952171
+
+    Example:
+    ax.add_patch(cov_ellipse(y, R, facecolor='none', edgecolor='y',lw=4,label='$1\\sigma$))
+    """
+
+    # Cov --> Width, Height, Theta
+    vals, vecs = np.linalg.eigh(sigma)
+    x, y       = vecs[:, -1] # x-y components of largest (last) eigenvector
+    theta      = np.degrees(np.arctan2(y, x))
+    theta      = theta % 180
+
+    h, w       = 2 * np.sqrt(vals.clip(0))
+
+    # Return artist
+    return Ellipse(mu, w, h, theta, **kwargs)
+    
+
 
 

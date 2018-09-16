@@ -114,7 +114,7 @@ class Stats(MLR_Print):
         alias = self.assess_ens
         state_prms = {'E':E,'w':w}
       else:
-        # Linear-Gaussian assessment
+        # Moment assessment
         alias = self.assess_ext
         state_prms = {'mu':mu,'P':Cov}
 
@@ -183,9 +183,9 @@ class Stats(MLR_Print):
     # from "empirical measure". See doc/unbiased_skew_kurt.jpg.
     # Normalize by var. Compute "excess" kurt, which is 0 for Gaussians.
     A_pow       *= A
-    self.skew[k] = mean( w @ A_pow / self.var[k]**(3/2) )
+    self.skew[k] = np.nanmean( w @ A_pow / self.var[k]**(3/2) )
     A_pow       *= A # idem.
-    self.kurt[k] = mean( w @ A_pow / self.var[k]**2 - 3 )
+    self.kurt[k] = np.nanmean( w @ A_pow / self.var[k]**2 - 3 )
 
     self.derivative_stats(k,x)
 

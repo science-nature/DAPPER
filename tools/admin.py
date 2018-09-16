@@ -11,6 +11,7 @@ class TwinSetup(MLR_Print):
     self.t  = t  if isinstance(t,  Chronology) else Chronology(**t)
     self.X0 = X0 if isinstance(X0, RV)         else RV        (**X0)
     # Write the rest of parameters
+    de_abbreviate(kwargs, [('LP','liveplotting')])
     for key, value in kwargs.items():
       setattr(self, key, value)
     # Validation
@@ -113,7 +114,7 @@ def DA_Config(da_method):
               assimilator(stats,setup,xx,yy)
           except (AssimFailedError,ValueError,np.linalg.LinAlgError) as ERR:
               if getattr(cfg,'fail_gently',True):
-                msg  = ["\nCaught exception during assimilation. Printing traceback:"]
+                msg  = ["\n\nCaught exception during assimilation. Printing traceback:"]
                 msg += ["<"*20 + "\n"]
                 msg += crop_traceback(ERR,1) + [str(ERR)]
                 msg += ["\n" + ">"*20]
@@ -140,11 +141,7 @@ def DA_Config(da_method):
       # Grab argument names/values
       #---------------------------
       # Process abbreviations, aliases
-      abbrevs = [('LP','liveplotting'),('store_intermediate','store_u')]
-      for a,b in abbrevs:
-        if a in kwargs:
-          kwargs[b] = kwargs[a]
-          del kwargs[a]
+      de_abbreviate(kwargs, [('LP','liveplotting'),('store_intermediate','store_u')])
 
       cfg = OrderedDict()
       i   = 0

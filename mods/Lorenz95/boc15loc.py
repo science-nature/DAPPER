@@ -4,13 +4,13 @@ from mods.Lorenz95.sak08 import setup
 import numpy as np
 
 # Shift localization indices to adjust for time (i.e. in smoothing)
-def loc_shift(i,dt):
+def loc_shift(ii,dt):
   shift = int(np.round(6.0*dt)) # Taken from Fig 4 of bocquet2015localization
   # NB: don't use builtin round; it returns integers -- except for round(0.0) !!!
-  i_new = i + shift
-  i_new = np.remainder(i_new, setup.f.m)
+  ii_new = ii + shift
+  ii_new = np.remainder(ii_new, setup.f.m) # periodicity
   assert setup.f.m == setup.h.m, "This func assumes the obs operator is identity."
-  return i_new
+  return ii_new
 
 setup.h.loc_shift = loc_shift
 

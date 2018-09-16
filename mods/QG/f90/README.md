@@ -22,7 +22,8 @@ This model was taken from Sakov's EnKF-Matlab package. Licence reproduced below.
         IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
         OF SUCH DAMAGE.
 
-The main adaption made since then is to set it up for python, as described below.
+The main adaption made since then is to set it up for Python by making `interface.f90`.
+Compilation is described below.
 
 ### This `f90` directory
 contains Fortran90 code for the QG model for building
@@ -34,10 +35,12 @@ Both requires an f90 compiler (tested with g95 and gfortran).
 In addition (1) requires `f2py`, while (2) requires `netcdf` libraries.
 
 ### For DAPPER,
-only the python module `py_mod` is required. To build it, run:
+only the python module `py_mod` is required (also to generate intial sample). To build it, run:
 
     $ cd DAPPER/mods/QG/f90
+    $ rm -rf py_mod.cpython-* __pycache__
     $ f2py -c utils.f90 parameters.f90 helmholtz.f90 calc.f90 qgflux.f90 qgstep.f90 interface.f90 -m py_mod
+
 
 ### For the standalone executable `qg`
 (not required for DAPPER), adapted the `Makefile` to your system, and run

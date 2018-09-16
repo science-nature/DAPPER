@@ -32,8 +32,8 @@ The typical set-up is a "twin experiment", where you
     given the above starred (*) items.
 
 DAPPER enables the numerical investigation of DA methods
-through its variety of typical test cases and statistics.
-It reproduces numerical results (benchmarks) reported in the literature,
+through a variety of typical test cases and statistics.
+It reproduces numerical benchmarks results reported in the literature,
 and facilitates comparative studies,
 thus promoting the reliability and relevance of the results.
 DAPPER is open source, written in Python, and focuses on readability;
@@ -52,7 +52,7 @@ Installation
 ------------------------------------------------
 Prerequisite: `python3.5+` with
 `scipy`, `matplotlib`, `pandas`.
-This is all comes with [anaconda](https://www.continuum.io/downloads)
+This is all comes with [anaconda](https://www.anaconda.com/download)
 by default.
 
 Download, extract the DAPPER folder, and `cd` into it. To test it, run:
@@ -100,13 +100,12 @@ Models
 
 Model       | Linear? | Phys.dim. | State len | # Lyap≥0 | Thanks to
 ----------- | ------- | --------- | --------- | -------- | ----------
-Lin. Advect.| Yes     | 1D        | 1000 *    | 51       | Evensen/Raanes
-Lorenz63    | No      | 0D        | 3         | 2        | Lorenz/Sakov
-Lorenz84    | No      | 0D        | 3         | 2        | Lorenz/Raanes
-Lorenz95    | No      | 1D        | 40 *      | 13       | Lorenz/Raanes
-LorenzUV    | No      | 2x 1D     | 256 + 8 * | ≈60      | Lorenz/Raanes
-MAOOAM      | No      | 2x 1D     | 36        | ?        | Vannitsem/Tondeur
-Quasi-Geost | No      | 2D        | 129²≈17k  | ?        | Sakov
+Lin. Advect.| Yes     | 1d        | 1000 *    | 51       | Evensen/Raanes
+Lorenz63    | No      | 0d        | 3         | 2        | Lorenz/Sakov
+Lorenz84    | No      | 0d        | 3         | 2        | Lorenz/Raanes
+Lorenz95    | No      | 1d        | 40 *      | 13       | Lorenz/Raanes
+LorenzUV    | No      | 2x 1d     | 256 + 8 * | ≈60      | Lorenz/Raanes
+Quasi-Geost | No      | 2d        | 129²≈17k  | ≈140     | Sakov
 
 *: flexible; set as necessary
 
@@ -114,21 +113,25 @@ Quasi-Geost | No      | 2D        | 129²≈17k  | ?        | Sakov
 Additional features
 ------------------------------------------------
 * Progressbar
-* Many visualizations, including
+* Tools to manage and display experimental settings and stats
+* Visualizations, including
     * liveplotting (during assimilation)
     * intelligent defaults (axis limits, ...)
-* Many diagnostics and statistics
+* Diagnostics and statistics with
     * Confidence interval on times series (e.g. rmse) averages with
         * automatic correction for autocorrelation 
         * significant digits printing
-* Tools to manage and display experimental settings and stats
-* Parallelisation options
+* Parallelisation:
     * (Independent) experiments can run in parallel; see `example_3.py`
     * Forecast parallelisation is possible since
-        the (user-implemented) model has access to the full ensemble
-        (see `mods/QG/core.py`)
-    * A light-weight alternative (see e.g. `mods/Lorenz95/core.py`):
-        native numpy vectorization (again by having access to full ensemble).
+        the (user-implemented) model has access to the full ensemble;
+        see example in `mods/QG/core.py`.
+    * Analysis parallelisation over local domains;
+        see example in `da_methods.py:LETKF()`
+    * Also, numpy does a lot of parallelization when it can.
+        However, as it often has significant overhead,
+        this has been turned off (see `tools/utils.py`)
+        in favour of the above forms of parallelization.
 * Gentle failure system to allow execution to continue if experiment fails.
 * Classes that simplify treating:
     * Time sequences Chronology/Ticker with consistency checks
@@ -299,23 +302,28 @@ Conventions:
 
 TODO
 ------------------------------------------------
+* Flytt inflasjon foer tapering i LETKF (og iLEnKS). Test med L95, QG
+* Lage demo fil for hver modell
 * Remark colorama dependency
+* Rm doc folder (coz people expect to find actual docs). State that docs: examples
+* Rm script folder.
 * Reorg file structure
 * Turn into package?
 * Simplify time management?
 * Use pandas for stats time series?
-* Complete QG
 
 <!--
+* Defaults file (fail_gently, liveplotting, mkl.set_num_threads, etc)
+* Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
 * Make citation format for DAPPER
-* TODO: Implement spatialized inflation?
+* Rm scripts folder (now that there's example_{1,2,3} ?
+* Upgrade example_4 with plot_1d_minz ?
+* Implement spatialized inflation?
 * Replace print_c and termcolors dict by 'with coloring:'
 * Fix Windows bug (key listening: ncurses?)
 * Fix issue with anaconda python framework install or whatever that fucks figure interaction
 * Use inspect somehow instead of C.update_setting
 * Use AlignedDict for DA_Config's repr?
-* Include Colin's tut
-* Get barotropic
 * Get good/simple local PF with reproduction of Alban's results
 * rename do_tab to tab
 * Make function DA_Config() a member called 'method' of DAC. Rename DAC to DA_Config.

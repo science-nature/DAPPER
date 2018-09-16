@@ -2,6 +2,7 @@
 
 # Consider the univariate problem from Chen, Yan and Oliver, Dean S.
 # "Levenberg-Marquardt forms of the iES for efficient history matching and UQ"
+# alias: CO13
 #
 # This is here generalized to M dimensions
 # by repeating the problem independently for each dim.
@@ -9,43 +10,53 @@
 #
 # Setting M = P = 1 can be used to reproduce the results of the paper.
 
-## Preamble
+## Preamble ===================
 from common import *
 from scipy.stats import norm
 
 #plt.xkcd()
 
-sd0 = seed_init(2)
+sd0 = seed_init(3)
 
 def mean1(E):
   "Enables correct broadcasting for MxN shaped ensemble matrices"
   return mean(E,axis=1,keepdims=True)
 
-M  = 1       # State length
-P  = 1       # Obs length
-N  = 200     # Ens size
+M  = 2       # State length
+P  = 2       # Obs length
+N  = 4       # Ens size
 N1 = N-1     #
-nbins = 100  # Histogram bins
+nbins = 150  # Histogram bins
 
-## Prior
+
+## Prior ===================
 b  = -2*ones((M,1))
 B  = 1*eye(M)
 E0 = b + sqrtm(B)@randn((M,N))
 
-## Obs
+
+## Obs  ===================
 jj = arange(P)
 y  = 48*ones((P,1))
 R  = 16*eye(P)
 #R  = 1*eye(P)
-def h1(x): return 7/12*x*x*x - 7/2*x*x + 8*x
-def  h(x): return h1(x) [jj,:]
-def hp(x):
-  H = zeros((P,M))
-  for i,j in enumerate(jj):
-    H[i,j] = 7/4*x[j]**2 - 7*x[j] + 8
-  return H
+if True:
+  # == Non-Lin H == (as in CO13):
+  def h1(x): return 7/12*x*x*x - 7/2*x*x + 8*x # A scalar fun...
+  def  h(x): return h1(x) [jj,:]               # ...duplicated to obs dims.
+  def hp(x):                                   # The tangent.
+    H = zeros((P,M))
+    for i,j in enumerate(jj):
+      H[i,j] = 7/4*x[j]**2 - 7*x[j] + 8
+    return H
+else:
+  # == Linear H == (not in CO13):
+  def h1(x): return 5*x
+  def  h(x): return h1(x) [jj,:]
+  def hp(x): return 5*ones((P,M))
 
-## PDFs
+
+## PDFs ===================
 xx = linspace(-5,10,2001)
 dx = xx[1]-xx[0]
 def normlz(pp):
@@ -55,7 +66,8 @@ prior_xx = norm.pdf(xx,b[0],sqrt(B[0,0]))
 lklhd_xx = normlz( norm.pdf(y[0],h1(xx),sqrt(R[0,0])) )
 postr_xx = normlz( prior_xx * lklhd_xx )
 
-## Plotting
+
+## Plotting PDFs ==========
 fig = plt.figure(1)
 fig.clear()
 fig, (ax1, ax2) = plt.subplots(2,1,sharex=True,num=1, gridspec_kw = {'height_ratios':[5, 1]})
@@ -78,51 +90,54 @@ ax2.set_ylabel('-log p')
 ax1.legend()
 ax2.set_xlabel('x')
 
-## Assimilation
 
-# Obs perturbations
-D  = sqrtm(R)@randn((P,N))
-D -= mean1(D)
-D *= sqrt(N/N1)
-
-# Sqrt initialization matrix
-Tinv   = eye(N)
-T      = eye(N)
-w      = zeros((N,1))
-W      = eye(N)
+## Ensemble setup ===========
 
 # Initialize ensemble
-E  = E0
-x0 = mean1(E0)
-A0 = E0 - x0
-B0 = A0@A0.T/N1
+E   = E0
+x0  = mean1(E0)
+A0  = E0 - x0
+B0  = A0@A0.T/N1
+
+# Proj matrices
+Pi0  = tinv(A0)@A0
+Pi0C = eye(N) - Pi0
+Pi1  = ones((N,N))/N
+AN   = eye(N) - Pi1
+
+# Obs perturbations
+D = sqrtm(R)@randn((P,N))
+D = center(D.T).T
+
+# Sqrt initialization matrix
+w      = zeros((N,1))
+W      = eye(N)
+T      = eye(N)
+# Geir-Evensen formulation
+We     = W - eye(N)
+Om     = eye(N) + We@AN # = Pi1 + W@AN
 
 
+## Algorithm  ===============
 #FORM='MDA'                   # Ensemble Multiple Data Assimilation
 #FORM='RML-GN'                # RML with exact, local gradients. Gauss-Newton.
+
+#FORM='iEnS-Det-GN'           # Sqrt, determin, iter EnS
+
 #FORM='EnRML-GN-obs'          # EnRML, Gauss-Newton
 #FORM='EnRML-GN-state'        # Idem. Formulated in state space
-FORM='EnRML-GN-ens'          # Idem. Formulated in ensemble space
-#FORM='EnRML-LM-ORIG-state'   # Use Lambda to adjust step lengths. 
-#FORM='EnRML-LM-state'        # Use Lambda, modify Hessian  Formulated in state space
-#FORM='EnRML-LM-obs'          # Use Lambda, modify Hessian. Formulated in obs space
-#FORM='EnRML-LM-APPROX-state' # Drop prior term
-#FORM='iEnS-Det-GN'           # Sqrt, determin, iter EnS
-#FORM='iEnS-Stoch-GN'          # Sqrt, stoch, iter EnS. Equals EnRML-GN ? 
+#FORM='EnRML-GN-ens'          # Idem. Formulated in ensemble space
 
-# Only applies for LM methods
-Lambda = 1 # Increase in Lambda => Decrease in step length
-Gamma  = 4 # Lambda geometric decrease factor
+FORM='iEnS-GN'               # Sqrt, stoch, iter EnS. Equals EnRML-GN ? 
 
-##
-nIter = 9
+
+## Assimilation =============
+nIter = 3
 for k in range(nIter):
-  Lambda /= Gamma
-
   A  = E - mean1(E)
   hE = h(E)
-  Y  = hE - mean1(hE)
-  H  = Y@tinv(A)
+  Z  = hE - mean1(hE)
+  H  = Z@tinv(A)
 
   if FORM=='RML-GN':
     dLkl = zeros((M,N))
@@ -132,82 +147,80 @@ for k in range(nIter):
       Pn        = inv( inv(B0) + Hn.T@inv(R)@Hn )
       dLkl[:,n] = Pn@Hn.T@inv(R)@(y.ravel()-D[:,n]-hE[:,n])
       dPri[:,n] = Pn@inv(B0)@(E0[:,n]-E[:,n])
+
   elif FORM=='MDA':
-    D    = sqrtm(R)@randn((P,N))
-    D   -= mean1(D)
-    D   *= sqrt(N/N1)
-    K    = A@Y.T@inv(Y@Y.T + nIter*N1*R)
-    dLkl = K@(y-sqrt(nIter)*D-hE)
-    dPri = 0
+    D     = sqrtm(R)@randn((P,N))
+    D    -= mean1(D)
+    D    *= sqrt(N/N1)
+    K     = A@Z.T@inv(Z@Z.T + nIter*N1*R)
+    dLkl  = K@(y-sqrt(nIter)*D-hE)
+    dPri  = 0
+
+  elif FORM=='iEnS-Det-GN':
+    #Y     = H@A0
+    Y     = Z @ inv(T)
+    # Mean update
+    Pw    = inv(Y.T@inv(R)@Y + N1*eye(N))
+    dLkl  = Pw@Y.T@inv(R)@(y-mean1(hE))
+    dPri  = Pw@           (0-w)*N1
+    w    += dLkl + dPri
+    # CVar to ensemble space
+    dLkl  = A0@dLkl
+    dPri  = A0@dPri
+    # Anomalies update (just add to dLkl)
+    T     = funm_psd(Pw, sqrt)*sqrt(N1)
+    dLkl  = dLkl + A0@T - A
+
+
   elif FORM=='EnRML-GN-obs':
-    Z    = H@A0
-    K    = A0@Z.T@inv(Z@Z.T + N1*R)
-    dLkl = K@(y-D-hE)
-    dPri = (eye(M) - K@H)@(E0-E)
+    Y     = H@A0
+    C     = Y@Y.T + N1*R
+    K     = A0@Y.T@inv(C)
+    dLkl  = K@(y-D-hE)
+    dPri  = (eye(M) - K@H)@(E0-E)
   elif FORM=='EnRML-GN-ens':
-    Z    = H@A0
-    K    = A0@inv(Z.T@inv(R)@Z + N1*eye(N))@Z.T@inv(R)
-    dLkl = K@(y-D-hE)
-    dPri = (eye(M) - K@H)@(E0-E)
+    Y     = H@A0
+    Pw    = inv(Y.T@inv(R)@Y + N1*eye(N))
+    K     = A0@Pw@Y.T@inv(R)
+    dLkl  = K@(y-D-hE)
+    dPri  = (eye(M) - K@H)@(E0-E)
   elif FORM=='EnRML-GN-state':
     assert nla.matrix_rank(B0) == M # Not well-done by inv()
-    P    = inv( inv(B0) + H.T@inv(R)@H )
-    dLkl = P@H.T@inv(R)@(y-D-hE)
-    dPri = P@inv(B0)@(E0-E)
-  elif FORM=='EnRML-LM-ORIG-state':
-    P    = inv( (1+Lambda)*inv(B0) + H.T@inv(R)@H )
-    dLkl = P@H.T@inv(R)@(y-D-hE)
-    dPri = P@inv(B0)@(E0-E)
-  elif FORM=='EnRML-LM-state':
-    Bk   = A@A.T/N1
-    P    = inv( (1+Lambda)*inv(Bk) + H.T@inv(R)@H )
-    dLkl = P@H.T@inv(R)@(y-D-hE)
-    dPri = P@inv(B0)@(E0-E)
-  elif FORM=='EnRML-LM-obs':
-    Bk   = A@A.T/N1
-    P    = inv( (1+Lambda)*inv(Bk) + H.T@inv(R)@H )
-    K    = Bk@H.T@inv(H@Bk@H.T + (1+Lambda)*R)
-    dLkl = K@(y-D-hE)
-    dPri = P@inv(B0)@(E0-E)
-  elif FORM=='EnRML-LM-APPROX-state':
-    P    = inv( (1+Lambda)*inv(A@A.T/N1) + H.T@inv(R)@H )
-    dLkl = P@H.T@inv(R)@(y-D-hE)
-    dPri = 0
-  elif FORM=='iEnS-Det-GN':
-    #Z    = H@A0
-    Z    = Y @ Tinv
-    Hw   = Z.T@inv(R)@Z + N1*eye(N)
-    Pw   = inv(Hw)
-    Tinv = funm_psd(Hw, sqrt)/sqrt(N1)
-    T    = funm_psd(Pw, sqrt)*sqrt(N1)
-    dLkl = Pw@Z.T@inv(R)@(y-mean1(hE))
-    dPri = Pw@-w*N1
-    w   += dLkl + dPri
+    P     = inv( inv(B0) + H.T@inv(R)@H )
+    dLkl  = P@H.T@inv(R)@(y-D-hE)
+    dPri  = P@inv(B0)@(E0-E)
+
+  elif FORM=='iEnS-GN':
+    # Y     = H @ A0                          # = EnRML_E
+    # Y     = Z @ tinv( A ) @ A0              # = EnRML_E
+    # Y     = Z @ tinv( A0 @ W @ AN ) @ A0    # = EnRML_E
+    # Y     = Z @ tinv( Pi0 @ W @ AN )        # = EnRML_E
+    # Y     = Z @ tinv( AN  @ W @ AN )        # = EnRML_W (but is it better?)
+    # Y     = Z @ tinv( W @ AN )              # = EnRML_W
+    # Y     = hE @ tinv( W @ AN )             # = EnRML_W
+    # Y     = hE @ AN @ tinv( W ) @ AN        # = EnRML_W
+    # Y     = Z @ tinv( W ) @ AN              # = EnRML_W
+    # Geir-Evensen forms
+    # Y     = Z @ tinv( A ) @ A @ inv(Om)     # = EnRML_E
+    Y     = Z @ inv(Om)                     # = EnRML_W
+    # Y     = hE @ AN @ inv(Om)                # = EnRML_W
+    #
+    Pw    = inv(Y.T@inv(R)@Y + N1*eye(N))
+    dLkl  = Pw@Y.T@inv(R)@(y-D-hE)
+    dPri  = Pw@(eye(N)-W)*N1
+    W    += dLkl + dPri
+    We    = W - eye(N)
+    Om    = eye(N) + We@AN
     # CVar to ensemble space
-    dLkl = A0@dLkl
-    dPri = A0@dPri
-    # Anomalies update (add to dPri)
-    dPri = dPri + A0@T - A
-  elif FORM=='iEnS-Stoch-GN':
-    #Z    = H@A0
-    #Tinv = tinv(tinv(A0)@A)
-    Tinv = tinv(T)
-    Z    = Y @ Tinv
-    Hw   = Z.T@inv(R)@Z + N1*eye(N)
-    Pw   = inv(Hw)
-    dLkl = Pw@Z.T@inv(R)@(y-D-hE)
-    dPri = Pw@(eye(N)-W)*N1
-    W   += dLkl + dPri
-    T    = Pw@(N1*eye(N) - Z.T@inv(R)@D)
-    # CVar to ensemble space
-    dLkl = A0@dLkl
-    dPri = A0@dPri
+    dLkl  = A0@dLkl
+    dPri  = A0@dPri
 
 
   E  = E + dLkl + dPri
 
   # Animation
-  if not k%1:
+  if not (k+1)%nIter:
+  #if not k%1:
     ax1.set_title(FORM+', k = '+str(k)+'. Plotting for state index [0]')
     if 'hist' in locals():
       for patch in hist:
@@ -217,9 +230,16 @@ for k in range(nIter):
     plt.pause(0.5)
 
 
-##
+## Print result =================
 # For (comparing methods) debugging
-print("%15.15s, E_k state0...5:"%FORM, E[0,:5])
+print("%15.15s, E_k state[0...5]:"%FORM, E[0,:5])
 
-##
+## Conclusions =================
+#  The W-form (iEnS) is equivalent to the E-forms (EnRML) if one of the following hold:
+#  - Y := H@A0
+#  - Y := Z @ tinv( W - mean1(W)), and
+#    - h is linear, or
+#    - N-1 <= M
+#  - Y := Z @ tinv( Pi0 @ (W - mean1(W)))
+# 
 

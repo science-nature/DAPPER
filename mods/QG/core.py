@@ -142,11 +142,11 @@ def step(E, t, dt_):
 #########################
 
 def gen_sample(nSamples,SpinUp,Spacing):
-  simulator = make_recursive(step,prog="Simul.")
+  simulator = make_recursive(step,prog="Simulating")
   K         = SpinUp + nSamples*Spacing
   m         = np.prod(shape) # total state length
   sample    = simulator(zeros(m), K, 0.0, dt)
-  return sample[::Spacing]
+  return sample[SpinUp::Spacing]
 
 sample_filename = 'data/samples/QG_samples.npz'
 if not os.path.isfile(sample_filename):

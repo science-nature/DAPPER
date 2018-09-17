@@ -25,7 +25,7 @@ X0 = GaussRV(C=2,mu=mu0)
 jj = array([0])
 h = partial_direct_obs_setup(m,jj)
 h['noise'] = 8
-h['loc_f'] = no_localization([m],jj)
+h['localizer'] = no_localization([m],jj)
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 

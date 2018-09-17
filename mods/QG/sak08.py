@@ -62,13 +62,13 @@ batch_shape = [3, 3] # width (in grid points) of each state batch.
 #  => quicker analysis (but less relative speed-up by parallelization, depending on NPROC)
 #  => worse (increased) rmse (but width 4 is only slightly worse than 1);
 #     if inflation is applied locally, then rmse might actually improve.
-loc_f = loc_setup(shape[::-1], batch_shape[::-1], obs_inds, periodic=False)
+localizer = loc_setup(shape[::-1], batch_shape[::-1], obs_inds, periodic=False)
 
 h = {
     'm'    : p,
     'model': hmod,
     'noise': GaussRV(C=4*eye(p)),
-    'loc_f': loc_f,
+    'localizer': localizer,
     }
 
 # Moving localization mask for smoothers:

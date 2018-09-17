@@ -26,7 +26,7 @@ h = {
     'jacob': Id_mat(m),
     'noise': 1, # abbrev GaussRV(C=CovMat(eye(m)))
     'plot' : lambda y: plt.plot(y,'g')[0],
-    'loc_f': loc_setup( (m,), (2,), arange(m), periodic=True )
+    'localizer': loc_setup( (m,), (2,), arange(m), periodic=True )
     }
 
 

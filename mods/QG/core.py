@@ -151,7 +151,7 @@ def gen_sample(nSamples,SpinUp,Spacing):
 sample_filename = 'data/samples/QG_samples.npz'
 if not os.path.isfile(sample_filename):
   print('Generating a sample from which to initialize experiments')
-  sample = gen_sample(400,500,10)
+  sample = gen_sample(400,700,10)
   np.savez(sample_filename,sample=sample)
 
 

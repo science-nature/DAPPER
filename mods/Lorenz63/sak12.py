@@ -5,6 +5,7 @@
 from common import *
 
 from mods.Lorenz63.core import step, dfdx
+from mods.Lorenz63.liveplotting import LP_setup
 
 m = 3
 p = m
@@ -21,16 +22,14 @@ f = {
 mu0 = array([1.509, -1.531, 25.46])
 X0 = GaussRV(C=2,mu=mu0)
 
-h = {
-    'm'    : p,
-    'model': Id_op(),
-    'jacob': Id_mat(m),
-    'noise': 2, # abbrev GaussRV(C=CovMat(2*eye(p)))
-    }
+jj = arange(m) # obs_inds
+h = partial_direct_obs_setup(m, jj)
+h['noise'] = 2 # GaussRV(C=CovMat(2*eye(p)))
 
-other = {'name': os.path.relpath(__file__,'mods/')}
-
-setup = TwinSetup(f,h,t,X0,**other)
+setup = TwinSetup(f,h,t,X0,
+    liveplotting = LP_setup(jj),
+    name         = os.path.relpath(__file__,'mods/'),
+    )
 
 
 ####################

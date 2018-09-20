@@ -3,7 +3,7 @@
 from common import *
 
 from mods.QG.core import step, dt, shape, order, sample_filename
-from mods.QG.liveplotting import liveplotter
+from mods.QG.liveplotting import LP_setup
 from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 
 ############################
@@ -81,11 +81,10 @@ h['loc_shift'] = lambda ii, dt: ii # no movement (suboptimal, but easy)
 ############################
 # Other
 ############################
-LP = functools.partial(liveplotter,obs_inds=obs_inds)
-
-setup = TwinSetup(f,h,t,X0,LP=LP)
-setup.name = os.path.relpath(__file__,'mods/')
-
+setup = TwinSetup(f,h,t,X0,
+    LP   = LP_setup(obs_inds),
+    name = os.path.relpath(__file__,'mods/'),
+ )
 
 
 ####################

@@ -8,6 +8,7 @@
 from common import *
 
 from mods.Lorenz84.core import step, dfdx
+from mods.Lorenz63.liveplotting import LP_setup
 
 m = 3
 p = m
@@ -36,6 +37,8 @@ h = {
 other = {'name': os.path.relpath(__file__,'mods/')}
 
 setup = TwinSetup(f,h,t,X0,**other)
+
+setup.liveplotting = LP_setup(arange(m))
 
 ####################
 # Suggested tuning

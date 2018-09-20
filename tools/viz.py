@@ -9,12 +9,13 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib import colors
 from matplotlib.ticker import MaxNLocator
 
+tri_corr = True
 
 class LivePlot:
   """
   Live plotting functionality.
   """
-  def __init__(self,stats,E=None,P=None,only=False,**kwargs):
+  def __init__(self,stats,key,E=None,P=None,only=False,**kwargs):
     """
     Initialize plots.
      - only: (possible) fignums to plot.
@@ -53,68 +54,18 @@ class LivePlot:
 
 
     #####################
-    # Dashboard
+    # Correlation plot
     #####################
-    if 1 in only and m<1001:
-      self.fga = plt.figure(1,figsize=(6,6))
-      self.fga.clf()
-      win_title(self.fga, "Dashboard")
+    if 2 in only and m<1001:
+      GS = {'height_ratios':[4, 1],'hspace':0.09,'top':0.95}
+      fig_C, (ax_C,ax_AC) = freshfig(2, (5,6), nrows=2, gridspec_kw=GS)
+      win_title(fig_C, "Correlations")
       set_figpos('2311')
 
-      # --------------
-      # Amplitude plot
-      # --------------
-      ax = plt.subplot(311)
-      # Ensemble/Confidence
-      if m<4001: # 401 ?
-        if E is not None and len(E)<401:
-          self.lE = plt.plot(ii,wrap(E.T),lw=1,**ens_props)
-        else:
-          self.ks  = 2.0
-          self.CI  = ax.fill_between(ii, \
-              wrap(mu[0] - self.ks*sqrt(stats.var[0])), \
-              wrap(mu[0] + self.ks*sqrt(stats.var[0])), \
-              alpha=0.4,label=(str(self.ks) + ' sigma'))
-        
-        self.lx,    = plt.plot(ii,wrap(xx[0]),'k',lw=3,ls='-',label='Truth')
-        self.lmu,   = plt.plot(ii,wrap(mu[0]),'b',lw=2,ls='-',label='DA estim.')
-        self.fcast, = plt.plot(ii,wrap(mu[0]),'r',lw=1,ls='-',label='forecast')
-
-        if hasattr(setup.h,'plot'):
-          # tmp
-          self.yplot = setup.h.plot
-          self.obs = setup.h.plot(yy[0])
-          self.obs.set_label('Obs')
-          #self.obs.set_visible(False)
-        
-        ax.legend()
-        #ax.xaxis.tick_top()
-        #ax.xaxis.set_label_position('top') 
-        ax.set_xlabel('State index')
-        ax.set_xlim((ii[0],ii[-1]))
-        ax.get_xaxis().set_major_locator(MaxNLocator(integer=True))
-        tcks = ax.get_xticks()
-        self.ax = ax
-      else:
-        not_available_text(ax)
-        
-
-      # TODO: Spectral plot
-      #axS = plt.subplot(412)
-
-
-      # --------------
-      # Correlation plot. Inspired by seaborn.heatmap.
-      # --------------
-      axC   = plt.subplot(312)
-      divdr = make_axes_locatable(axC)
-      # Colorbar
-      cax   = divdr.append_axes("bottom", size = "10%", pad = 0.05)
-      cax   . set_xlabel('Correlation')
-      if hasattr(self,'ax') and m<301:
+      if m<=1003:
         # Get cov matrix
         if E is not None:
-          C = np.cov(E,rowvar=False)
+          C = np.cov(E.T, ddof=1)
         else:
           assert P is not None
           C = P.full if isinstance(P,CovMat) else P
@@ -125,91 +76,97 @@ class LivePlot:
         C  /= std[None,:]
         # Mask half
         mask = np.zeros_like(C, dtype=np.bool)
-        mask[np.tril_indices_from(mask)] = True
-        C2 = np.ma.masked_where(mask, C)[::-1]
-        # Make colormap
+        mask   [np.tril_indices_from(mask)] = True
+        if tri_corr:
+          C  = np.ma.masked_where(mask, C)
+        # Make colormap. Log-transform cmap, but not internally in matplotlib,
+        # so as to avoid transforming the colorbar too.
         cmap = plt.get_cmap('RdBu')
-        # Log-transform cmap, but not internally in matplotlib,
-        # to avoid transforming the colorbar too.
         trfm = colors.SymLogNorm(linthresh=0.2,linscale=0.2,vmin=-1, vmax=1)
         cmap = cmap(trfm(linspace(-0.6,0.6,cmap.N)))
         cmap = colors.ListedColormap(cmap)
-        #VM  = abs(np.percentile(C2,[1,99])).max()
-        VM   = 1.0
         #
-        mesh = axC.pcolormesh(C2,cmap=cmap,vmin=-VM,vmax=VM)
+        VM   = 1.0 # abs(np.percentile(C,[1,99])).max()
+        im_C = ax_C.imshow(C,cmap=cmap,vmin=-VM,vmax=VM)
         #
-        axC.figure.colorbar(mesh,cax=cax,orientation='horizontal')
+        cax = ax_C.figure.colorbar(im_C,ax=ax_C,shrink=0.8)
         plt.box(False)
-        #axC.set_facecolor('w')
-        axC.set_facecolor('w') 
-        axC.yaxis.tick_right()
-        tcks = tcks[np.logical_and(tcks >= ii[0], tcks <= ii[-1])]
-        tcks = tcks.astype(int)
-        axC.set_yticks(m-tcks-0.5)
-        axC.set_yticklabels([str(x) for x in tcks])
-        axC.set_xticklabels([])
+        ax_C.set_facecolor('w') 
+        ax_C.grid(False)
+        ax_C.set_title("State correlation matrix:", y=1.07)
+        ax_C.xaxis.tick_top()
         
-        # Inset: Auto-correlation function
-        acf = circulant_ACF(C)
-        ac6 = circulant_ACF(C,do_abs=True)
-        ax5 = inset_axes(axC,width="30%",height="60%",loc=3)
-        l5, = ax5.plot(arange(m), acf,     label='auto-corr')
-        l6, = ax5.plot(arange(m), ac6, label='abs(")')
-        ax5.set_xticklabels([])
-        ax5.set_yticks([0,1] + list(ax5.get_yticks()[[0,-1]]))
-        ax5.set_ylim(top=1)
-        ax5.legend(frameon=False,loc=1)
-        #ax5.text(m/2-.5,0.9,'Auto corr.',va='center',ha='center')
+        # ax_AC = inset_axes(ax_C,width="30%",height="60%",loc=3)
+        ACF = circulant_ACF(C)
+        AAF = circulant_ACF(C,do_abs=True)
+        line_AC, = ax_AC.plot(arange(m), ACF, label='Correlation')
+        line_AA, = ax_AC.plot(arange(m), AAF, label='Abs. corr.')
+        _   = ax_AC.hlines(0,0,m-1,'k','dotted',lw=1)
+        # Align ax_AC with ax_C
+        bb_AC = ax_AC.get_position()
+        bb_C  = ax_C.get_position()
+        ax_AC.set_position([bb_C.x0, bb_AC.y0, bb_C.width, bb_AC.height])
+        # Tune plot
+        ax_AC.set_title("Auto-correlation:")
+        ax_AC.set_ylabel("Mean value")
+        ax_AC.set_xlabel("Distance (in state indices)")
+        ax_AC.set_xticklabels([])
+        ax_AC.set_yticks([0,1] + list(ax_AC.get_yticks()[[0,-1]]))
+        ax_AC.set_ylim(top=1)
+        ax_AC.legend(frameon=True,facecolor='w',
+            bbox_to_anchor=(1, 1), loc='upper left', borderaxespad=0.02)
 
-        self.axC  = axC
-        self.ax5  = ax5
-        self.mask = mask
-        self.mesh = mesh
-        self.l5   = l5
-        self.l6   = l6
+        self.fig_C   = fig_C
+        self.ax_C    = ax_C
+        self.ax_AC   = ax_AC
+        self.im_C    = im_C
+        self.line_AC = line_AC
+        self.line_AA = line_AA
+        self.mask    = mask
       else:
-        not_available_text(axC)
+        not_available_text(ax_C)
       
 
-      # --------------
-      # Spectral error plot
-      # --------------
-      ax2  = plt.subplot(313)
-      ax2.set_xlabel('Sing. value index')
-      ax2.set_yscale('log')
-      ax2.set_ylim(bottom=1e-5)
-      #ax2.set_ylim([1e-3,1e1])
-      self.ax2 = ax2
+    #####################
+    # Spectral error plot
+    #####################
+      fig_S, ax_S = freshfig(4, (4,3))
+      win_title(fig_S, "Spectral view")
+      set_figpos('2311')
+      ax_S.set_xlabel('Sing. value index')
+      ax_S.set_yscale('log')
+      ax_S.set_ylim(bottom=1e-5)
+      #ax_S.set_ylim([1e-3,1e1])
       try:
         msft = abs(stats.umisf[0])
         sprd =     stats.svals[0]
       except KeyError:
         self.do_spectral_error = False
+        not_available_text(ax_S, "Spectral stats not being computed")
       else:
-        self.do_spectral_error = np.any(np.isfinite(msft))
+        if np.any(np.isfinite(msft)):
+          not_available_text(ax_S, "Spectral stats not finite")
+          self.do_spectral_error = False
+        else:
+          self.do_spectral_error = True
 
       if self.do_spectral_error:
-        self.lmf, = ax2.plot(arange(len(msft)),msft,'k',lw=2,label='Error')
-        self.lew, = ax2.plot(arange(len(sprd)),sprd,'b',lw=2,label='Spread',alpha=0.9)
-        ax2.get_xaxis().set_major_locator(MaxNLocator(integer=True))
-        ax2.legend()
-      else:
-        not_available_text(ax2)
+        self.line_msft, = ax_S.plot(arange(len(msft)),msft,'k',lw=2,label='Error')
+        self.line_sprd, = ax_S.plot(arange(len(sprd)),sprd,'b',lw=2,label='Spread',alpha=0.9)
+        ax_S.get_xaxis().set_major_locator(MaxNLocator(integer=True))
+        ax_S.legend()
 
-
-      self.fga.subplots_adjust(top=0.95,bottom=0.08,hspace=0.4)
-      adjust_position(axC,y0=0.03)
-      self.fga.suptitle('t=Init')
+      self.ax_S = ax_S
 
 
     #####################
     # Diagnostics
     #####################
-    if 2 in only:
-      self.fgd = plt.figure(2,figsize=(5,3.5))
-      self.fgd.clf()
-      win_title(self.fgd,"Scalar diagnostics")
+    if 1 in only:
+      GS = {'left':0.125+0.04,'right':0.9+0.04}
+      self.fig_pulse, (self.ax_RMS, self.ax_Uni) = freshfig(
+          1,(5,3.5),nrows=2,sharex=True,gridspec_kw=GS)
+      win_title(self.fig_pulse,"Scalar diagnostics")
       set_figpos('2312')
       self.has_checked_presence = False
 
@@ -231,7 +188,7 @@ class LivePlot:
       # --------------
       # RMS
       # --------------
-      d1 = {
+      d_RMS = {
           'rmse' : dict(c='k', label='Error'),
           'rmv'  : dict(c='b', label='Spread', alpha=0.6),
         }
@@ -239,7 +196,7 @@ class LivePlot:
       # --------------
       # Plain
       # --------------
-      d2 = OrderedDict([
+      d_Uni = OrderedDict([
           ('skew'   , dict(c='g', label='Skew')),
           ('kurt'   , dict(c='r', label='Kurt')),
           ('infl'   , dict(c='c', label='(Infl-1)*10',transf=lin(-10,10))),
@@ -292,108 +249,51 @@ class LivePlot:
           new[name]    = d
         return new
 
+      self.d_RMS    = init_axd(self.ax_RMS, d_RMS)
+      self.ax_RMS.set_ylabel('RMS')
 
-      fig, (self.ax_d1, self.ax_d2) = plt.subplots(2,1,sharex=True,
-          num=plt.gcf().number,
-          gridspec_kw={'left':0.125+0.04,'right':0.9+0.04})
-
-      self.d1    = init_axd(self.ax_d1, d1)
-      self.ax_d1.set_ylabel('RMS')
-
-      self.d2    = init_axd(self.ax_d2, d2)
-      self.ax_d2.set_ylabel('mean of marginal\n $\sigma$-normalized values',
+      self.d_Uni    = init_axd(self.ax_Uni, d_Uni)
+      self.ax_Uni.set_ylabel('mean of marginal\n $\sigma$-normalized values',
           fontsize='small', labelpad=0)
       
-      self.ax_d2.set_xlabel('time (t)')
+      self.ax_Uni.set_xlabel('time (t)')
 
-
-    #####################
-    # 3D phase space
-    #####################
-    if 3 in only and m<41:
-      self.fg3 = plt.figure(3,figsize=(5,3.5))
-      self.fg3.clf()
-      win_title(self.fg3,"3D trajectories")
-      set_figpos('2321')
-
-      ax3      = self.fg3.add_subplot(111,projection='3d')
-      self.ax3 = ax3
-      self.fg3.set_tight_layout(True)
-
-      tail_k = max(2,int(1/dt))
-      
-      if E is not None and len(E)<1001:
-        # Ensemble
-        self.sE = ax3.scatter(*E.T[:3],s=10,**ens_props)
-        # Tail
-        N = E.shape[0]
-        self.tail_E  = zeros((tail_k,N,3))
-        for k in range(tail_k):
-          self.tail_E[k] = E[:,:3]
-        self.ltE = []
-        for n in range(N):
-          lEn, = ax3.plot(*self.tail_E[:,n].squeeze().T,**ens_props)
-          self.ltE.append(lEn)
-      else:
-        # Mean
-        self.smu     = ax3.scatter(*mu[0,:3],s=100,c='b')
-        # Tail
-        self.tail_mu = ones((tail_k,3)) * mu[0,:3] # init
-        self.ltmu,   = ax3.plot(*self.tail_mu.T,'b',lw=2)
-
-      # Truth
-      self.sx        = ax3.scatter(*xx[0,:3],s=300,c='y',marker=(5, 1))
-      # Tail
-      self.tail_xx   = ones((tail_k,3)) * xx[0,:3] # init
-      self.ltx,      = ax3.plot(*self.tail_xx.T,'y',lw=4)
-
-      #ax3.axis('off')
-      with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        for i in range(3):
-          set_ilim(ax3,i,xx,1.7)
-        ax3.set_facecolor('w')
 
 
     #####################
-    # Weight histogram
+    # Weighted histogram
     #####################
     if 4 in only and E is not None and stats._has_w:
-      fgh = plt.figure(4,figsize=(6,3))
-      fgh.clf()
-      win_title(fgh,"Weight histogram")
+      fig_hw, ax_hw = freshfig(4,(6,3), gridspec_kw={'bottom':.15})
+      win_title(fig_hw,"Weight histogram")
       set_figpos('2321')
-      axh = fgh.add_subplot(111)
-      fgh.subplots_adjust(bottom=.15)
-      axh.set_xscale('log')
-      axh.set_xlabel('weigth [× N]')
-      axh.set_ylabel('count')
+      ax_hw.set_xscale('log')
+      ax_hw.set_xlabel('weigth [× N]')
+      ax_hw.set_ylabel('count')
       if len(E)<10001:
-        hst = axh.hist(stats.w[0])[2]
-        N   = len(E)
+        hist   = ax_hw.hist(stats.w[0])[2]
+        N      = len(E)
         xticks = 1/N * 10**arange(-4,log10(N)+1)
         xtlbls = array(['$10^{'+ str(int(log10(w*N))) + '}$' for w in xticks])
         xtlbls[xticks==1/N] = '1'
-        axh.set_xticks(xticks)
-        axh.set_xticklabels(xtlbls)
-        self.fgh = fgh
-        self.axh = axh
-        self.hst = hst
+        ax_hw.set_xticks(xticks)
+        ax_hw.set_xticklabels(xtlbls)
+        self.fig_hw = fig_hw
+        self.ax_hw  = ax_hw
+        self.hist   = hist
       else:
-        not_available_text(axh,'Not computed (N > threshold)')
+        not_available_text(ax_hw,'Not computed (N > threshold)')
 
 
 
     #####################
     # User-defined state
     #####################
-    if 9 in only:
-      if hasattr(setup,'liveplotting'):
-        self.fgu = plt.figure(9,figsize=(6,6))
-        self.fgu.clf()
-        win_title(self.fgu,"Custom")
-        set_figpos('2322')
-        self.custom = setup.liveplotting(stats)
+    if 9 in only and hasattr(setup,'liveplotting'):
+      self.fig_custom, self.custom = setup.liveplotting(stats,key,E,P)
+      win_title(self.fig_custom,"Custom plot")
+      set_figpos('2322')
+      plot_pause(0.01)
 
     self.prev_k = 0
     plot_pause(0.01)
@@ -432,9 +332,11 @@ class LivePlot:
     return not self.is_on
 
 
-  def update(self,k,kObs,E=None,P=None,**kwargs):
+  def update(self,key,E=None,P=None,**kwargs):
     """Update liveplots"""
     if self.skip_plotting(): return
+
+    k,kObs,f_a_u = key
 
     stats = self.stats
     mu    = stats.mu
@@ -443,96 +345,51 @@ class LivePlot:
     ii,wrap = setup_wrapping(m)
     
     #####################
-    # Dashboard
+    # Correlation plot
     #####################
-    if hasattr(self, 'fga') and plt.fignum_exists(self.fga.number):
+    if hasattr(self, 'fig_C') and plt.fignum_exists(self.fig_C.number):
+      plt.figure(self.fig_C.number)
 
-      plt.figure(self.fga.number)
-      t = self.setup.t.tt[k]
-      self.fga.suptitle('t[k]={:<5.2f}, k={:<d}'.format(t,k))
+      if E is not None:
+        C = np.cov(E,rowvar=False)
+      else:
+        assert P is not None
+        C = P.full if isinstance(P,CovMat) else P
+        C = C.copy()
+      std = sqrt(diag(C))
+      C  /= std[:,None]
+      C  /= std[None,:]
+      if tri_corr:
+        C = np.ma.masked_where(self.mask, C)
+      self.im_C.set_data(C)
 
-      # --------------
-      # Amplitude plot
-      # --------------
-      if hasattr(self,'ax'):
-        # Truth
-        self.lx .set_ydata(wrap(self.xx[k]))
-        # Analysis
-        self.lmu.set_ydata(wrap(mu[k]))
-        # Forecast
-        if kObs is None:
-          self.fcast.set_visible(False)
-        else:
-          self.fcast.set_ydata(wrap(mu.f[kObs]))
-          self.fcast.set_visible(True)
-          
-        # Ensemble/Confidence
-        if hasattr(self,'lE'):
-          w    = stats.w[k]
-          wmax = w.max()
-          for i,l in enumerate(self.lE):
-            l.set_ydata(wrap(E[i]))
-            l.set_alpha((w[i]/wmax).clip(0.1))
-        else:
-          self.CI.remove()
-          self.CI  = self.ax.fill_between(ii, \
-              wrap(mu[k] - self.ks*sqrt(stats.var[k])), \
-              wrap(mu[k] + self.ks*sqrt(stats.var[k])), alpha=0.4)
+      # Auto-corr function
+      ACF = circulant_ACF(C)
+      AAF = circulant_ACF(C,do_abs=True)
+      self.line_AC.set_ydata(ACF)
+      self.line_AA.set_ydata(AAF)
 
-        plt.sca(self.ax)
-        if hasattr(self,'obs'):
-          try:
-            self.obs.remove()
-          except Exception:
-            pass
-          if kObs is not None:
-            self.obs = self.yplot(self.yy[kObs])
-
-        update_ylim([mu[k], self.xx[k]], self.ax)
+      plot_pause(0.01)
 
 
-      # --------------
-      # Correlation plot.
-      # --------------
-      if hasattr(self,'axC'):
-        if E is not None:
-          C = np.cov(E,rowvar=False)
-        else:
-          assert P is not None
-          C = P.full if isinstance(P,CovMat) else P
-          C = C.copy()
-        std = sqrt(diag(C))
-        C  /= std[:,None]
-        C  /= std[None,:]
-        C2 = np.ma.masked_where(self.mask, C)[::-1]
-        self.mesh.set_array(C2.ravel())
-
-        # Auto-corr function
-        acf = circulant_ACF(C)
-        ac6 = circulant_ACF(C,do_abs=True)
-        self.l5.set_ydata(acf)
-        self.l6.set_ydata(ac6)
-        update_ylim([acf, ac6], self.ax5)
-
-
-      # --------------
-      # Spectral error plot
-      # --------------
-      if self.do_spectral_error:
-        msft = abs(stats.umisf[k])
-        sprd =     stats.svals[k]
-        self.lew.set_ydata(sprd)
-        self.lmf.set_ydata(msft)
-        update_ylim(msft, self.ax2)
-
+    #####################
+    # Spectral error plot
+    #####################
+    if hasattr(self, 'fig_S') and plt.fignum_exists(self.fig_S.number) and self.do_spectral_error:
+      plt.figure(self.fig_S.number)
+      msft = abs(stats.umisf[k])
+      sprd =     stats.svals[k]
+      self.line_sprd.set_ydata(sprd)
+      self.line_msft.set_ydata(msft)
+      update_ylim(msft, self.ax_S)
       plot_pause(0.01)
 
 
     #####################
     # Diagnostics
     #####################
-    if hasattr(self,'fgd') and plt.fignum_exists(self.fgd.number):
-      plt.figure(self.fgd.number)
+    if hasattr(self,'fig_pulse') and plt.fignum_exists(self.fig_pulse.number):
+      plt.figure(self.fig_pulse.number)
       chrono = self.setup.t
 
       # Indices with shift
@@ -568,7 +425,7 @@ class LivePlot:
               d['data']      = stat[kkU]
             else: # store .u manually
               tmp = stat[k]
-              if self.prev_k != (k-1):
+              if self.prev_k not in [k, k-1]:
                 # Reset display
                 d['data'][:] = nan
               if k >= chrono.pK:
@@ -589,92 +446,44 @@ class LivePlot:
         if dict_of_dicts:
           ax.legend(loc='upper left')
 
-      update_axd(self.ax_d1,self.d1)
-      update_axd(self.ax_d2,self.d2)
+      update_axd(self.ax_RMS,self.d_RMS)
+      update_axd(self.ax_Uni,self.d_Uni)
 
       #if k%(chrono.pK/5) <= 1:
-      update_ylim([d['data'] for d in self.d1.values()], self.ax_d1,
+      update_ylim([d['data'] for d in self.d_RMS.values()], self.ax_RMS,
           bottom=0,      cC=0.2,cE=0.9)
-      update_ylim([d['data'] for d in self.d2.values()], self.ax_d2,
+      update_ylim([d['data'] for d in self.d_Uni.values()], self.ax_Uni,
           Max=4, Min=-4, cC=0.3,cE=0.9)
 
       # Check which diagnostics are present
       if (not self.has_checked_presence) and (k>=chrono.kkObs[0]):
-        rm_absent(self.ax_d1,self.d1)
-        rm_absent(self.ax_d2,self.d2)
+        rm_absent(self.ax_RMS,self.d_RMS)
+        rm_absent(self.ax_Uni,self.d_Uni)
         self.has_checked_presence = True
 
       plot_pause(0.01)
 
 
-    #####################
-    # 3D phase space
-    #####################
-    if hasattr(self,'fg3') and plt.fignum_exists(self.fg3.number):
-      plt.figure(self.fg3.number)
-
-      def update_tail(handle,newdata):
-        handle.set_data(newdata[:,0],newdata[:,1])
-        handle.set_3d_properties(newdata[:,2])
-
-      # Reset
-      if self.prev_k != (k-1):
-        self.tail_xx  [:] = self.xx[k,:3]
-        if hasattr(self, 'sE'):
-          self.tail_E [:] = E[:,:3]
-        else:
-          self.tail_mu[:] = mu[k,:3]
-
-      # Truth
-      self.sx._offsets3d = juggle_axes(*tp(self.xx[k,:3]),'z')
-      self.tail_xx       = roll_n_sub(self.tail_xx,self.xx[k,:3])
-      update_tail(self.ltx, self.tail_xx)
-
-      if hasattr(self, 'sE'):
-        # Ensemble
-        self.sE._offsets3d = juggle_axes(*E.T[:3],'z')
-
-        clrs  = self.sE.get_facecolor()[:,:3]
-        w     = stats.w[k]
-        alpha = (w/w.max()).clip(0.1,0.4)
-        if len(clrs) == 1: clrs = clrs.repeat(len(w),axis=0)
-        self.sE.set_color(np.hstack([clrs, alpha[:,None]]))
-        
-        self.tail_E = roll_n_sub(self.tail_E,E[:,:3])
-        for n in range(E.shape[0]):
-          update_tail(self.ltE[n],self.tail_E[:,n,:])
-          self.ltE[n].set_alpha(alpha[n])
-      else:
-        # Mean
-        self.smu._offsets3d = juggle_axes(*tp(mu[k,:3]),'z')
-        self.tail_mu        = roll_n_sub(self.tail_mu,mu[k,:3])
-        update_tail(self.ltmu, self.tail_mu)
-
-      plot_pause(0.01)
-
-      # For animation:
-      #self.fg3.savefig('figs/l63_' + str(k) + '.png',format='png',dpi=70)
-    
 
     #####################
     # Weight histogram
     #####################
-    if kObs and hasattr(self, 'fgh') and plt.fignum_exists(self.fgh.number):
-      plt.figure(self.fgh.number)
-      axh      = self.axh
-      _        = [b.remove() for b in self.hst]
-      w        = stats.w[k]
-      N        = len(w)
-      wmax     = w.max()
-      bins     = exp(linspace(log(1e-5/N), log(1), int(N/20)))
-      counted  = w>bins[0]
-      nC       = np.sum(counted)
-      nn,_,pp  = axh.hist(w[counted],bins=bins,color='b')
-      self.hst = pp
+    if kObs and hasattr(self, 'fig_hw') and plt.fignum_exists(self.fig_hw.number):
+      plt.figure(self.fig_hw.number)
+      ax_hw     = self.ax_hw
+      _         = [b.remove() for b in self.hist]
+      w         = stats.w[k]
+      N         = len(w)
+      wmax      = w.max()
+      bins      = exp(linspace(log(1e-5/N), log(1), int(N/20)))
+      counted   = w>bins[0]
+      nC        = np.sum(counted)
+      nn,_,pp   = ax_hw.hist(w[counted], bins=bins, color='b')
+      self.hist = pp
       #thresh   = '#(w<$10^{'+ str(int(log10(bins[0]*N))) + '}/N$ )'
-      axh.set_title('N: {:d}.   N_eff: {:.4g}.   Not shown: {:d}. '.\
+      ax_hw.set_title('N: {:d}.   N_eff: {:.4g}.   Not shown: {:d}. '.\
           format(N, 1/(w@w), N-nC))
-      update_ylim([nn], axh, cC=True)
+      update_ylim([nn], ax_hw, cC=True)
       plot_pause(0.01)
 
 
@@ -682,9 +491,9 @@ class LivePlot:
     #####################
     # User-defined state
     #####################
-    if hasattr(self,'fgu') and plt.fignum_exists(self.fgu.number):
-      plt.figure(self.fgu.number)
-      self.custom(k,kObs)
+    if hasattr(self,'fig_custom') and plt.fignum_exists(self.fig_custom.number):
+      plt.figure(self.fig_custom.number)
+      self.custom(key,E,P)
       plot_pause(0.01)
 
     # Trackers
@@ -707,15 +516,22 @@ def plot_pause(duration):
     time.sleep(0.1)
 
 
-def setup_wrapping(m):
+def setup_wrapping(m,periodic=True):
   """
   Make periodic indices and a corresponding function
   (that works for ensemble input).
   """
-  ii  = np.hstack([-0.5, range(m), m-0.5])
-  def wrap(E):
-    midpoint = (E[[0],...] + E[[-1],...])/2
-    return ccat(midpoint,E,midpoint)
+
+  if periodic:
+    ii = np.hstack([-0.5, arange(m), m-0.5])
+    def wrap(E):
+      midpoint = (E[[0],...] + E[[-1],...])/2
+      return ccat(midpoint,E,midpoint)
+
+  else:
+    ii = arange(m)
+    wrap = lambda x: x
+
   return ii, wrap
   
 def adjust_position(ax,adjust_extent=False,**kwargs):
@@ -737,6 +553,28 @@ def adjust_position(ax,adjust_extent=False,**kwargs):
   # Set
   ax.set_position(d.values())
 
+# TODO: rename "xtrma"
+def span(xx,axis=None):
+  a = xx.min(axis)
+  b = xx.max(axis)
+  return a, b
+
+def stretch(a,b,factor=1,int=False):
+  """
+  Stretch distance a-b by factor.
+  Return a,b.
+  If int: floor(a) and ceil(b)
+  """
+  c = (a+b)/2
+  a = c + factor*(a-c) 
+  b = c + factor*(b-c) 
+  if int:
+    a = floor(a)
+    b = ceil(b)
+  return a, b
+
+
+
 def update_ylim(data,ax,bottom=None,top=None,Min=-1e20,Max=+1e20,cC=0,cE=1):
   """
   Update ylim's intelligently, mainly by computing
@@ -752,11 +590,6 @@ def update_ylim(data,ax,bottom=None,top=None,Min=-1e20,Max=+1e20,cC=0,cE=1):
   the cost of this subroutine is typically not substantial.
   """
 
-  def stretch(a,b,factor):
-    c = (a+b)/2
-    a = c + factor*(a-c) 
-    b = c + factor*(b-c) 
-    return a, b
   #
   def worth_updating(a,b,curr):
     # Note: should depend on cC and cE
@@ -774,7 +607,6 @@ def update_ylim(data,ax,bottom=None,top=None,Min=-1e20,Max=+1e20,cC=0,cE=1):
       minv, maxv = np.maximum([minv, maxv], \
           array([-1, 1]) * np.percentile(d,[1,99]))
   minv *= -1
-  # Add some stretch
   minv, maxv = stretch(minv,maxv,1.02)
   # Pry apart equal values
   if np.isclose(minv,maxv):
@@ -963,27 +795,26 @@ def plot_hovmoller(xx,chrono=None,**kwargs):
   """
   #cm = mpl.colors.ListedColormap(sns.color_palette("BrBG", 256)) # RdBu_r
   #cm = plt.get_cmap('BrBG')
-  fgH = plt.figure(16,figsize=(4,3.5)).clf()
+  fig, ax = freshfig(16,(4,3.5))
   set_figpos('3311 mac')
-  axH = plt.subplot(111)
 
   m = xx.shape[1]
 
   if chrono!=None:
     kk,_ = get_plot_inds(xx,chrono,mult=40,**kwargs)
     tt   = chrono.tt[kk]
-    axH.set_ylabel('Time (t)')
+    ax.set_ylabel('Time (t)')
   else:
     pK   = estimate_good_plot_length(xx,mult=40)
     tt   = arange(pK)
-    axH.set_ylabel('Time indices (k)')
+    ax.set_ylabel('Time indices (k)')
 
   plt.contourf(arange(m),tt,xx[kk],25)
   plt.colorbar()
-  axH.set_position([0.125, 0.20, 0.62, 0.70])
-  axH.set_title("Hovmoller diagram (of 'Truth')")
-  axH.set_xlabel('Dimension index (i)')
-  add_endpoint_xtick(axH)
+  ax.set_position([0.125, 0.20, 0.62, 0.70])
+  ax.set_title("Hovmoller diagram (of 'Truth')")
+  ax.set_xlabel('Dimension index (i)')
+  add_endpoint_xtick(ax)
 
 
 def add_endpoint_xtick(ax):
@@ -1010,7 +841,8 @@ def not_available_text(ax,txt=None,fs=20):
   ax.text(0.5,0.5,txt,
       fontsize=fs,
       transform=ax.transAxes,
-      va='center',ha='center')
+      va='center',ha='center',
+      wrap=True)
 
 def plot_err_components(stats):
   """
@@ -1343,6 +1175,19 @@ def toggle_viz(h,prompt=True,legend=True):
   plt.pause(0.04)
   return is_viz
 
+def freshfig(num=None,figsize=None,*args,**kwargs):
+  """
+  - If the figure does not exist: create figure it.
+    This allows for figure sizing -- even on Macs.
+  - Otherwise: clear figure (we avoid closing/opening so as
+    to keep (potentially manually set) figure positioning.
+  - The rest is the same as:
+  >>> fig, ax = suplots()
+  """
+  fig = plt.figure(num=num,figsize=figsize)
+  fig.clf()
+  _, ax = plt.subplots(num=fig.number,*args,**kwargs)
+  return fig, ax
 
 def savefig_n(f=None):
   """
@@ -1395,14 +1240,15 @@ def axes_with_marginals(n_joint, n_marg,**kwargs):
   return ax_s, ax_x, ax_y
 
 from matplotlib.patches import Ellipse
-def cov_ellipse(mu, sigma, **kwargs):
+def cov_ellipse(ax, mu, sigma, **kwargs):
     """
     Draw ellipse corresponding to (Gaussian) 1-sigma countour of cov matrix.
 
     Inspired by stackoverflow.com/q/17952171
 
     Example:
-    ax.add_patch(cov_ellipse(y, R, facecolor='none', edgecolor='y',lw=4,label='$1\\sigma$))
+    >>> ellipse = cov_ellipse(ax, y, R,
+    >>>           facecolor='none', edgecolor='y',lw=4,label='$1\\sigma$')
     """
 
     # Cov --> Width, Height, Theta
@@ -1413,8 +1259,14 @@ def cov_ellipse(mu, sigma, **kwargs):
 
     h, w       = 2 * np.sqrt(vals.clip(0))
 
+    # Get artist
+    e = Ellipse(mu, w, h, theta, **kwargs)
+
+    ax.add_patch(e)
+    e.set_clip_box(ax.bbox) # why is this necessary?
+
     # Return artist
-    return Ellipse(mu, w, h, theta, **kwargs)
+    return e
     
 
 

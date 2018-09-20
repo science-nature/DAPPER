@@ -41,8 +41,8 @@ try:
     # can cause tqdm to freeze the entire execution. 
     # Seemingly, this is caused by their multiprocessing-safe stuff.
     # Disable this, as per github.com/tqdm/tqdm/issues/461#issuecomment-334343230
-    try: pb.get_lock().locks = []
-    except AttributeError: pass
+    # try: pb.get_lock().locks = []
+    # except AttributeError: pass
     return pb
 except ImportError as err:
   install_warn(err)

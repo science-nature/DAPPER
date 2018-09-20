@@ -9,7 +9,7 @@
 #   Tellus A 57 (2005) 1–11
 
 import numpy as np
-from tools.math import rk4, is1d
+from tools.math import with_rk4, is1d
 from common import ens_compatible, integrate_TLM
 
 # Constants
@@ -25,9 +25,8 @@ def dxdt(x):
   d[2]  = b*x*y + x*z - z
   return d
 
-
-def step(x0, t0, dt):
-    return rk4(lambda t,x: dxdt(x), x0, np.nan, dt)
+step = with_rk4(dxdt,autonom=True)
+  
 
 def TLM(x):
   """Tangent linear model"""

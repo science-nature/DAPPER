@@ -32,9 +32,19 @@ plot_time_series(stats)
 #print(stats)
 #print(avrgs)
 
-# Excercises:
-# - Try using the Lorenz95 model.
-#   - Find suitable DA configuration (see suggestions in setup file).
-# - Repeat, now with the QG model.
+# Excercise1:
+# - Try using
+#   - The (extended) Kalman filter
+#   - 3D-Var
+#   - Optimal interpolation
+#   - The particle filter
+#   Hint: a list of DA configurations can be found in the file
+#         from which the setup is imported.
+
+# Excercise2:
+# - Repeat the above excercise, now with the model called:
+#   - Lorenz95
+#   - LA
+#   - QG
 
 

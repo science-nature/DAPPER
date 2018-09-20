@@ -296,6 +296,8 @@ Conventions:
 * E,w,A
 * m-by-N
 * m (not ndims coz thats like 2 for matrices), p, chrono
+* n
+* ii, jj
 * xx,yy
 * no obs at 0
 -->
@@ -314,6 +316,7 @@ TODO
 
 <!--
 * Defaults file (fail_gently, liveplotting, mkl.set_num_threads, etc)
+* Replace set_ilabel by [eval("ax.set_%slabel('%s')"%(s,s)) for s in "xyz"]
 * Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
 * Make citation format for DAPPER
 * Rm scripts folder (now that there's example_{1,2,3} ?

@@ -1,8 +1,7 @@
 # Script to illustrate the QG (quasi-geostrophic) model.
 
+from common import *
 from mods.QG.core import sample_filename, nx, square, prms_dict
-from matplotlib import pyplot as plt
-import numpy as np
 
 
 def show(x0,psi=True,ax=None):
@@ -37,8 +36,8 @@ def compute_q(psi):
 ###########
 # Main
 ###########
-fig, (ax1,ax2) = plt.subplots(ncols=2,sharex=True,sharey=True, figsize=(8,4))
-for ax in (ax1,ax2): ax.set_aspect('equal','box-forced')
+fig, (ax1,ax2) = plt.subplots(ncols=2,sharex=True,sharey=True,figsize=(8,4))
+for ax in (ax1,ax2): ax.set_aspect('equal',adjustable_box_or_forced())
 ax1.set_title('$\psi$')
 ax2.set_title('$q$')
 
@@ -46,7 +45,7 @@ xx = np.load(sample_filename)['sample']
 setter1 = show(xx[0],psi=True ,ax=ax1)
 setter2 = show(xx[0],psi=False,ax=ax2)
 
-for k, x in enumerate(xx):
+for k, x in progbar(list(enumerate(xx)),"Animating"):
   if k%2==0:
     setter1(x)
     setter2(x)

@@ -14,6 +14,7 @@
 from common import *
 
 from mods.LA.core import sinusoidal_sample, Fmat
+from mods.Lorenz95.liveplotting import LP_setup
 
 # Burn-in allows damp*x and x+noise balance out
 tseq = Chronology(dt=1,dkObs=5,T=500,BurnIn=60)
@@ -32,19 +33,21 @@ h['noise'] = 0.01
 # But, for strict equivalence, one would have to use
 # uniform (i.e. not Gaussian) random numbers.
 wnumQ = 25
-fname = 'data/samples/LA_Q_wnum' + str(wnumQ) + '.npz'
+sample_filename = 'data/samples/LA_Q_wnum' + str(wnumQ) + '.npz'
+
 try:
   # Load pre-generated
-  L = np.load(fname)['Left']
+  L = np.load(sample_filename)['Left']
 except FileNotFoundError:
   # First-time use
-  NQ        = 20000; # Must have NQ > (2*wnumQ+1)
+  print('Generating a sample from which to initialize experiments.')
+  NQ        = 20000 # Must have NQ > (2*wnumQ+1)
   A         = sinusoidal_sample(m,wnumQ,NQ)
   A         = 1/10 * anom(A)[0] / sqrt(NQ)
   Q         = A.T @ A
   U,s,_     = tsvd(Q)
   L         = U*sqrt(s)
-  np.savez(fname, Left=L)
+  np.savez(sample_filename, Left=L)
 
 X0 = GaussRV(C=CovMat(sqrt(5)*L,'Left'))
 
@@ -63,8 +66,10 @@ f = {
     }
 
 ################### Gather ###################
-other = {'name': os.path.relpath(__file__,'mods/')}
-setup = TwinSetup(f,h,tseq,X0,**other)
+setup = TwinSetup(f,h,tseq,X0,
+    name = os.path.relpath(__file__,'mods/'),
+    LP   = LP_setup(jj),
+    )
 
 
 
@@ -90,5 +95,5 @@ setup = TwinSetup(f,h,tseq,X0,**other)
 # Why is rmse so INsensitive to inflation, especially for PertObs?
 # This is largely explained by the paragraph
 # "Cataloguing the circumstances for inflation"
-# of Raanes and Bocquet, 2017.
+# of Raanes and Bocquet, 2018.
 # A similar case, but with N=60: infl=1.00, and 1.80.

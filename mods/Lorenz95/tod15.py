@@ -19,7 +19,7 @@ X0 = GaussRV(m=m, C=0.001)
 
 jj = arange(0,m,2)
 h = partial_direct_obs_setup(m,jj)
-h['loc_f'] = loc_setup( (m,), (1,), jj, periodic=True )
+h['localizer'] = loc_setup( (m,), (1,), jj, periodic=True )
 #h['noise'] = LaplaceRV(C=1,m=len(jj))
 h['noise'] = LaplaceParallelRV(C=1,m=len(jj))
 

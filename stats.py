@@ -68,11 +68,12 @@ class Stats(MLR_Print):
       E=None,w=None,mu=None,Cov=None):
     """
     Common interface for both assess_ens and _ext.
+
     f_a_u: One or more of ['f',' a', 'u'], indicating
            that the result should be stored in (respectively)
            the forecast/analysis/universal attribute.
-           Defaults: see source code.
-    If 'u' in f_a_u: call/update LivePlot.
+
+    f_a_u has intelligent defaults. See source code. 
     """
 
     # Initial consistency checks.
@@ -88,18 +89,16 @@ class Stats(MLR_Print):
       else:
         if E is not None:  rze("mu/Cov","E","not")
         if mu is None:     rze("mu/Cov","mu","")
-    
 
-    # Defaults for f_a_u
-    if f_a_u is None:
+    # Intelligent defaults: f_a_u 
+    if f_a_u is None:    # Append 'u'; Assume 'a' if kObs:
+      f_a_u = 'u' if kObs is None else 'au'
+    elif f_a_u == 'f':   # Append 'u':
+      f_a_u = 'fu'
+    elif f_a_u == 'fau': # This is for Climatology() only:
       if kObs is None:
         f_a_u = 'u'
-      else:
-        f_a_u = 'au'
-    elif f_a_u == 'fau':
-      if kObs is None:
-        f_a_u = 'u'
-
+    # Assemble key
     key = (k,kObs,f_a_u)
 
     LP      = self.config.liveplotting
@@ -134,12 +133,12 @@ class Stats(MLR_Print):
         warnings.warn("Sample variance was 0 at (k,kObs,fau) = " + str(key))
 
 
-      # LivePlot
-      if LP:
-        if k==0:
-          self.lplot = LivePlot(self,**state_prms,only=LP)
-        elif 'u' in f_a_u:
-          self.lplot.update(k,kObs,**state_prms)
+      # LivePlot -- called if ('u' in f_a_u)
+      if LP and 'u' in f_a_u:
+        if hasattr(self,'lplot'):
+          self.lplot.update(key,**state_prms)
+        else:
+          self.lplot = LivePlot(self,key,**state_prms,only=LP)
 
 
   def assess_ens(self,k,E,w=None):

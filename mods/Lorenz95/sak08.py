@@ -4,10 +4,11 @@
 
 from common import *
 
-from mods.Lorenz95.core import step, dfdx, typical_init_params
+from mods.Lorenz95.core import step, dfdx
 from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
+from mods.Lorenz95.liveplotting import LP_setup
 
-t = Chronology(0.05,dkObs=1,T=4**5,BurnIn=20)
+t = Chronology(0.05,dkObs=5,T=4**5,BurnIn=20)
 
 m = 40
 f = {
@@ -18,21 +19,17 @@ f = {
     }
 
 X0 = GaussRV(m=m, C=0.001) 
-#X0 = GaussRV(*typical_init_params(m))
 
-h = {
-    'm'    : m,
-    'model': Id_op(),
-    'jacob': Id_mat(m),
-    'noise': 1, # abbrev GaussRV(C=CovMat(eye(m)))
-    'plot' : lambda y: plt.plot(y,'g')[0],
-    'loc_f': loc_setup( (m,), (2,), arange(m), periodic=True )
-    }
+jj = arange(m) # obs_inds
+h = partial_direct_obs_setup(m, jj)
+h['noise'] = 1
+h['localizer'] = loc_setup( (m,), (2,), jj, periodic=True )
 
 
-other = {'name': os.path.relpath(__file__,'mods/')}
-setup = TwinSetup(f,h,t,X0,**other)
-
+setup = TwinSetup(f,h,t,X0,
+    LP   = LP_setup(jj),
+    name = os.path.relpath(__file__,'mods/'),
+    )
 
 
 ####################
@@ -100,3 +97,5 @@ setup = TwinSetup(f,h,t,X0,**other)
 # PartFilt  0.5   0.9  |  0.30    0.34  
 # PartFilt  0.5   1.2  |  0.36    0.40  
 # Using NER=0.9 yielded rather poor results.
+
+

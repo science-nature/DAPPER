@@ -1,31 +1,21 @@
-# "Lorenz-95" (or 96) model.
-# 
-# A summary for the purpose of DA is provided in
-# section 3.5 of thesis found at
-# ora.ox.ac.uk/objects/uuid:9f9961f0-6906-4147-a8a9-ca9f2d0e4a12
-#
-# A more detailed summary is given in Chapter 11 of 
-# Majda, Harlim: Filtering Complex Turbulent Systems"
+# "Lorenz-95" (or 96) model. For a deeper introduction, see
+# "DAPPER/tutorials/T4 - Dynamical systems, chaos, Lorenz.ipynb"
 #
 # Note: implementation is ndim-agnostic.
-#
-# Note: the model integration is unstable (--> infinity)
-# in the presence of large peaks in amplitude,
-# Example: x = [0,-30,0,30]; step(x,dt=0.05,recursion=4).
-# This may be occasioned by the Kalman analysis update,
-# especially if the system is only partially observed.
-# Is this effectively a CFL condition? Could be addressed by:
-#  - post-processing,
-#  - modifying the step() function, e.g.:
-#    - crop amplitude
-#    - or lowering dt
-#    - using an implicit time stepping scheme instead of rk4
 
 import numpy as np
 from scipy.linalg import circulant
 from tools.math import rk4, integrate_TLM, is1d
 
-Force           = 8.0
+Force = 8.0
+
+# Note: the model is unstable (blows up) if there are large peaks
+# (as may be occasioned by the analysis update, especially with partial obs). 
+# Example: integrate 4 steps with dt=0.05 from x0 = [0,-30,0,30].
+# This is effectively a CFL condition... Can be addressed by:
+#  - lowering dt
+#  - using an implicit time stepping scheme instead of rk4
+#  - stupidly crop amplitudes, as is done here:
 prevent_blow_up = False
 
 def dxdt(x):
@@ -35,9 +25,9 @@ def dxdt(x):
 
 def step(x0, t, dt):
 
-  #if prevent_blow_up:
-    #clip      = abs(x0)>30
-    #x0[clip] *= 0.1
+  if prevent_blow_up:
+    clip      = abs(x0)>30
+    x0[clip] *= 0.1
 
   return rk4(lambda t,x: dxdt(x), x0, np.nan, dt)
 

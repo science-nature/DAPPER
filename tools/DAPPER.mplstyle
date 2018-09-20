@@ -5,7 +5,5 @@ legend.framealpha: 0.8
 legend.fontsize: small
 lines.linewidth   : 2
 
-
-
-axes.axisbelow: line # if True or 'line': then (e.g.) inwards ticks get hidden on colorbars. 
+# axes.axisbelow: # if True or 'line': then (e.g.) inward ticks get hidden on colorbars. 
 

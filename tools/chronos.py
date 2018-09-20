@@ -234,4 +234,16 @@ class Ticker:
     return tple
 
 
+def format_time(k,kObs,t):
+  if k==None:
+    k    = "init"
+    t    = "init"
+    kObs = "N/A"
+  else:
+    t    = "   t=%g"%t
+    k    = "   k=%d"%k
+    kObs = "kObs=%s"%kObs
+  s = "\n".join([t,k,kObs])
+  return s
+
 

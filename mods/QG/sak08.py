@@ -3,7 +3,7 @@
 from common import *
 
 from mods.QG.core import step, dt, shape, order, sample_filename
-from mods.QG.liveplotting import liveplotter
+from mods.QG.liveplotting import LP_setup
 from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 
 ############################
@@ -62,13 +62,13 @@ batch_shape = [3, 3] # width (in grid points) of each state batch.
 #  => quicker analysis (but less relative speed-up by parallelization, depending on NPROC)
 #  => worse (increased) rmse (but width 4 is only slightly worse than 1);
 #     if inflation is applied locally, then rmse might actually improve.
-loc_f = loc_setup(shape[::-1], batch_shape[::-1], obs_inds, periodic=False)
+localizer = loc_setup(shape[::-1], batch_shape[::-1], obs_inds, periodic=False)
 
 h = {
     'm'    : p,
     'model': hmod,
     'noise': GaussRV(C=4*eye(p)),
-    'loc_f': loc_f,
+    'localizer': localizer,
     }
 
 # Moving localization mask for smoothers:
@@ -81,11 +81,10 @@ h['loc_shift'] = lambda ii, dt: ii # no movement (suboptimal, but easy)
 ############################
 # Other
 ############################
-LP = functools.partial(liveplotter,obs_inds=obs_inds)
-
-setup = TwinSetup(f,h,t,X0,LP=LP)
-setup.name = os.path.relpath(__file__,'mods/')
-
+setup = TwinSetup(f,h,t,X0,
+    LP   = LP_setup(obs_inds),
+    name = os.path.relpath(__file__,'mods/'),
+ )
 
 
 ####################

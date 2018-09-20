@@ -404,7 +404,7 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
         y    = yy[kObs]
         inds = serial_inds(ordr, y, R, anom(E)[0])
             
-        state_localizer = h.loc_f(loc_rad, 'y2x', t, taper)
+        state_localizer = h.localizer(loc_rad, 'y2x', t, taper)
         for j in inds:
           # Prep:
           # ------------------------------------------------------
@@ -524,7 +524,7 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
         Y  = Y        @ R.sym_sqrt_inv.T
         dy = (y - hx) @ R.sym_sqrt_inv.T
 
-        state_batches, obs_localizer = h.loc_f(loc_rad, 'x2y', t, taper)
+        state_batches, obs_localizer = h.localizer(loc_rad, 'x2y', t, taper)
         # for ii in state_batches:
         def local_analysis(ii):
 
@@ -1103,7 +1103,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,iMax=10,xN=1.0,infl=1.0,rot=False,**
         DAW_dt = chrono.ttObs[DAW[-1]] - chrono.ttObs[DAW[0]] + chrono.dtObs
 
         # Get localization setup (at time t)
-        state_batches, obs_localizer = h.loc_f(loc_rad, 'x2y', chrono.ttObs[kObs], taper)
+        state_batches, obs_localizer = h.localizer(loc_rad, 'x2y', chrono.ttObs[kObs], taper)
         nBatch = len(state_batches)
 
         # Store 0th (iteration) estimate as (xf,Af)
@@ -2283,7 +2283,7 @@ def LNETF(N,loc_rad,taper='GC',infl=1.0,Rs=1.0,rot=False,**kwargs):
         YR = (hE-hx)  @ Rm12.T
         yR = (yy[kObs] - hx) @ Rm12.T
 
-        state_batches, obs_localizer = h.loc_f(loc_rad, 'x2y', t, taper)
+        state_batches, obs_localizer = h.localizer(loc_rad, 'x2y', t, taper)
         for ii in state_batches:
           # Localize obs
           jj, coeffs = obs_localizer(ii)

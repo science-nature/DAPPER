@@ -118,8 +118,9 @@ def DA_Config(da_method):
                 msg += ["<"*20 + "\n"]
                 msg += crop_traceback(ERR,1) + [str(ERR)]
                 msg += ["\n" + ">"*20]
-                msg += ["Returning stats (time series) object in its"+\
-                    " current (incompleted) state\n, and resuming program execution.\n"]
+                msg += ["Returning stats (time series) object in its "+\
+                    "current (incompleted) state,\nand resuming program execution.\n"+\
+                    "Turn off the fail_gently attribute of the DA config to fully raise the exception.\n"]
                 for s in msg:
                   print(s,file=sys.stderr)
               else: # Don't fail gently.

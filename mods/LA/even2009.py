@@ -11,6 +11,7 @@
 from common import *
 
 from mods.LA.core import sinusoidal_sample, Fmat
+from mods.Lorenz95.liveplotting import LP_setup
 
 m = 1000
 p = 4
@@ -37,19 +38,15 @@ f = {
 # Yet this is not so implausible because sinusoidal_sample()
 # yields (multivariate) uniform (random numbers) -- not Gaussian.
 wnum  = 25
-X0 = RV(func= lambda N: sqrt(5)/10 * sinusoidal_sample(m,wnum,N))
-
-def yplot(y):
-  lh = plt.plot(jj,y,'g*',MarkerSize=8)[0]
-  plt.pause(0.8)
-  return lh
+X0 = RV(m=m, func = lambda N: sqrt(5)/10 * sinusoidal_sample(m,wnum,N))
 
 h = partial_direct_obs_setup(m,jj)
 h['noise'] = 0.01
-h['plot'] = yplot
 
-other = {'name': os.path.relpath(__file__,'mods/')}
-setup = TwinSetup(f,h,tseq,X0,**other)
+setup = TwinSetup(f,h,tseq,X0,
+    LP   = LP_setup(jj,conf_patch=True,conf_mult=1),
+    name = os.path.relpath(__file__,'mods/'),
+    )
 
 
 
@@ -57,19 +54,8 @@ setup = TwinSetup(f,h,tseq,X0,**other)
 # Suggested tuning
 ####################
 
-# Not carefully tuned
-#config.N         = 100
-#config.infl      = 1.02
-#config.upd_a   = 'PertObs'
-#config.rot       = False
-#config.da_driver = EnKF
+# Not carefully tuned.
+# NB: Note how inflation is not necessary for good rmse performance.
+# config = EnKF('PertObs',N=100,infl=1.02)
+config = EnKF('PertObs',N=30 ,infl=3.4) # 0.3
 
-# Expected rmse_a = 0.3
-#config.N         = 30
-#config.infl      = 3.4
-#config.upd_a   = 'PertObs'
-#config.rot       = False
-#config.da_driver = EnKF
-
-# NB: Note how inflation is not necessary
-# for good rmse performance.

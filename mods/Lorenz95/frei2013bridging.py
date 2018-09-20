@@ -34,7 +34,7 @@ X0 = GaussRV(m=m, C=0.001)
 jj = 1 + arange(0,m,2)
 h = partial_direct_obs_setup(m,jj)
 h['noise'] = 0.5
-h['loc_f'] = loc_setup( (m,), (2,), jj, periodic=True )
+h['localizer'] = loc_setup( (m,), (2,), jj, periodic=True )
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 setup = TwinSetup(f,h,t,X0,**other)

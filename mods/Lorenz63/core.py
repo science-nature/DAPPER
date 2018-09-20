@@ -1,9 +1,6 @@
 # "Lorenz-63"  model. Classic exhibitor of chaos.
 # Phase-plot looks like a butterfly.
-# 
-# A summary for the purpose of DA is provided in section 3.4
-# of thesis found at
-# ora.ox.ac.uk/objects/uuid:9f9961f0-6906-4147-a8a9-ca9f2d0e4a12
+# See demo.py for more info.
 
 import numpy as np
 from tools.math import with_rk4, is1d, ens_compatible, integrate_TLM

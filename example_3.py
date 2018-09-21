@@ -26,7 +26,7 @@ setup.t.T = 4**4.0
 
 # Specify the control variable (i.e. the plotting xlabel) of interest.
 CtrlVar = sys.argv[1] # command-line argument #1
-#CtrlVar = 'N'
+# CtrlVar = 'N'
 
 # Define range of the experiment control variable.
 if CtrlVar == 'N': # Ensemble size.
@@ -109,7 +109,7 @@ def L95_lag(N,F):
 avrgs = np.empty((len(xticks),1,len(cfgs)),dict)
 # avrgs uses nRepeats=1 coz repetition is done by xticks replication.
 
-#stats = np.empty_like(avrgs)
+# stats = np.empty_like(avrgs)
 # Lines with the 'stats' array are commented out so that the stat objects
 # (which contain full time series and therefore might require significant memory)
 # that the array would hold, instead get discarded after each loop iterate.
@@ -125,7 +125,7 @@ for iX,(X,iR) in enumerate(zip(xticks,rep_inds)):
     C = adjust_cfg(C,CtrlVar,X)
     seed(sd0+iR)
     stat = C.assimilate(setup,xx,yy)
-    #stats[iX,0,iC] = stat
+    # stats[iX,0,iC] = stat
     avrgs[iX,0,iC] = stat.average_in_time()
 
   print_averages(cfgs,avrgs[iX,0])
@@ -148,7 +148,7 @@ if 'WORKER' in sys.argv: sys.exit(0) # quit if script is running as worker.
 R = ResultsTable(save_path)
 # ... => could be run as a separate script,
 # ... or downloaded data (e.g. from parallelization):
-#R = ResultsTable('data/example_3/MyRemoteHost/N_runX')
+# R = ResultsTable('data/example_3/MyRemoteHost/N_runX')
 
 ##
 R = ResultsTable('data/example_3/johansen/N_run1') # all

@@ -29,7 +29,7 @@ cfgs += Var3D()
 cfgs += ExtKF(infl=6)
 cfgs += EnKF_N(N=25,rot=False)
 
-#cfgs.assign_names()
+# cfgs.assign_names()
 
 ############################
 # Assimilate
@@ -53,4 +53,4 @@ for iX,X in enumerate(xticks):
   print_c('Average over',nRepeat,'repetitions:')
   print_averages(cfgs,avrg)
 
-#save_data(save_path,inds,xticks=xticks,stng_var=stng_var,avrgs=avrgs,xx=xx,yy=yy)
+# save_data(save_path,inds,xticks=xticks,stng_var=stng_var,avrgs=avrgs,xx=xx,yy=yy)

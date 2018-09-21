@@ -35,11 +35,11 @@ setup = TwinSetup(f,h,t,X0,**other)
 ####################
 # Compare with Anderson's figure 10.
 # Benchmarks are fairly reliable (KObs=2000): 
-#from mods.Lorenz63.anderson2010rhf import setup         # rmse_a
-#cfgs += SL_EAKF(N=20,infl=1.01,rot=True,loc_rad=np.nan) # 0.87
-#cfgs += EnKF_N (N=20,rot=True)                          # 0.87
-#cfgs += RHF    (N=50,infl=1.10)                         # 1.28
-#cfgs += RHF    (N=50,infl=0.95,rot=True)                # 0.94
-#cfgs += RHF    (N=20,infl=0.95,rot=True)                # 1.07
+# from mods.Lorenz63.anderson2010rhf import setup         # rmse_a
+# cfgs += SL_EAKF(N=20,infl=1.01,rot=True,loc_rad=np.nan) # 0.87
+# cfgs += EnKF_N (N=20,rot=True)                          # 0.87
+# cfgs += RHF    (N=50,infl=1.10)                         # 1.28
+# cfgs += RHF    (N=50,infl=0.95,rot=True)                # 0.94
+# cfgs += RHF    (N=20,infl=0.95,rot=True)                # 1.07
 
 

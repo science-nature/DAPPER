@@ -27,24 +27,21 @@ print_averages(config,avrgs,[],['rmse_a','rmv_a'])
 plot_time_series(stats)
 
 # "Explore" objects individually
-#print(setup)
-#print(config)
-#print(stats)
-#print(avrgs)
+# print(setup)
+# print(config)
+# print(stats)
+# print(avrgs)
 
-# Excercise1:
-# - Try using
-#   - The (extended) Kalman filter
-#   - 3D-Var
-#   - Optimal interpolation
-#   - The particle filter
-#   Hint: a list of DA configurations can be found in the file
-#         from which the setup is imported.
+# Excercise: Try using
+# - The (extended) Kalman filter
+# - 3D-Var
+# - Optimal interpolation
+# - The particle filter
+# Hint: suggested DA configs are listed in the setup file (imported above)
 
-# Excercise2:
-# - Repeat the above excercise, now with the model called:
-#   - Lorenz95
-#   - LA
-#   - QG
+# Excercise: Repeat the above excercise, but now with the models:
+# - Lorenz95
+# - LA
+# - QG
 
 

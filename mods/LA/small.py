@@ -13,8 +13,8 @@ tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1)
 
 m = 100
 
-#def step(x,t,dt):
-  #return np.roll(x,1,axis=x.ndim-1)
+# def step(x,t,dt):
+  # return np.roll(x,1,axis=x.ndim-1)
 Fm = Fmat(m,-1,1,tseq.dt)
 def step(x,t,dt):
   assert dt == tseq.dt
@@ -43,4 +43,4 @@ setup = TwinSetup(f,h,tseq,X0,**other)
 # Suggested tuning
 ####################
 
-#config.N = 100
+# config.N = 100

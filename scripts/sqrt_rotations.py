@@ -11,16 +11,16 @@ sd0 = seed(9)
 ############################
 cfgs  = List_of_Configs()
 
-#from mods.Lorenz63.sak12 import setup
-#cfgs += EnKF('Sqrt',N=6,infl=1.08,rot=False)
-#cfgs += EnKF('Sqrt',N=6,infl=1.08,rot=True)
-#cfgs += EnKF('Sqrt',N=20,infl=1.01,rot=True)
-#cfgs += EnKF('Sqrt',N=20,infl=1.01,rot=False)
-#cfgs += EnKF('Sqrt',N=20,infl=1.01,rot=0.7)
-#cfgs += EnKF('Sqrt',N=20,infl=1.01,rot=(2,0.6))
-#cfgs += EnKF_N(N=20,rot=False)
-#cfgs += EnKF_N(N=20,rot=0.7)
-#cfgs += EnKF_N(N=20,rot=True)
+# from mods.Lorenz63.sak12 import setup
+# cfgs += EnKF('Sqrt',N=6,infl=1.08,rot=False)
+# cfgs += EnKF('Sqrt',N=6,infl=1.08,rot=True)
+# cfgs += EnKF('Sqrt',N=20,infl=1.01,rot=True)
+# cfgs += EnKF('Sqrt',N=20,infl=1.01,rot=False)
+# cfgs += EnKF('Sqrt',N=20,infl=1.01,rot=0.7)
+# cfgs += EnKF('Sqrt',N=20,infl=1.01,rot=(2,0.6))
+# cfgs += EnKF_N(N=20,rot=False)
+# cfgs += EnKF_N(N=20,rot=0.7)
+# cfgs += EnKF_N(N=20,rot=True)
 
 
 from mods.Lorenz95.sak08 import setup
@@ -43,7 +43,7 @@ stats = []
 avrgs = []
 
 for ic,config in enumerate(cfgs):
-  #config.liveplotting = True
+  # config.liveplotting = True
   seed(sd0+2)
 
   stats += [ config.assimilate(setup,xx,yy) ]

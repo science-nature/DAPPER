@@ -304,6 +304,7 @@ Conventions:
 
 TODO
 ------------------------------------------------
+* LotkaVolterra, 2pendulum, Kuramoto-Sivashinsky , Nikolaevskiy Equation
 * Flytt inflasjon foer tapering i LETKF (og iLEnKS). Test med L95, QG
 * Lage demo fil for hver modell
 * Remark colorama dependency

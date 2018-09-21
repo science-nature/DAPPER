@@ -35,57 +35,57 @@ setup = TwinSetup(f,h,t,X0,
 ####################
 # Suggested tuning
 ####################
-# Reproduce Sakov'2008 "deterministic"                    # Expected RMSE_a:
-#cfgs += EnKF('PertObs',N=40, infl=1.06)                  # 0.22
-#cfgs += EnKF('DEnKF'  ,N=40, infl=1.01)                  # 0.18
-#cfgs += EnKF('PertObs',N=28, infl=1.08)                  # 0.24
-#cfgs += EnKF('Sqrt'   ,N=24, infl=1.013,rot=True)        # 0.18
+# Reproduce Sakov'2008 "deterministic"                     # Expected RMSE_a:
+# cfgs += EnKF('PertObs',N=40, infl=1.06)                  # 0.22
+# cfgs += EnKF('DEnKF'  ,N=40, infl=1.01)                  # 0.18
+# cfgs += EnKF('PertObs',N=28, infl=1.08)                  # 0.24
+# cfgs += EnKF('Sqrt'   ,N=24, infl=1.013,rot=True)        # 0.18
 
 # Other
-#cfgs += EnKF_N(N=24,rot=True) # no tuning!               # 0.21
-#cfgs += EnKF_N(N=24,rot=True,xN=2.0)                     # 0.18
-#cfgs += iEnKS('Sqrt',N=40,infl=1.01,rot=True)            # 0.17
+# cfgs += EnKF_N(N=24,rot=True) # no tuning!               # 0.21
+# cfgs += EnKF_N(N=24,rot=True,xN=2.0)                     # 0.18
+# cfgs += iEnKS('Sqrt',N=40,infl=1.01,rot=True)            # 0.17
 
 # Localized
-#cfgs += LETKF(         N=7,rot=True,infl=1.04,loc_rad=4) # 0.22
-#cfgs += SL_EAKF(       N=7,rot=True,infl=1.07,loc_rad=6) # 0.23
+# cfgs += LETKF(         N=7,rot=True,infl=1.04,loc_rad=4) # 0.22
+# cfgs += SL_EAKF(       N=7,rot=True,infl=1.07,loc_rad=6) # 0.23
 # Reproduce LETKF scores from Bocquet'2011 "EnKF-N" fig 6:
-#cfgs += LETKF(N=6,rot=True,infl=1.05,loc_rad=4,taper='Step')
+# cfgs += LETKF(N=6,rot=True,infl=1.05,loc_rad=4,taper='Step')
 
 # Other
-#cfgs += Climatology()                                    # 3.6 
-#cfgs += OptInterp()                                      # 0.95 
-#cfgs += Var3D_Lag(infl=0.5)
-#cfgs += Var3D(infl=1.05)                                 # 0.41 
-#cfgs += ExtKF(infl=10)                                   # 0.24 
+# cfgs += Climatology()                                    # 3.6 
+# cfgs += OptInterp()                                      # 0.95 
+# cfgs += Var3D_Lag(infl=0.5)
+# cfgs += Var3D(infl=1.05)                                 # 0.41 
+#cfgs += ExtKF(infl=10)                                    # 0.24 
 
 # Reproduce Table 3 (IEnKF) from sakov2012iterative
 #setup.t.dkObs = 12
-#cfgs += iEnKS('Sqrt' ,N=25,Lag=1,iMax=10,infl=1.2,rot=1) # 0.46
+#cfgs += iEnKS('Sqrt' ,N=25,Lag=1,iMax=10,infl=1.2,rot=1)  # 0.46
 
 
 # Reproduce Fig 3 of Bocquet'2015 "expanding"
-#cfgs += EnKF('Sqrt',N=20,rot=True,infl=1.04)             # 0.20
+# cfgs += EnKF('Sqrt',N=20,rot=True,infl=1.04)             # 0.20
 # # use infl=1.10 with dkObs=3
 # # use infl=1.40 with dkObs=5
-# cfgs += EnKF_N(N=20)                                    # 0.24
-# cfgs += EnKF_N(N=20,xN=2)                               # 0.19
+# cfgs += EnKF_N(N=20)                                     # 0.24
+# cfgs += EnKF_N(N=20,xN=2)                                # 0.19
 # # Also try quasi-linear regime:
-# t = Chronology(0.01,dkObs=1,T=4**4,BurnIn=20)
+# t = Chronology(0.01,dkObs=1,...)
 
 # Reproduce Fig 7a of Bocquet'2014 "an iterative EnKS"
 # Similar settings also in Fig 7.3 of DA book by Asch, Bocquet, Nodet.
-#cfgs += iEnKS('-N', N=20,Lag=10,xN=2.0)                  # 0.163
-#cfgs += iEnKS('-N', N=20,Lag=20,xN=2.0)                  # 0.160 
+# cfgs += iEnKS('-N', N=20,Lag=10,xN=2.0)                  # 0.163
+# cfgs += iEnKS('-N', N=20,Lag=20,xN=2.0)                  # 0.160 
 # using setup.t.dkObs = 8:
-#cfgs += iEnKS('-N', N=20,Lag=2,xN=1.0)                   # 0.39
+# cfgs += iEnKS('-N', N=20,Lag=2,xN=1.0)                   # 0.39
 #
 # Fig 2 (smoother averages):
-#cfgs += iEnKS('-N', N=20,Lag=10,xN=2.0)                  # 0.163
+# cfgs += iEnKS('-N', N=20,Lag=10,xN=2.0)                  # 0.163
 # The analysis-time smoother averages can be computed as
 # mean(s[indx].rmse.u[setup.t.kkObs_BI])
 # while universal-time averages are given by 
-#print_averages(cfgs,avrgs,[],['rmse_u'])
+# print_averages(cfgs,avrgs,[],['rmse_u'])
 
 
 # Tests with the Particle filter, with N=3000, KObs=10'000.

@@ -78,7 +78,7 @@ setup = TwinSetup(f,h,tseq,X0,
 ####################
 
 ## Expected rmse_a = 0.3
-#config = EnKF('PertObs',N=30,infl=3.2)
+# config = EnKF('PertObs',N=30,infl=3.2)
 
 # Reproduce raanes'2015 "extending sqrt method to model noise":
 # config = EnKF('Sqrt',fnoise_treatm='XXX',N=30,infl=1.0),

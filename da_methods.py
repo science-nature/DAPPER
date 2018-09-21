@@ -428,9 +428,9 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
           # Update state (regress update from observation space)
           # ------------------------------------------------------
           # --- Localized
-          ii, coeffs = state_localizer(j)
+          ii, tapering = state_localizer(j)
           if len(ii) == 0: continue
-          Regression = (A[:,ii]*coeffs).T @ Y_j/np.sum(Y_j**2)
+          Regression = (A[:,ii]*tapering).T @ Y_j/np.sum(Y_j**2)
           mu[ ii]   += Regression*dy2
           A[:,ii]   += np.outer(Y2 - Y_j, Regression)
           # --- Without localization:
@@ -529,7 +529,7 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
         def local_analysis(ii):
 
           # Locate local obs
-          jj, coeffs = obs_localizer(ii)
+          jj, tapering = obs_localizer(ii)
           if len(jj) == 0: return
           Y_jj   = Y[:,jj]
           dy_jj  = dy [jj]
@@ -538,8 +538,8 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
           za = effective_N(Y_jj,dy_jj,xN,g) if infl=='-N' else N1
 
           # Taper
-          Y_jj  *= sqrt(coeffs)
-          dy_jj *= sqrt(coeffs)
+          Y_jj  *= sqrt(tapering)
+          dy_jj *= sqrt(tapering)
 
           # Compute ETKF update
           if len(jj) < N:
@@ -1151,10 +1151,10 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,iMax=10,xN=1.0,infl=1.0,rot=False,**
               # Shift indices (to adjust for time difference)
               ii_kObs = h.loc_shift(ii, DAW_dt)
               # Localize
-              jj, coeffs = obs_localizer(ii_kObs)
+              jj, tapering = obs_localizer(ii_kObs)
               if len(jj) == 0: continue
-              Y_jj   = Y[:,jj] * sqrt(coeffs)
-              dy_jj  = dy[jj]  * sqrt(coeffs)
+              Y_jj   = Y[:,jj] * sqrt(tapering)
+              dy_jj  = dy[jj]  * sqrt(tapering)
 
               # "Uncondition" the observation anomalies
               # (and yet this linearization of h improves with iterations)
@@ -2286,11 +2286,11 @@ def LNETF(N,loc_rad,taper='GC',infl=1.0,Rs=1.0,rot=False,**kwargs):
         state_batches, obs_localizer = h.localizer(loc_rad, 'x2y', t, taper)
         for ii in state_batches:
           # Localize obs
-          jj, coeffs = obs_localizer(ii)
+          jj, tapering = obs_localizer(ii)
           if len(jj) == 0: return
 
-          Y_jj  = YR[:,jj] * sqrt(coeffs)
-          dy_jj = yR[jj]   * sqrt(coeffs)
+          Y_jj  = YR[:,jj] * sqrt(tapering)
+          dy_jj = yR[jj]   * sqrt(tapering)
 
           # NETF:
           # This "paragraph" is the only difference to the LETKF.

@@ -93,25 +93,6 @@ getch = _find_getch()
 
 
 
-# Terminal color codes. Use:
-termcolors={
-    'blue'      : '\033[94m',
-    'green'     : '\033[92m',
-    'OKblue'    : '\033[94m',
-    'OKgreen'   : '\033[92m',
-    'WARNING'   : '\033[93m',
-    'FAIL'      : '\033[91m',
-    'ENDC'      : '\033[0m' ,
-    'header'    : '\033[95m',
-    'bold'      : '\033[1m' ,
-    'underline' : '\033[4m' ,
-}
-
-def print_c(*args,color='blue',**kwargs):
-  s = ' '.join([str(k) for k in args])
-  print(termcolors[color] + s + termcolors['ENDC'],**kwargs)
-
-
 import inspect
 def spell_out(*args):
   """

@@ -26,7 +26,7 @@ def distance_nd(centr, pts, shape, periodic=True):
 
 def dist2coeff(dists, radius, tag=None):
   """
-  Compute coefficients corresponding to a distances.
+  Compute tapering coefficients corresponding to a distances.
 
   NB: The radius is internally adjusted such that independently of 'tag',
   coeff==exp(-0.5) when distance==radius.
@@ -80,7 +80,7 @@ def inds_and_coeffs(dists, radius, cutoff=None, tag=None):
   """
   Returns
   inds   : the indices of pts that are "close to" centr.
-  coeffs : the corresponding coefficients.
+  coeffs : the corresponding tapering coefficients.
   """
   if cutoff is None:
     cutoff = CUTOFF
@@ -197,7 +197,7 @@ def no_localization(shape,obs_inds):
 
   def loc_setup(radius,direction,t,tag=None):
     """
-    Returns all indices, with all coeffs=1.
+    Returns all indices, with all tapering coeffs=1.
     Useful for testing local DA methods without localization. Examples:
      - To test if LETKF <==> EnKF('Sqrt') -- alternatively: set loc_rad=inf;
      - Pretend that Lorenz63 has localization.

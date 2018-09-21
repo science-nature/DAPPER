@@ -76,7 +76,7 @@ def foo(_):
   slope_pinv  = lambda t: (r1-r2)/R11*sin(2*t)/2
 
   def contour1(mu, C,col,**kwargs):
-    return ax.add_patch(cov_ellipse(mu, C, edgecolor=col,lw=4, facecolor='none',**kwargs))
+    return cov_ellipse(ax, mu, C, edgecolor=col,lw=4, facecolor='none',**kwargs)
 
   if len(hh):
     hh['E_y'].set_offsets(y.ravel())

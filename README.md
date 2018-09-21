@@ -46,6 +46,8 @@ I.e. it is not designed for the assimilation of real data in operational models 
 
 A good place to start is with the scripts `example_{1,2,3}.py`.
 Alternatively, see the `tutorials` folder for an intro to DA.
+There is no unified documentation,
+but the code is well-commented, and has decent docstrings.
 
   
 Installation
@@ -62,7 +64,8 @@ Download, extract the DAPPER folder, and `cd` into it. To test it, run:
 For the tutorials, you will also need
 `jupyter` and the `markdown` package.
 
-It is also recommended to install `tqdm` (e.g. `pip install tqdm`).
+It is also recommended to install `tqdm` (e.g. `pip install tqdm`)
+and `colorama`.
 
 
 
@@ -303,25 +306,18 @@ Conventions:
 -->
 
 
+<!--
 TODO
 ------------------------------------------------
 * LotkaVolterra, 2pendulum, Kuramoto-Sivashinsky , Nikolaevskiy Equation
-* Flytt inflasjon foer tapering i LETKF (og iLEnKS). Test med L95, QG
-* Lage demo fil for hver modell
-* Remark colorama dependency
-* Rm doc folder (coz people expect to find actual docs). State that docs: examples
-* Rm script folder.
-* Reorg file structure
-* Turn into package?
+* Lage demo fil/liveplotting for LorenzUV
+* Reorg file structure: Turn into package?
 * Simplify time management?
 * Use pandas for stats time series?
-
-<!--
 * Defaults file (fail_gently, liveplotting, mkl.set_num_threads, etc)
 * Replace set_ilabel by [eval("ax.set_%slabel('%s')"%(s,s)) for s in "xyz"]
 * Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
 * Make citation format for DAPPER
-* Rm scripts folder (now that there's example_{1,2,3} ?
 * Upgrade example_4 with plot_1d_minz ?
 * Implement spatialized inflation?
 * Replace print_c and termcolors dict by 'with coloring:'
@@ -334,7 +330,7 @@ TODO
 * Make function DA_Config() a member called 'method' of DAC. Rename DAC to DA_Config.
     => Yields (???) decorator syntax @DA_Config.method  (which would look nice) 
 * Rename setup to HMM
-* Change m to M ? (what about model?)
+* Change m to M and ndim? (what about model?)
 * EITHER: Rm *args, **kwargs from da_methods? (less spelling errors)
 *         Replace with opts argument (could be anything).
 *     OR: implement warning if config argument was not used (warns against misspelling, etc)

@@ -6,7 +6,7 @@ sd0 = seed(3)
 # DA Configurations
 ##############################
 from mods.Lorenz95.boc15loc import setup
-setup.t.KObs = 2000 # length (num of cycles) of each experiment
+setup.t.KObs = 1000 # length (num of cycles) of each experiment
 
 # Get experiment control variable (CtrlVar) from arguments
 CtrlVar = sys.argv[1]
@@ -44,7 +44,6 @@ for N in [20, 25, 35, 50, 100]:
   for infl in infls:
     cfgs += EnKF('PertObs',N=N,infl=infl,                          )
     cfgs += EnRML('NA'    ,N=N,infl=infl,         Lag=1  ,iMax=iMax)
-    cfgs += EnRML(        ,N=N,infl=infl,         Lag=LAG,iMax=iMax)
 
 
 ##############################

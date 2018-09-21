@@ -84,7 +84,7 @@ def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
           d     = pad0(s**2,N) + N1
           Pw    = ( V * d**(-1.0) ) @ V.T
           T     = ( V * d**(-0.5) ) @ V.T * sqrt(N1) 
-          trHK  = np.sum( (s**2+N1)**(-1.0) * s**2 ) # see docs/trHK.jpg
+          trHK  = np.sum( (s**2+N1)**(-1.0) * s**2 ) # data/doc_snippets/trHK.jpg
         elif 'sS' in upd_a:
           # Same as 'svd', but with slightly different notation
           # (sometimes used by Sakov) using the normalization sqrt(N1).
@@ -93,7 +93,7 @@ def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
           d     = pad0(s**2,N) + 1
           Pw    = ( V * d**(-1.0) )@V.T / N1 # = G/(N1)
           T     = ( V * d**(-0.5) )@V.T
-          trHK  = np.sum(  (s**2 + 1)**(-1.0)*s**2 ) # see docs/trHK.jpg
+          trHK  = np.sum(  (s**2 + 1)**(-1.0)*s**2 ) # data/doc_snippets/trHK.jpg
         else: # 'eig' in upd_a:
           # Implementation using eig. val. decomp.
           d,V   = eigh(Y @ R.inv @ Y.T + N1*eye(N))
@@ -1724,7 +1724,7 @@ def resample(w,kind='Systematic',N=None,wroot=1.0):
     Among the three, 'Systematic' is fastest, introduces the least noise,
     and brings continuity benefits for localized particle filters,
     and is therefore generally prefered.
-    Example: see docs/test_resample.py.
+    Example: see data/doc_snippets/test_resample.py.
 
   - N can be different from len(w)
     (e.g. in case some particles have been elimintated).

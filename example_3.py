@@ -144,14 +144,11 @@ np.savez(save_path,
 ##############################
 if 'WORKER' in sys.argv: sys.exit(0) # quit if script is running as worker.
 
-# The rest of this script only uses saved data:
+# The rest of this script only uses saved data ...
 R = ResultsTable(save_path)
 # ... => could be run as a separate script,
-# ... or downloaded data (e.g. from parallelization):
+# on downloaded data (e.g. from parallelization):
 # R = ResultsTable('data/example_3/MyRemoteHost/N_runX')
-
-##
-R = ResultsTable('data/example_3/johansen/N_run1') # all
 
 # Print averages of a given field.
 # The "subcolumns" show the number of repetitions, crashes and the 1-sigma conf.

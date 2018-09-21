@@ -21,7 +21,7 @@ Example diagnostics:
 ![EnKF - Lorenz'63](./data/figs/anims/DAPPER_illust_v2.jpg)
 
 
-The typical set-up is a "twin experiment", where you
+The typical set-up is a **twin experiment**, where you
 * specify a
   * dynamic model* 
   * observational model*
@@ -31,7 +31,7 @@ The typical set-up is a "twin experiment", where you
 * assess how different DA methods perform in estimating the truth,
     given the above starred (*) items.
 
-DAPPER enables the numerical investigation of DA methods
+**Pros:** DAPPER enables the numerical investigation of DA methods
 through a variety of typical test cases and statistics.
 It reproduces numerical benchmarks results reported in the literature,
 and facilitates comparative studies,
@@ -41,12 +41,12 @@ this promotes the reproduction and dissemination of the underlying science,
 and makes it easy to adapt and extend.
 In summary, it is well suited for teaching and fundamental DA research.
 
-In a trade-off with the above advantages, DAPPER makes some sacrifices of efficiency and flexibility (generality).
+**Cons:** In a trade-off with the above advantages, DAPPER makes some sacrifices of efficiency and flexibility (generality).
 I.e. it is not designed for the assimilation of real data in operational models (e.g. WRF).
 
-A good place to start is with the scripts `example_{1,2,3}.py`
-(there is no unified documentation,
-but the code is reasonably well commented, including docstrings).
+**Getting started:** Read, run, and understand the scripts `example_{1,2,3}.py`.
+There is no unified documentation,
+but the code is reasonably well commented, including docstrings.
 Alternatively, see the `tutorials` folder for an intro to DA.
 
   

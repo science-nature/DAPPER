@@ -309,7 +309,7 @@ Conventions:
 <!--
 TODO
 ------------------------------------------------
-* LotkaVolterra, 2pendulum, Kuramoto-Sivashinsky , Nikolaevskiy Equation
+* Darcy, LotkaVolterra, 2pendulum, Kuramoto-Sivashinsky , Nikolaevskiy Equation
 * Lage demo fil/liveplotting for LorenzUV
 * Reorg file structure: Turn into package?
 * Simplify time management?

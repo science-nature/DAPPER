@@ -92,18 +92,18 @@ def make_H(p,m):
   return H
 
 H = make_H(p,m)
-#plt.figure(1).gca().matshow(H)
-#plt.figure(2).gca().matshow(H @ H.T)
+# plt.figure(1).gca().matshow(H)
+# plt.figure(2).gca().matshow(H @ H.T)
 
 
 # "raw" obs plotting
-#if p<=m:
-  #Hinv = H.T
-#else:
-  #Hinv = sla.pinv2(H)
-#def yplot(y):
-  #lh = plt.plot(y @ Hinv.T,'g')[0]
-  #return lh
+# if p<=m:
+  # Hinv = H.T
+# else:
+  # Hinv = sla.pinv2(H)
+# def yplot(y):
+  # lh = plt.plot(y @ Hinv.T,'g')[0]
+  # return lh
 
 # "implicit" (interpolated sine/cosine) obs plotting
 Hplot = make_H(p,max(p,201))
@@ -129,5 +129,5 @@ setup = TwinSetup(f,h,t,X0,**other)
 ####################
 # Suggested tuning
 ####################
-#cfgs += EnKF ('Sqrt',N=40, infl=1.01)
+# cfgs += EnKF ('Sqrt',N=40, infl=1.01)
 

@@ -13,12 +13,12 @@ setup.name = os.path.relpath(__file__,'mods/')
 ####################
 # Suggested tuning
 ####################
-#from mods.Lorenz63.boc12 import setup ##################### Expected RMSE_a:
-#cfgs += iEnKS('-N', N=3,infl=0.95)                                 # 0.20
-#
+# from mods.Lorenz63.boc12 import setup                     # Expected RMSE_a:
+# cfgs += iEnKS('-N', N=3,infl=0.95)                                 # 0.20
+# 
 # With dkObs=5:
-#cfgs += iEnKS('-N', N=3)                                           # 0.15
-#cfgs += iEnKS('-N', N=3,xN=1.4)                                    # 0.14
-#
+# cfgs += iEnKS('-N', N=3)                                           # 0.15
+# cfgs += iEnKS('-N', N=3,xN=1.4)                                    # 0.14
+# 
 # With R=8*eye(3):
-#cfgs += iEnKS('-N', N=3)                                           # 0.70
+# cfgs += iEnKS('-N', N=3)                                           # 0.70

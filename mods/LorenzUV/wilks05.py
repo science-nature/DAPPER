@@ -15,7 +15,7 @@ nU = LUV.nU
 # Full
 ################
 
-#t = Chronology(dt=0.001,dtObs=0.05,T=4**3,BurnIn=6) # allows using rk2
+# t = Chronology(dt=0.001,dtObs=0.05,T=4**3,BurnIn=6) # allows using rk2
 t = Chronology(dt=0.005,dtObs=0.05,T=4**3,BurnIn=6)  # requires rk4
 
 
@@ -95,6 +95,6 @@ def polynom_prmzt(t,x,order):
 # Suggested tuning
 ####################
 #                                                         # Expected RMSE_a:
-#cfgs += Climatology()                                    # 0.93
-#cfgs += Var3D()                                          # 0.38
-#cfgs += EnKF_N(N=20)                                     # 0.27
+# cfgs += Climatology()                                    # 0.93
+# cfgs += Var3D()                                          # 0.38
+# cfgs += EnKF_N(N=20)                                     # 0.27

@@ -10,7 +10,7 @@ from   mods.Lorenz95.boc15loc import setup
 import mods.Lorenz95.core as core
 
 CtrlVar = sys.argv[1] # command-line argument #1
-#CtrlVar = 'N'
+# CtrlVar = 'N'
 
 # Define range of the experiment control variable.
 if CtrlVar == 'N': # Ensemble size.
@@ -29,7 +29,7 @@ cfgs  = List_of_Configs()
 
 tuning_tag = 'loc_rad'
 
-#INFL = 1.02
+# INFL = 1.02
 INFL = 1.0
 
 if tuning_tag=='rot':
@@ -91,7 +91,7 @@ ax.legend()
 # Plot field in 2D: (x-axis: control-var, y-axis: tuning-var)
 fig, ax = plt.subplots()
 R.plot_2d(log=True)
-#R.plot_2d(log=False,cMax=0.8)
+# R.plot_2d(log=False,cMax=0.8)
 
 
 ##

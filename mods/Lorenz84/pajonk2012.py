@@ -43,7 +43,7 @@ setup.liveplotting = LP_setup(arange(m))
 ####################
 # Suggested tuning
 ####################
-#cfgs += ExtKF(infl=2)
-#cfgs += EnKF('Sqrt',N=3,infl=1.01)
-#cfgs += PartFilt(reg=1.0, N=100, NER=0.4) # add reg!
-#cfgs += PartFilt(reg=1.0, N=1000, NER=0.1) # add reg!
+# cfgs += ExtKF(infl=2)
+# cfgs += EnKF('Sqrt',N=3,infl=1.01)
+# cfgs += PartFilt(reg=1.0, N=100, NER=0.4) # add reg!
+# cfgs += PartFilt(reg=1.0, N=1000, NER=0.1) # add reg!

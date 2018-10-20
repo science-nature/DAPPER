@@ -2,7 +2,7 @@
 
 from common import *
 
-from mods.QG.core import step, dt, shape, order, sample_filename
+from mods.QG.core import model_config, shape, sample_filename
 from mods.QG.liveplotting import LP_setup
 from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 
@@ -10,21 +10,19 @@ from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 # Time series, model, initial condition
 ############################
 
-# As specified in core.py: dt = 4*1.25 = 5.0.
-# Decreasing BurnIn below 250 will increase the average rmse!
-# Sakov also used 10 repetitions.
-t = Chronology(dt=dt,dkObs=1,T=1500,BurnIn=250)
-# In my opinion the burn in should be 400.
+model = model_config("sak08",{})
+f = {
+    'm'    : np.prod(shape),
+    'model': model.step,
+    'noise': 0,
+    }
 
 # Considering that I have 8GB mem on the Mac, and the estimate:
 # ≈ (8 bytes/float)*(129² float/stat)*(7 stat/k) * K,
 # it should be possible to run experiments of length (K) < 8000.
-
-f = {
-    'm'    : np.prod(shape),
-    'model': step,
-    'noise': 0,
-    }
+t = Chronology(dt=model.prms['dtout'],dkObs=1,T=1500,BurnIn=250)
+# In my opinion the burn in should be 400.
+# Sakov also used 10 repetitions.
 
 X0 = RV(m=f['m'],file=sample_filename)
 
@@ -33,7 +31,7 @@ X0 = RV(m=f['m'],file=sample_filename)
 # Observation settings
 ############################
 
-# This will look like satelite tracks when plotted in 2D
+# This will look like satellite tracks when plotted in 2D
 p  = 300
 jj = equi_spaced_integers(f['m'],p)
 jj = jj-jj[0]
@@ -45,7 +43,7 @@ jj = jj-jj[0]
 rstream = np.random.RandomState()
 max_offset = jj[1]-jj[0]
 def random_offset(t):
-  rstream.seed(int(t/dt*100))
+  rstream.seed(int(t/model.prms['dtout']*100))
   u = rstream.rand()
   return int(floor(max_offset * u))
 
@@ -81,10 +79,7 @@ h['loc_shift'] = lambda ii, dt: ii # no movement (suboptimal, but easy)
 ############################
 # Other
 ############################
-setup = TwinSetup(f,h,t,X0,
-    LP   = LP_setup(obs_inds),
-    name = os.path.relpath(__file__,'mods/'),
- )
+setup = TwinSetup(f,h,t,X0, LP=LP_setup(obs_inds) )
 
 
 ####################
@@ -93,11 +88,15 @@ setup = TwinSetup(f,h,t,X0,
 # Reproducing Fig 7 from Sakov and Oke "DEnKF" paper from 2008.
 
 # Notes:
-# - As may be inferred from Fig 3 of Counillon et al 2009 ("...hybrid EnKF-OI...")
-#   (even though setup is slightly different): Must have N >= 25.
-# - Our experiments differ from Sakov's in the following minor details:
+# - If N<=25, then typically need to increase the dissipation  to be almost sure to avoid divergence (sometimes).
 #    - We have not had the need to increase the dissipation parameter for the EnKF.
-#    - We use a batch width (unsure what Sakov uses)
+# - Our experiments differ from Sakov's in the following minor details:
+#    - We use a batch width (unsure what Sakov uses).
+#    - The "EnKF-Matlab" code has a bug: it forgets to take sqrt() of the taper coeffs.
+#      This is equivalent to: R_actually_used = R_reported / sqrt(2).
+# - The boundary cells are all fixed at 0 by BCs,
+#   but are included in the state vector (amounting to 3% of the its length),
+#   and thus in RMSE calculations (which is not quite fair/optimal).
 
 #from mods.QG.sak08 import setup                                # Expected RMSE_a:
 # N = 25

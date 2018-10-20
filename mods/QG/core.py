@@ -7,64 +7,100 @@
 #   an alternative to ensemble square root filters."
 #   Tellus A 60.2 (2008): 361-371.
 #
-# Also see:
+# More info:
 #  - DAPPER/mods/QG/governing_eqn.png
 #  - DAPPER/mods/QG/demo.py
-# and note that:
 #  - ψ (psi) is the stream function (i.e. surface elevation)
 #  - Doubling time "between 25 and 50"
+#  - Note Sakov's trick of increasing RKH2 from 2.0e-12 to 2.0e-11 to stabilize
+#    the ensemble integration, which may be necessary for EnKF's with small N.
+#    See example in mods/QG/cou09.py.
 
 from common import *
 
 #########################
-# Model parameters
+# Model
 #########################
+try:
+  from mods.QG.f90.py_mod import interface_mod as fortran
+except ImportError as err:
+  raise Exception("Have you compiled the (Fortran) model?" + \
+      "\nSee README in folder DAPPER/mods/QG/f90") from err
 
-# Time settings. Can be changed, but this must be done here.
-dt_internal = 1.25 # CFL ≈ 2.0  # Internal (NO output to DAPPER)
-dt          = 4*dt_internal     # DAPPER-facing (outputs to DAPPER)
-assert 0==(dt/dt_internal)%1.0, "Must be integer multiple"
+default_prms = OrderedDict([
+  # These parameters may be interesting to change.
+  ["dtout"        , 5.0        ], # dt for output to DAPPER.
+  ["dt"           , 1.25       ], # dt used internally by Fortran. CFL = 2.0
+  ["RKB"          , 0          ], # bottom     friction
+  ["RKH"          , 0          ], # horizontal friction
+  ["RKH2"         , 2.0e-12    ], # horizontal friction, biharmonic
+  ["F"            , 1600       ], # Froud number
+  ["R"            , 1.0e-5     ], # ≈ Rossby number
+  ["scheme"       , "'rk4'"    ], # One of (2ndorder, rk4, dp5)
+  # Do not change the following:
+  ["tend"         , 0          ], # Only used by standalone QG
+  ["verbose"      , 0          ], # Turn off
+  ["rstart"       , 0          ], # Restart: switch
+  ["restartfname" , "''"       ], # Restart: read file
+  ["outfname"     , "''"       ]  # Restart: write file
+  ])
 
-# These parameters may be interesting to change. 
-# In particular, RKH2=2.0e-11 yields a more stable integration,
-# and Sakov therefore used it for the ensemble runs (but not the truth).
-prms = [
-    ["dtout"        , dt         ], # dt registered by DAPPER
-    ["dt"           , dt_internal], # dt used internally by Fortran
-    ["RKB"          , 0          ], # bottom friction
-    ["RKH"          , 0          ], # horizontal friction
-    ["RKH2"         , 2.0e-12    ], # biharmonic horizontal friction
-    ["F"            , 1600       ], # Froud number
-    ["R"            , 1.0e-5     ], # ≈ Rossby number
-    ["scheme"       , "'rk4'"    ]  # One of (2ndorder, rk4, dp5)
-    ]
-# Do NOT change:
-prms2 = [
-    ["tend"         , 0   ], # Only used by standalone QG
-    ["verbose"      , 0   ], # Turn off
-    ["rstart"       , 0   ], # Restart switch
-    ["restartfname" , "''"], # Read from
-    ["outfname"     , "''"]  # Write to
-    ]
-prms += prms2
+class model_config:
+  """
+  Helps to ensure consistency between prms file (that Fortran module reads)
+  and Python calls to step(), for example for dt.
+  """
 
-# Used list for prms above to keep ordering. But a dict's nice:
-prms_dict = {entry[0]: entry[1] for entry in prms}
+  def __init__(self,name, prms, mp=True):
+    "Use prms={} to get the default configuration."
+
+    # Insert prms. Assert key is present in defaults.
+    D = default_prms.copy()
+    for key in prms:
+      assert key in D
+      D[key] = prms[key]
+
+    # Fortran code does not adjust its dt to divide dtout.
+    # Nor is it worth implementing -- just assert:
+    assert D['dtout']%D['dt'] == 0, "Must be integer multiple"
+
+    self.prms  = D
+    self.mp    = mp
+    self.name  = name
+    self.fname = './mods/QG/f90/prms_' + name + '.txt'
+
+    # Create string
+    text = ["  %s = %s"%(key.ljust(20),str(D[key])) for key in D]
+    text = """! Parameter namelist ("%s") generated via Python
+    &parameters\n"""%name + "\n".join(text) + """\n/\n"""
+
+    # Write string to file
+    with open(self.fname, 'w') as f: f.write(text)
 
 
-#########################
-# Write Fortran namelist from prms
-#########################
-prm_filename = './mods/QG/f90/prms_tmp.txt'
-# Create string
-prm_txt = """! Parameter file auto generated from python
-&parameters"""
-for p in prms:
-  prm_txt += "\n  " + p[0].ljust(20) + '= ' + str(p[1])
-prm_txt += """\n/\n"""
-# Write string to file
-with open(prm_filename, 'w') as f:
-  f.write(prm_txt)
+  def step_1(self, x0, t, dt):
+    """Step a single state vector."""
+    assert self.prms["dtout"] == dt  # Coz fortran.step() reads dt (dtout) from prms file.
+    assert isinstance(t,float)       # Coz Fortran is typed.
+    assert np.isfinite(t)            # QG is autonomous, but nan/inf wont work.
+    psi = py2f(x0.copy())            # Copy coz Fortran will modify in-place.
+    fortran.step(t,psi,self.fname)   # Call Fortran model.
+    x = f2py(psi)                    # Flattening
+    return x
+
+  def step(self, E, t, dt):
+    """Vector and 2D-array (ens) input, with multiproc for ens case."""
+    if E.ndim==1:
+      return self.step_1(E,t,dt)
+    if E.ndim==2:
+      if self.mp: # PARALLELIZED:
+        # Note: the relative overhead for parallelization decreases
+        # as the ratio dtout/dt increases.
+        # But the overhead is already negligible with a ratio of 4.
+        E = np.array(multiproc_map(self.step_1, E, t=t, dt=dt))
+      else: # NON-PARALLELIZED:
+        for n,x in enumerate(E): E[n] = self.step_1(x,t,dt)
+      return E
 
 
 #########################
@@ -73,7 +109,7 @@ with open(prm_filename, 'w') as f:
 # Domain size "hardcoded" in f90/parameters.f90.
 
 # "Physical" domain length -- copied from f90/parameters.f90.
-# It appears that only square domains generate any dynamics.
+# In my tests, only square domains generate any dynamics of interest.
 NX1 = 2
 NY1 = 2
 # Resolution level -- copied MREFIN from parameters.f90
@@ -99,59 +135,19 @@ def ind2sub(ind): return np.unravel_index(ind, shape[::-1])
 
 
 #########################
-# Define step functions
-#########################
-
-try:
-  from mods.QG.f90.py_mod import interface_mod as fortran
-except ImportError as err:
-  raise Exception("Have you compiled the (Fortran) model?" + \
-      "\nSee README in folder DAPPER/mods/QG/f90") from err
-
-def step_1(x0, t, dt_):
-  """Step a single state vector."""
-  assert dt_ == dt                 # dt read through parm file, so don't change it here.
-  assert isinstance(t,float)       # Coz Fortran is a typed language.
-  assert np.isfinite(t)            # QG is autonomous, but nan/inf wont work.
-  psi = py2f(x0.copy())            # Copy coz Fortran will modify in-place.
-  fortran.step(t,psi,prm_filename) # Call Fortran model.
-  x = f2py(psi)                    # Flattening
-  return x
-
-
-# Model multiprocessing switch
-mp = True
-
-def step(E, t, dt_):
-  """Vector and 2D-array (ens) input, with multiproc for ens case."""
-  if E.ndim==1:
-    return step_1(E,t,dt_)
-  if E.ndim==2:
-    if mp: # PARALLELIZED:
-      # Note: the relative overhead for parallelization decreases
-      # as the ratio dt/dt_internal increases.
-      # But the overhead is already negligible with a ratio of 4.
-      E = np.array(multiproc_map(step_1, E, t=t, dt_=dt_))
-    else: # NON-PARALLELIZED:
-      for n,x in enumerate(E): E[n] = step_1(x,t,dt_)
-    return E
-
-
-#########################
 # Free run
 #########################
-
-def gen_sample(nSamples,SpinUp,Spacing):
-  simulator = make_recursive(step,prog="Simulating")
+def gen_sample(model,nSamples,SpinUp,Spacing):
+  simulator = make_recursive(model.step,prog="Simulating")
   K         = SpinUp + nSamples*Spacing
   m         = np.prod(shape) # total state length
-  sample    = simulator(zeros(m), K, 0.0, dt)
+  sample    = simulator(zeros(m), K, 0.0, model.prms["dtout"])
   return sample[SpinUp::Spacing]
 
 sample_filename = 'data/samples/QG_samples.npz'
 if not os.path.isfile(sample_filename):
   print('Generating a sample from which to initialize experiments.')
-  sample = gen_sample(400,700,10)
+  sample = gen_sample(model_config("sample_generation",{}),400,700,10)
   np.savez(sample_filename,sample=sample)
 
 

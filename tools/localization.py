@@ -1,5 +1,9 @@
 from common import *
 
+# A good introduction to localization:
+# Sakov (2011), Computational Geosciences:
+# "Relation between two common localisation methods for the EnKF".
+
 # Defaults
 CUTOFF   = 1e-3
 TAG      = 'GC'
@@ -30,8 +34,10 @@ def dist2coeff(dists, radius, tag=None):
 
   NB: The radius is internally adjusted such that independently of 'tag',
   coeff==exp(-0.5) when distance==radius.
-  However, the constants in Sakov (2011) "Relation..." and his enkf-matlab code
-  are slightly wrong, and have been changed here.
+
+  This is largely based on Sakov's enkf-matlab code. Two bugs have here been fixed:
+   - The constants were slightly wrong, as noted in comments below.
+   - It forgot to take sqrt() of coeffs when applying them through 'local analysis'.
   """
   coeffs = zeros(dists.shape)
 

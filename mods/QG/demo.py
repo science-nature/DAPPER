@@ -1,7 +1,7 @@
 # Script to illustrate the QG (quasi-geostrophic) model.
 
 from common import *
-from mods.QG.core import sample_filename, nx, square, prms_dict
+from mods.QG.core import sample_filename, nx, square, default_prms
 
 
 def show(x0,psi=True,ax=None):
@@ -30,7 +30,7 @@ dx = 1/(nx-1)
 def compute_q(psi):
   Lapl = filters.laplace(psi,mode='constant')/dx**2
   # mode='constant' coz BCs are: psi = nabla psi = nabla^2 psi = 0
-  return Lapl - prms_dict['F']*psi
+  return Lapl - default_prms['F']*psi
 
 
 ###########

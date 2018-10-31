@@ -883,8 +883,8 @@ def iEnKS(upd_a,N,Lag=1,iMax=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs)
         DAW_0  = kObs-Lag+1
         DAW    = arange(max(0,DAW_0),DAW_0+Lag)
 
-        # Store 0th (iteration) estimate as (xf,Af)
-        Af,xf  = anom(E)
+        # Store 0th (iteration) estimate as (x0,A0)
+        A0,x0  = anom(E)
         # Init iterations
         w      = zeros(N)
         Tinv   = eye(N)
@@ -898,7 +898,7 @@ def iEnKS(upd_a,N,Lag=1,iMax=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs)
               Tinv = 1e+4*eye(N)
 
             # Forecast
-            E = xf + w @ Af + T @ Af                # Current estimate of E[kObs-Lag]
+            E = x0 + w @ A0 + T @ A0                # Current estimate of E[kObs-Lag]
             for kDAW in DAW:                        # Loop Lag cycles
               for k,t,dt in chrono.obs_range(kDAW): # Loop dkObs steps (1 cycle)
                 E = f(E,t-dt,dt)                    # Forecast 1 dt step (1 dkObs)
@@ -948,7 +948,7 @@ def iEnKS(upd_a,N,Lag=1,iMax=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs)
         stats.infl [kObs] = sqrt(N1/za)
 
         # Final (smoothed) estimate of E[kObs-Lag]
-        E = xf + w @ Af + T @ Af
+        E = x0 + w @ A0 + T @ A0
         E = post_process(E,infl,rot)
 
         # Forecast smoothed ensemble by shift (1*dkObs)
@@ -1008,8 +1008,8 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,iMax=10,xN=1.0,infl=1.0,rot=False,**
         state_batches, obs_localizer = h.localizer(loc_rad, 'x2y', chrono.ttObs[kObs], taper)
         nBatch = len(state_batches)
 
-        # Store 0th (iteration) estimate as (xf,Af)
-        Af,xf  = anom(E)
+        # Store 0th (iteration) estimate as (x0,A0)
+        A0,x0  = anom(E)
         # Init iterations
         w      = np.tile( zeros(N) , (nBatch,1) )
         Tinv   = np.tile( eye(N)   , (nBatch,1,1) )
@@ -1020,7 +1020,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,iMax=10,xN=1.0,infl=1.0,rot=False,**
 
             # Assemble current estimate of E[kObs-Lag]
             for ib, ii in enumerate(state_batches):
-              E[:,ii] = xf[ii] + w[ib]@Af[:,ii]+ T[ib]@Af[:,ii]
+              E[:,ii] = x0[ii] + w[ib]@A0[:,ii]+ T[ib]@A0[:,ii]
 
             # Forecast
             for kDAW in DAW:                        # Loop Lag cycles
@@ -1085,7 +1085,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,iMax=10,xN=1.0,infl=1.0,rot=False,**
 
         # Final (smoothed) estimate of E[kObs-Lag]
         for ib, ii in enumerate(state_batches):
-          E[:,ii] = xf[ii] + w[ib]@Af[:,ii]+ T[ib]@Af[:,ii]
+          E[:,ii] = x0[ii] + w[ib]@A0[:,ii]+ T[ib]@A0[:,ii]
 
         E = post_process(E,infl,rot)
 

@@ -92,7 +92,7 @@ def foo(_):
 
     hh['l_y'].set_ydata( y[1,0] + theta2slope(hh['c_y']) *(xlims- y[0,0]))
     hh['l_t'].set_ydata(xt[1,0] + theta2slope(hh['c_t']) *(xlims-xt[0,0]))
-    hh['l_k'].set_ydata(xt[1,0] + slope_pinv(t)          *(xlims-xt[0,0]))
+    # hh['l_k'].set_ydata(xt[1,0] + slope_pinv(t)          *(xlims-xt[0,0]))
 
   else:
     hh['E_y'] = ax.scatter(y[0], y[1] ,15**2,'y','*', label='$\mathcal{N}(y|x)$')
@@ -107,7 +107,7 @@ def foo(_):
 
     hh['l_y'], = ax.plot(xlims,  y[1,0] + theta2slope(hh['c_y']) *(xlims- y[0,0]), 'y',alpha=0.7)
     hh['l_t'], = ax.plot(xlims, xt[1,0] + theta2slope(hh['c_t']) *(xlims-xt[0,0]), 'm',alpha=0.7)
-    hh['l_k'], = ax.plot(xlims, xt[1,0] + slope_pinv(t)          *(xlims-xt[0,0]), 'k',lw=0.7)
+    # hh['l_k'], = ax.plot(xlims, xt[1,0] + slope_pinv(t)          *(xlims-xt[0,0]), 'k',lw=0.7)
 
   output[0] = t, U, r1, r2, R, iR, E, xb, X, Bb, G, Xa, Pb, KG, xab, Ea, Pt, xt, Et, xt_1, xt_2
 

@@ -9,6 +9,9 @@
 # However, sampling error will couple the dimensions somewhat.
 #
 # Setting M = P = 1 can be used to reproduce the results of the paper.
+#
+# This script has been used extensively to test the equivalence of various
+# forms of the matrix Y_k = H_k X_0.
 
 ## Preamble ===================
 from common import *
@@ -191,20 +194,29 @@ for k in range(nIter):
     dPri  = P@inv(B0)@(E0-E)
 
   elif FORM=='iEnS-GN':
-    # Y     = H @ A0                          # = EnRML_E
-    # Y     = Z @ tinv( A ) @ A0              # = EnRML_E
-    # Y     = Z @ tinv( A0 @ W @ AN ) @ A0    # = EnRML_E
-    # Y     = Z @ tinv( Pi0 @ W @ AN )        # = EnRML_E
-    # Y     = Z @ tinv( AN  @ W @ AN )        # = EnRML_W (but is it better?)
-    # Y     = Z @ tinv( W @ AN )              # = EnRML_W
-    # Y     = hE @ tinv( W @ AN )             # = EnRML_W
-    # Y     = hE @ AN @ tinv( W ) @ AN        # = EnRML_W
-    # Y     = Z @ tinv( W ) @ AN              # = EnRML_W
-    # Geir-Evensen forms
-    # Y     = Z @ tinv( A ) @ A @ inv(Om)     # = EnRML_E
-    Y     = Z @ inv(Om)                     # = EnRML_W
-    # Y     = hE @ AN @ inv(Om)                # = EnRML_W
-    #
+    # Could re-construct W from E...
+    # W     = tinv(A0) @ (E - x0) + Pi0C @ W 
+    # ... but, of course, it's better to just use W to hold the state.
+
+    # Regression_E: Y = Z tinv(A) A0:
+    Y     = H @ A0                          # 
+    # Y     = Z @ tinv( A ) @ A0              # 
+    # Y     = Z @ tinv( A0 @ W @ AN ) @ A0    # 
+    # Y     = Z @ tinv( Pi0 @ W @ AN )        # 
+
+    # Regression_W: Y = Z tinv(T)   -- is it better?
+    # Y     = Z  @ tinv( AN  @ W @ AN )       # 
+    # Y     = Z  @ tinv( W @ AN )             # 
+    # Y     = hE @ tinv( W @ AN )             # 
+    # Y     = hE @ AN @ tinv( W ) @ AN        # 
+    # Y     = Z  @ tinv( W ) @ AN             # 
+
+    # Geir-Evensen forms -- equivalent to Regression_W forms
+    # Y     = Z @ tinv( A ) @ A @ inv(Om)     # 
+    # Y     = Z @ inv(Om)                     # 
+    # Y     = hE @ AN @ inv(Om)               # 
+
+    # The rest of the algo
     Pw    = inv(Y.T@inv(R)@Y + N1*eye(N))
     dLkl  = Pw@Y.T@inv(R)@(y-D-hE)
     dPri  = Pw@(eye(N)-W)*N1
@@ -216,7 +228,7 @@ for k in range(nIter):
     dPri  = A0@dPri
 
 
-  E  = E + dLkl + dPri
+  E = E + dLkl + dPri
 
   # Animation
   if not (k+1)%nIter:
@@ -234,12 +246,4 @@ for k in range(nIter):
 # For (comparing methods) debugging
 print("%15.15s, E_k state[0...5]:"%FORM, E[0,:5])
 
-## Conclusions =================
-#  The W-form (iEnS) is equivalent to the E-forms (EnRML) if one of the following hold:
-#  - Y := H@A0
-#  - Y := Z @ tinv( W - mean1(W)), and
-#    - h is linear, or
-#    - N-1 <= M
-#  - Y := Z @ tinv( Pi0 @ (W - mean1(W)))
-# 
 

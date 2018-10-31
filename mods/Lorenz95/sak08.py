@@ -8,7 +8,7 @@ from mods.Lorenz95.core import step, dfdx
 from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 from mods.Lorenz95.liveplotting import LP_setup
 
-t = Chronology(0.05,dkObs=5,T=4**5,BurnIn=20)
+t = Chronology(0.05,dkObs=1,T=4**5,BurnIn=20)
 
 m = 40
 f = {

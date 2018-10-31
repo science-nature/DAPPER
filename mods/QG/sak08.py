@@ -88,7 +88,8 @@ setup = TwinSetup(f,h,t,X0, LP=LP_setup(obs_inds) )
 # Reproducing Fig 7 from Sakov and Oke "DEnKF" paper from 2008.
 
 # Notes:
-# - If N<=25, then typically need to increase the dissipation  to be almost sure to avoid divergence (sometimes).
+# - If N<=25, then typically need to increase the dissipation
+#      to be almost sure to avoid divergence. See cou09.py for example.
 #    - We have not had the need to increase the dissipation parameter for the EnKF.
 # - Our experiments differ from Sakov's in the following minor details:
 #    - We use a batch width (unsure what Sakov uses).

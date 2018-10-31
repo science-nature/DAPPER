@@ -25,7 +25,7 @@ truth_model   = model_config("cou09_truth",{"dtout":dt}                ).step
 # R = 17.7 # equiv. to R=25 in enkf-matlab
 # from mods.QG.cou09 import setup, truth_model                        # Expected RMSE_f:
 # cfgs += LETKF(mp=True, N=25,infl=1.15,taper='Gauss',loc_rad=R)      # 1.11
-# cfgs += LETKF(mp=True, N=15,infl=1.35,taper='Gauss',loc_rad=R)      # 1.15
+# cfgs += LETKF(mp=True, N=15,infl=1.35,taper='Gauss',loc_rad=R)      # 1.2
 #
 # - My N=15 rmse << rmse_from_paper. But I only tested a single repetition => maybe I got lucky.
 #

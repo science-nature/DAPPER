@@ -162,8 +162,8 @@ BaseLineMethods = R.split(lambda x: x in ['Climatology', 'OptInterp', 'Var3D','E
 fig, ax = plt.subplots()
 R.plot_1d('rmse_a',)
 # The commented-out lines make checkmarks that toggle on/off the curves.
-if 'checkmarks' not in locals(): checkmarks = []
-checkmarks += [toggle_lines()];
+# if 'checkmarks' not in locals(): checkmarks = []
+# checkmarks += [toggle_lines()];
 BaseLineMethods.plot_1d('rmse_a',color='k')
 
 # Adjust plot

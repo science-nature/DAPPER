@@ -4,12 +4,12 @@
 # with each curve being one method configuration.
 #
 # Specifically, we will reproduce figure 6.6 from [1], accessible through 
-# http://books.google.no/books?id=FtDZDQAAQBAJ&q=figure+6.6.
+# http://books.google.no/books?id=FtDZDQAAQBAJ&q=figure+6.6
 # The figure reveals the relative importance of localization and inflation in the EnKF.
 # Ref[1]: Book: "Data Assimilation: Methods, Algorithms, and Applications"
 #         by M. Asch, M. Bocquet, M. Nodet.
 #
-# Also demostrates:
+# Also demonstrates:
 #  - Parallelization (distribution of experiment settings (xticks)).
 #  - Result data saving, loading, plotting. 
 

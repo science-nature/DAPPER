@@ -32,7 +32,7 @@ def dist2coeff(dists, radius, tag=None):
   """
   Compute tapering coefficients corresponding to a distances.
 
-  NB: The radius is internally adjusted such that independently of 'tag',
+  NB: The radius is internally adjusted such that, independently of 'tag',
   coeff==exp(-0.5) when distance==radius.
 
   This is largely based on Sakov's enkf-matlab code. Two bugs have here been fixed:

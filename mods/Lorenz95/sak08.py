@@ -64,7 +64,7 @@ setup = TwinSetup(f,h,t,X0, LP=LP_setup(jj))
 # Reproduce Table 3 (IEnKF) from sakov2012iterative
 # --------------------------------------------------------------------------------
 # setup.t.dkObs = 12
-# cfgs += iEnKS('Sqrt' ,N=25,Lag=1,iMax=10,infl=1.2,rot=1)      # 0.46
+# cfgs += iEnKS('Sqrt' ,N=25,Lag=1,nIter=10,infl=1.2,rot=1)     # 0.46
 
 # Reproduce Fig 3 of Bocquet'2015 "expanding"
 # --------------------------------------------------------------------------------

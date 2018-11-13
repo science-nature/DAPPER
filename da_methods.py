@@ -882,7 +882,7 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
 
 
 @DA_Config
-def iEnKS(upd_a,N,Lag=1,iMax=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs):
+def iEnKS(upd_a,N,Lag=1,nIter=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs):
   """
   Iterative EnKS-N.
   
@@ -901,7 +901,7 @@ def iEnKS(upd_a,N,Lag=1,iMax=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs)
   - Lag   : length of the DA window (DAW), in multiples of dkObs.
             Lag=1 (default) yields the iterative "filter" iEnKF.
             Note: the shift (S) is fixed at 1.
-  - iMax  : Maximal num. of iterations allowed.
+  - nIter : Maximal num. of iterations allowed.
             NB: Its minimum (1) still yields 2 forecasts per step.
   - bundle: Use bundle (finite-diff) linearization instead of
             of ensemble-based least-squares regression.
@@ -951,7 +951,7 @@ def iEnKS(upd_a,N,Lag=1,iMax=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs)
           Tinv  = eye(N) # Avoiding tinv(T) saves significant time for small systems.
 
           # Loop iterations
-          for iteration in arange(iMax):
+          for iteration in arange(nIter):
 
               if bundle:
                 # T is non-dimensional => don't really need to make _eps tunable.
@@ -980,7 +980,7 @@ def iEnKS(upd_a,N,Lag=1,iMax=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs)
               if   upd_a == 'Sqrt'  : za = N1
               elif upd_a == '-N'    : za = zeta_a(*hyperprior_coeffs(s,N,xN), w)
               elif upd_a == 'EnRML' : za = N1
-              elif upd_a == 'ES-MDA': za = N1 * iMax
+              elif upd_a == 'ES-MDA': za = N1 * nIter
 
               # Posterior cov (approx), for w, estimated at current iteration, raised to some power.
               Pw_pwr = lambda expo: (V * (pad0(s**2,N) + za)**-expo) @ V.T
@@ -1011,7 +1011,7 @@ def iEnKS(upd_a,N,Lag=1,iMax=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs)
               elif upd_a == 'ES-MDA': # i.e. Annealing.
                 grad = Y0@dy
                 w    = w + grad@Pw            
-                D    = sqrt(iMax) * center(randn(Y.shape))
+                D    = sqrt(nIter) * center(randn(Y.shape))
                 grad = -(Y + D)@Y0.T
                 T    = T + grad@Pw
                 Tinv = eye(N)
@@ -1052,7 +1052,7 @@ def iEnKS(upd_a,N,Lag=1,iMax=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs)
 
 
 @DA_Config
-def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,iMax=10,xN=1.0,infl=1.0,rot=False,**kwargs):
+def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,**kwargs):
   """
   Iterative, Localized EnKS-N.
 
@@ -1098,7 +1098,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,iMax=10,xN=1.0,infl=1.0,rot=False,**
         T      = np.tile( eye(N)   , (nBatch,1,1) )
 
         # Loop iterations
-        for iteration in arange(iMax):
+        for iteration in arange(nIter):
 
             # Assemble current estimate of E[kObs-Lag]
             for ib, ii in enumerate(state_batches):

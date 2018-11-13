@@ -35,27 +35,26 @@ def EnKF(upd_a,N,infl=1.0,rot=False,**kwargs):
 
 def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
     """
-    The EnKF analysis update.
-    
-    'upd_a' selects between the different versions.
+    The EnKF analysis update, in many flavours and forms,
+    specified via 'upd_a'.
 
-    References:
+    Main references:
     Sakov and Oke (2008). "Implications of the Form of the ... EnSRF..."
     Sakov and Oke (2008). "A deterministic formulation of the EnKF..."
     """
-    R = hnoise.C
-    N,m = E.shape
-    N1  = N-1
+    R = hnoise.C    # Obs noise cov
+    N,m = E.shape   # Dimensionality
+    N1  = N-1       # Ens size - 1
 
-    mu = mean(E,0)
-    A  = E - mu
+    mu = mean(E,0)  # Ens mean
+    A  = E - mu     # Ens anomalies
 
-    hx = mean(hE,0)
-    Y  = hE-hx
-    dy = y - hx
+    hx = mean(hE,0) # Obs ens mean 
+    Y  = hE-hx      # Obs ens anomalies
+    dy = y - hx     # Mean "innovation"
 
     if 'PertObs' in upd_a:
-        # Uses perturbed observations (burgers'98)
+        # Uses classic, perturbed observations (Burgers'98)
         C  = Y.T @ Y + R.full*N1
         D  = center(hnoise.sample(N))
         YC = mrdiv(Y, C)
@@ -63,14 +62,16 @@ def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
         HK = Y.T @ YC
         dE = (KG @ ( y + D - hE ).T).T
         E  = E + dE
+
     elif 'Sqrt' in upd_a:
         # Uses a symmetric square root (ETKF)
         # to deterministically transform the ensemble.
-        #
+        
         # The various versions below differ only numerically.
         # EVD is default, but for large N use SVD version.
-        if upd_a == 'Sqrt' and N>m: upd_a = 'Sqrt svd'
-        #
+        if upd_a == 'Sqrt' and N>m:
+          upd_a = 'Sqrt svd'
+        
         if 'explicit' in upd_a:
           # Not recommended due to numerical costs and instability.
           # Implementation using inv (in ens space)
@@ -102,26 +103,75 @@ def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
           HK    = R.inv @ Y.T @ (V@ diag(d**(-1)) @V.T) @ Y
         w = dy @ R.inv @ Y.T @ Pw
         E = mu + w@A + T@A
+
     elif 'Serial' in upd_a:
-        # Observations assimilated one-at-a-time (the "Potter method").
-        #  - While it may be derived as "serial ETKF", it does not yield the same updated 
-        #    ensemble as 'Sqrt' (which processes obs as a batch), only the same mean/cov.
-        #  - The two-stage "update-regress" form of the serial EAKF yields the same ensemble.
-        #  - An enhancement would be to re-compute Sj by non-lin h,
-        #    but this would then not allow us to accumulate the updates on S and T.
+        # Observations assimilated one-at-a-time:
         inds = serial_inds(upd_a, y, R, A)
-        z = dy@ R.sym_sqrt_inv.T / sqrt(N1)
-        S = Y @ R.sym_sqrt_inv.T / sqrt(N1)
-        T = eye(N)
-        for j in inds:
-          Sj = S[:,j]
-          Dj = Sj@Sj + 1
-          Tj = np.outer(Sj, Sj /  (Dj + sqrt(Dj)))
-          T -= Tj @ T
-          S -= Tj @ S
-        GS   = S.T @ T
-        E    = mu + z@GS@A + T@A
-        trHK = trace(R.sym_sqrt_inv.T@GS@Y)/sqrt(N1) # Correct?
+        #  Requires de-correlation:
+        dy   = dy @ R.sym_sqrt_inv.T
+        Y    = Y  @ R.sym_sqrt_inv.T
+        # Enhancement in the nonlinear case: re-compute Y each scalar obs assim.
+        # But: little benefit, model costly (?), updates cannot be accumulated on S and T.
+
+        if any(x in upd_a for x in ['Stoch','ESOPS','Var1']):
+            # More details: Misc/Serial_ESOPS.py
+            for i,j in enumerate(inds):
+
+              # Perturbation creation
+              if 'ESOPS' in upd_a:
+                # "2nd-O exact perturbation sampling"
+                if i==0:
+                  # Init -- increase nullspace by 1 
+                  V,s,UT = tsvd(A,N1)
+                  s[N-2:] = 0
+                  A = reconst(V,s,UT)
+                  v = V[:,N-2]
+                else:
+                  # Orthogonalize v wrt. the new A
+                  # v   = Zj - Yj            # This formula (from paper) relies on Y=HX.
+                  mult  = (v@A) / (Yj@A)     # Should be constant*ones(M), meaning that:
+                  v     = v - mult[0]*Yj     # we can project v into ker(A) such that v@A is null.
+                  v    /= sqrt(v@v)          # Normalize
+                Zj  = v*sqrt(N1)             # Standardized perturbation along v
+                Zj *= np.sign(rand()-0.5)    # Random sign
+              else:
+                # The usual stochastic perturbations. 
+                Zj = center(randn(N)) # Un-coloured noise
+                if 'Var1' in upd_a:
+                  Zj *= sqrt(N/(Zj@Zj))
+
+              # Select j-th obs
+              Yj  = Y[:,j]       # [j] obs anomalies
+              dyj = dy [j]       # [j] innov mean
+              DYj = Zj - Yj      # [j] innov anomalies
+              DYj = DYj[:,None]  # Make 2d vertical
+
+              # Kalman gain computation
+              C     = Yj@Yj + N1 # Total obs cov
+              KGx   = Yj @ A / C # KG to update state
+              KGy   = Yj @ Y / C # KG to update obs
+
+              # Updates
+              A    += DYj * KGx
+              mu   += dyj * KGx
+              Y    += DYj * KGy
+              dy   -= dyj * KGy
+            E = mu + A
+        else:
+            # "Potter scheme", "EnSRF"
+            # - EAKF's two-stage "update-regress" form yields the same *ensemble* as this.
+            # - The form below may be derived as "serial ETKF", but does not yield the same
+            #   ensemble as 'Sqrt' (which processes obs as a batch) -- only the same mean/cov.
+            T = eye(N)
+            for j in inds:
+              Yj = Y[:,j]
+              C  = Yj@Yj + N1
+              Tj = np.outer(Yj, Yj /  (C + sqrt(N1*C)))
+              T -= Tj @ T
+              Y -= Tj @ Y
+            w = dy@Y.T@T/N1
+            E = mu + w@A + T@A
+
     elif 'DEnKF' is upd_a:
         # Uses "Deterministic EnKF" (sakov'08)
         C  = Y.T @ Y + R.full*N1
@@ -129,6 +179,7 @@ def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
         KG = A.T @ YC
         HK = Y.T @ YC
         E  = E + KG@dy - 0.5*(KG@Y.T).T
+
     else:
       raise KeyError("No analysis update method found: '" + upd_a + "'.") 
 
@@ -425,15 +476,14 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
           alpha  = (N1/(N1+sig2_j))**(0.5) # Update contraction factor
           dy2    = sig2_u * dy_j/N1        # Mean update
           Y2     = alpha*Y_j               # Anomaly update
-          # Update state (regress update from observation space)
+          # Update state (regress update from obs space, using localization)
           # ------------------------------------------------------
-          # --- Localized
           ii, tapering = state_localizer(j)
           if len(ii) == 0: continue
           Regression = (A[:,ii]*tapering).T @ Y_j/np.sum(Y_j**2)
           mu[ ii]   += Regression*dy2
           A[:,ii]   += np.outer(Y2 - Y_j, Regression)
-          # --- Without localization:
+          # Without localization:
           # Regression = A.T @ Y_j/np.sum(Y_j**2)
           # mu        += Regression*dy2
           # A         += np.outer(Y2 - Y_j, Regression)
@@ -842,23 +892,28 @@ def iEnKS(upd_a,N,Lag=1,iMax=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs)
   Boc12: Marc Bocquet, and Pavel Sakov. (2012):
   "Combining inflation-free and iterative EnKFs ..."
 
-  - upd_a : 'Sqrt' (i.e. ETKF) or '-N' (i.e. EnKF-N)
+  - upd_a : Analysis update form. One of:
+    * 'Sqrt'  : as in ETKF  , using a deterministic matrix square root transform.
+    * '-N'    : as in EnKF-N, which is like the ETKF, but also estimates inflation.
+    * 'EnRML' : as in EnRML , using stochastic, perturbed-observations.
+    * 'ES-MDA': as in ES-MDA, using perturbed obs and annealing.
+                Also applicable to (quasi-static) "progressive assimilation", cf. below.
   - Lag   : length of the DA window (DAW), in multiples of dkObs.
             Lag=1 (default) yields the iterative "filter" iEnKF.
             Note: the shift (S) is fixed at 1.
   - iMax  : Maximal num. of iterations allowed.
             NB: Its minimum (1) still yields 2 forecasts per step.
-  - bundle: Use bundle (finite difference) or transform (regression)
-            linearizations. For details, see Boc12.
-            If True, then the statistics for spread (etc) will
-            be very small, but we have not bothered to correct this.
+  - bundle: Use bundle (finite-diff) linearization instead of
+            of ensemble-based least-squares regression.
+            For details, see Boc12.
+            NB: yields artificially small spread statistics (TODO: fix).
   - xN    : Described in EnKF_N().
 
   As in Boc14, the minimization is done with Gauss-Newton.
   See Boc12 for a Levenberg-Marquardt approach.
 
-  MDA (progressive assimilation) is not implemented because
-   - The 'balancing step' is convoluted
+  MDA (progressive assimilation / quasi-static optimization ) is not implemented coz
+   - The 'balancing step' is complicated.
    - Trouble playing nice with '-N' inflation estimation.
 
   Settings for reproducing literature benchmarks may be found in
@@ -871,6 +926,7 @@ def iEnKS(upd_a,N,Lag=1,iMax=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs)
 
   def assimilator(stats,twin,xx,yy):
     f,h,chrono,X0,R,KObs = twin.f, twin.h, twin.t, twin.X0, twin.h.noise.C, twin.t.KObs
+    Rm12 = h.noise.C.sym_sqrt_inv
     assert f.noise.C is 0, "Q>0 not yet supported. See Sakov et al 2017: 'An iEnKF with mod. error'"
 
     # Init DA cycles
@@ -878,93 +934,119 @@ def iEnKS(upd_a,N,Lag=1,iMax=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs)
     stats.iters = np.full(KObs+1,nan)
 
     # Loop DA cycles
-    for kObs in progbar(arange(KObs+1)):
-        # Set (shifting) DA Window. Shift is 1.
-        DAW_0  = kObs-Lag+1
-        DAW    = arange(max(0,DAW_0),DAW_0+Lag)
+    with printoptions(precision=9):
+      for kObs in progbar(arange(KObs+1)):
 
-        # Store 0th (iteration) estimate as (x0,A0)
-        A0,x0  = anom(E)
-        # Init iterations
-        w      = zeros(N)
-        Tinv   = eye(N)
-        T      = eye(N)
+          # Set current DA Window (DAW) -- max length: Lag.
+          DAW_0 = kObs-Lag+1
+          DAW   = arange(max(0,DAW_0),DAW_0+Lag)
 
-        # Loop iterations
-        for iteration in arange(iMax):
+          # Decompose (and store the components of) prior ensemble. Define CVar from ens space.
+          A0,x0 = anom(E)
+          w2x   = lambda w: x0 + w @ A0
 
-            if bundle:
-              T    = 1e-4*eye(N)
-              Tinv = 1e+4*eye(N)
+          # Init iterations. Note: E = w2x(w + T).
+          w     = zeros(N)
+          T     = eye(N)
+          Tinv  = eye(N) # Avoiding tinv(T) saves significant time for small systems.
 
-            # Forecast
-            E = x0 + w @ A0 + T @ A0                # Current estimate of E[kObs-Lag]
-            for kDAW in DAW:                        # Loop Lag cycles
-              for k,t,dt in chrono.obs_range(kDAW): # Loop dkObs steps (1 cycle)
-                E = f(E,t-dt,dt)                    # Forecast 1 dt step (1 dkObs)
+          # Loop iterations
+          for iteration in arange(iMax):
 
-            if iteration==0:
-              stats.assess(k,kObs,'f',E=E)
+              if bundle:
+                # T is non-dimensional => don't really need to make _eps tunable.
+                Eps  = 1e-4
+                T    = eye(N) * Eps
+                Tinv = eye(N) / Eps
 
-            # Analysis of y[kObs] (already assim'd [:kObs])
-            y    = yy[kObs]
-            Y,hx = anom(h(E,t))
-            # "Uncondition" the observation anomalies
-            # (and yet this linearization of h improves with iterations)
-            Y  = Tinv @ Y
-            # Transform obs space
-            Y  = Y        @ R.sym_sqrt_inv.T
-            dy = (y - hx) @ R.sym_sqrt_inv.T
-            # Prepare analysis: do SVD
-            V,s,UT = svd0(Y)
+              # Forecast across whole DAW, Observe.
+              E = w2x(w+T)                            # Reconstruct ensemble
+              for kDAW in DAW:                        # Loop Lag cycles
+                for k,t,dt in chrono.obs_range(kDAW): # Loop dkObs steps (1 cycle)
+                  E = f(E,t-dt,dt)                    # Forecast 1 dt step (1 dkObs)
+              if iteration==0:                        # 'f' stats obtained at 0th iteration
+                stats.assess(k,kObs,'f',E=E)          # Assess
+              hE = h(E,t)                             # Run obs model
 
-            step_shrink = 1 + iteration     # Decreasing (starting from 1)
-            #step_shrink = iMax - iteration # Increasing (starting from max)
-            # Implement by inserting *sqrt(step_shrink) [for Pw only?]
+              # Prepare the analysis of y_kObs (already assim'd yy[:kObs])
+              y      = yy[kObs]          # Get actual obs
+              Y,hx   = anom(hE)          # Get ensemble obs {anomalies, mean}
+              dy     = (y - hx) @ Rm12.T # Transform obs space 
+              Y      = Y        @ Rm12.T # Transform obs space
+              Y0     = Tinv @ Y          # "De-condition" the observation anomalies.
+              V,s,UT = svd0(Y0)          # Decompose Y0
 
-            # Set "effective ensemble size", za = (N-1)/pre-inflation^2
-            if   upd_a == 'Sqrt': za = N1 # No inflation
-            elif upd_a == '-N'  : za = zeta_a(*hyperprior_coeffs(s,N,xN), w)
-            else: raise KeyError("upd_a: '" + upd_a + "' not matched.") 
+              # Set "effective ensemble size" (indicates infl. need): za = (N-1)/pre_inflation^2
+              if   upd_a == 'Sqrt'  : za = N1
+              elif upd_a == '-N'    : za = zeta_a(*hyperprior_coeffs(s,N,xN), w)
+              elif upd_a == 'EnRML' : za = N1
+              elif upd_a == 'ES-MDA': za = N1 * iMax
 
-            # Gauss-Newton ingredients
-            grad = -Y@dy + w*za
-            Pw   = (V * (pad0(s**2,N) + za)**-1.0) @ V.T
-            # Conditioning for anomalies (discrete linearlizations)
-            T    = (V * (pad0(s**2,N) + za)**-0.5) @ V.T * sqrt(N1)
-            Tinv = (V * (pad0(s**2,N) + za)**+0.5) @ V.T / sqrt(N1)
-            # Gauss-Newton step
-            dw   = Pw@grad
-            w   -= dw
+              # Posterior cov (approx), for w, estimated at current iteration, raised to some power.
+              Pw_pwr = lambda expo: (V * (pad0(s**2,N) + za)**-expo) @ V.T
+              Pw     = Pw_pwr(1.0)
 
-            # Stopping condition
-            if np.linalg.norm(dw) < N*1e-4:
-              break
+              if upd_a == 'Sqrt' or upd_a == '-N':
+                grad = Y0@dy - w*za           # Cost function gradient
+                w    = w + grad@Pw            # Gauss-Newton step
+                T    = Pw_pwr(0.5) * sqrt(N1) # Sqrt-transforms
+                Tinv = Pw_pwr(-.5) / sqrt(N1) # Inv
 
-        # Analysis 'a' stats for E[kObs].
-        stats.assess(k,kObs,'a',E=E)
-        stats.trHK [kObs] = trace(Y.T @ Pw @ Y)/h.noise.m
-        stats.iters[kObs] = iteration+1
-        stats.infl [kObs] = sqrt(N1/za)
+              elif upd_a == 'EnRML':
+                # EnRML implementation using mean-anomalies decomposition (as for 'Sqrt'):
+                grad = Y0@dy - w*za
+                w    = w + grad@Pw            
+                D    = center(randn(Y.shape)) if iteration==0 else D
+                grad = -(Y + D)@Y0.T + N1*(eye(N) - T)
+                T    = T + grad@Pw
+                Tinv = tinv(T)
+                # EnRML w/ mean-anomalies together is "prettier":
+                # W    = w + T
+                # dY   = (y - hE) @ Rm12.T
+                # grad = (dY - D)@Y0.T + N1*(eye(N) - W)
+                # W    = W + grad@Pw
+                # T,w  = anom(W)
+                # Tinv = tinv(T)
 
-        # Final (smoothed) estimate of E[kObs-Lag]
-        E = x0 + w @ A0 + T @ A0
-        E = post_process(E,infl,rot)
+              elif upd_a == 'ES-MDA': # i.e. Annealing.
+                grad = Y0@dy
+                w    = w + grad@Pw            
+                D    = sqrt(iMax) * center(randn(Y.shape))
+                grad = -(Y + D)@Y0.T
+                T    = T + grad@Pw
+                Tinv = eye(N)
 
-        # Forecast smoothed ensemble by shift (1*dkObs)
-        if DAW_0 >= 0:
-          for k,t,dt in chrono.obs_range(DAW_0):
-            stats.assess(k-1,None,'u',E=E)
-            E = f(E,t-dt,dt)
+
+              # Stopping condition
+              # if np.linalg.norm(dw) < N*1e-4:
+                # break
+
+          # Analysis 'a' stats for E[kObs].
+          stats.assess(k,kObs,'a',E=E)
+          stats.trHK [kObs] = trace(Y0.T @ Pw @ Y0)/h.noise.m
+          stats.iters[kObs] = iteration+1
+          stats.infl [kObs] = sqrt(N1/za)
+
+          # Final (smoothed) estimate of E[kObs-Lag]
+          E = w2x(w+T)
+          E = post_process(E,infl,rot)
+
+          # Forecast shift (shift fixed at 1 (1*dkObs) for simplicity)
+          if DAW_0 >= 0:
+            for k,t,dt in chrono.obs_range(DAW_0):
+              stats.assess(k-1,None,'u',E=E)
+              E = f(E,t-dt,dt)
 
     # Assess the last (Lag-1) obs ranges
     for kDAW in arange(DAW[0]+1,KObs+1):
       for k,t,dt in chrono.obs_range(kDAW):
         stats.assess(k-1,None,'u',E=E)
         E = f(E,t-dt,dt)
+    # Assess the very last time instance 
     stats.assess(chrono.K,None,'u',E=E)
 
   return assimilator
+
 
 
 
@@ -1048,6 +1130,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,iMax=10,xN=1.0,infl=1.0,rot=False,**
               Pw     = (V * (pad0(s**2,N) + N1)**-1.0) @ V.T
               w_glob = Pw@grad 
               za     = zeta_a(*hyperprior_coeffs(s,N,xN), w_glob)
+            else: raise KeyError("upd_a: '" + upd_a + "' not matched.") 
 
             for ib, ii in enumerate(state_batches):
               # Shift indices (to adjust for time difference)

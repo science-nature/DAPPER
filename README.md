@@ -101,13 +101,13 @@ The particle filter is tuned with "effective-N monitoring", "regularization/jitt
 Models
 ------------
 
-Model       | Linear? | Phys.dim. | State len | # Lyap≥0 | Thanks to
+Model       | Linear? | Phys.dim. | State len | # Lyap≥0 | Implementer
 ----------- | ------- | --------- | --------- | -------- | ----------
 Lin. Advect.| Yes     | 1d        | 1000 *    | 51       | Evensen/Raanes
-Lorenz63    | No      | 0d        | 3         | 2        | Lorenz/Sakov
-Lorenz84    | No      | 0d        | 3         | 2        | Lorenz/Raanes
-Lorenz95    | No      | 1d        | 40 *      | 13       | Lorenz/Raanes
-LorenzUV    | No      | 2x 1d     | 256 + 8 * | ≈60      | Lorenz/Raanes
+Lorenz63    | No      | 0d        | 3         | 2        | Sakov
+Lorenz84    | No      | 0d        | 3         | 2        | Raanes
+Lorenz95    | No      | 1d        | 40 *      | 13       | Raanes
+LorenzUV    | No      | 2x 1d     | 256 + 8 * | ≈60      | Raanes
 Quasi-Geost | No      | 2d        | 129²≈17k  | ≈140     | Sakov
 
 *: flexible; set as necessary
@@ -196,74 +196,55 @@ Just add it to `da_methods.py`, using the others in there as templates.
 
 Alternative projects
 ------------------------------------------------
+If you have an *operational* (real-world) application,
+you should look into one of the alternatives,
+sorted by approximate project size.
+
+
+Alternative projects
+------------------------------------------------
+DAPPER is for research/teaching with DA. Not *operational* application.
+
 Sorted by approximate project size.
-DAPPER may be situated somewhere in the middle.
 
-<!--
-* DART         (NCAR)
-* SANGOMA      (Liege/CNRS/Nersc/Reading/Delft)
-* Verdandi     (INRIA)
-* PDAF         (Nerger)
-* ERT*         (Statoil)
-* OpenDA       (TU Delft)
-* MIKE         (DHI)
-* PyOSSE       (Edinburgh)
-* FilterPy     (R. Labbe)
-* DASoftware   (Yue Li, Stanford)
-* PyIT         (CIPR)
-* OAK          (Liège)
-* Siroco       (OMP)
-* Datum*       (Raanes)
-* EnKF-Matlab* (Sakov)
-* IEnKS code*  (Bocquet)
-* pyda         (Hickman)
-
-*: Has been inspirational in the development of DAPPER. 
--->
-
-
-Name               | Developers           | Purpose (vs. DAPPER)
------------------- | -------------------- | -----------------------------
-[DART][1]          | NCAR                 | Operational and real-world DA
-[ERT][2]*          | Statoil              | Operational (petroleum) history matching
-[OpenDA][3]        | TU Delft             | Operational and real-world DA
-[EMPIRE][4]        | Reading (Met)        | Operational and real-world DA
-[SANGOMA][5]       | Conglomerate**       | Unified code repository researchers
-[Verdandi][6]      | INRIA                | Real-world biophysical DA
-[PDAF][7]          | Nerger               | Real-world and example DA
-[PyOSSE][8]        | Edinburgh, Reading   | Real-world earth-observation DA
-[MIKE][9]          | DHI                  | Real-world oceanographic DA. Commercial?
-[OAK][10]          | Liège                | Real-world oceaonagraphic DA
-[Siroco][11]       | OMP                  | Real-world oceaonagraphic DA
-[FilterPy][12]     | R. Labbe             | Engineering, general intro to Kalman filter
-[DASoftware][13]   | Yue Li, Stanford     | Matlab, large-scale
-[Pomp][18]         | U of Michigan        | R, general state-estimation
-[PyIT][14]         | CIPR                 | Real-world petroleum DA (?)
-Datum*             | Raanes               | Matlab, personal publications
-[EnKF-Matlab*][15] | Sakov                | Matlab, personal publications and intro
-[EnKF-C][17]       | Sakov                | C, light-weight EnKF, off-line
-IEnKS code*        | Bocquet              | Python, personal publications
-[pyda][16]         | Hickman              | Python, personal publications
-
-
-<!--
-Real-world: supports very general models (e.g. time dependent state length, mapping to-from grids, etc.)
-Operational: optimized for speed.
--->
+Name               | Developers            | Purpose (approximately)
+------------------ | --------------------- | -----------------------------
+[DART][1]          | NCAR                  | Operational, general
+[ERT][2]*          | Statoil               | Operational, history matching (Petroleum)
+[JEDI][22]         | JCSDA (NOAA, NASA, ++)| Operational, general (in develpmt?)
+[OpenDA][3]        | TU Delft              | Operational
+[EMPIRE][4]        | Reading (Met)         | Operational
+[SANGOMA][5]       | Conglomerate**        | Unify DA research
+[Verdandi][6]      | INRIA                 | Biophysical DA
+[PDAF][7]          | Nerger                | Operational and research
+[PyOSSE][8]        | Edinburgh, Reading    | Earth-observation DA
+[MIKE][9]          | DHI                   | Oceanographic. Commercial?
+[OAK][10]          | Liège                 | Oceaonagraphic
+[Siroco][11]       | OMP                   | Oceaonagraphic
+[FilterPy][12]     | R. Labbe              | Engineering, general intro to Kalman filter
+[DASoftware][13]   | Yue Li, Stanford      | Matlab, large-scale
+[Pomp][18]         | U of Michigan         | R, general state-estimation
+[PyIT][14]         | CIPR                  | Real-world petroleum DA (?)
+Datum*             | Raanes                | Matlab, personal publications
+[EnKF-Matlab*][15] | Sakov                 | Matlab, personal publications and intro
+[EnKF-C][17]       | Sakov                 | C, light-weight EnKF, off-line
+IEnKS code*        | Bocquet               | Python, personal publications
+[pyda][16]         | Hickman               | Python, personal publications
 
 *: Has been inspirational in the development of DAPPER. 
 
 **: Liege/CNRS/NERSC/Reading/Delft
 
-[1]: http://www.image.ucar.edu/DAReS/DART/
-[2]: http://ert.nr.no/ert/index.php/Main_Page
-[3]: http://www.openda.org/
-[4]: http://www.met.reading.ac.uk/~darc/empire/index.php
-[5]: http://www.data-assimilation.net/
-[6]: http://verdandi.sourceforge.net/
-[7]: http://pdaf.awi.de/trac/wiki
-[8]: http://www.geos.ed.ac.uk/~lfeng/
-[9]: http://www.dhigroup.com/
+[1]:  http://www.image.ucar.edu/DAReS/DART/
+[2]:  http://ert.nr.no/ert/index.php/Main_Page
+[22]: https://www.jcsda.noaa.gov/index.php
+[3]:  http://www.openda.org/
+[4]:  http://www.met.reading.ac.uk/~darc/empire/index.php
+[5]:  http://www.data-assimilation.net/
+[6]:  http://verdandi.sourceforge.net/
+[7]:  http://pdaf.awi.de/trac/wiki
+[8]:  http://www.geos.ed.ac.uk/~lfeng/
+[9]:  http://www.dhigroup.com/
 [10]: http://modb.oce.ulg.ac.be/mediawiki/index.php/Ocean_Assimilation_Kit
 [11]: https://www5.obs-mip.fr/sirocco/assimilation-tools/sequoia-data-assimilation-platform/
 [12]: https://github.com/rlabbe/filterpy
@@ -309,6 +290,8 @@ Conventions:
 <!--
 TODO
 ------------------------------------------------
+* Rename anom to centr. Merge with center.
+* Update list of methods (e.g. ESOPS)
 * Darcy, LotkaVolterra, 2pendulum, Kuramoto-Sivashinsky , Nikolaevskiy Equation
 * Lage demo fil/liveplotting for LorenzUV
 * Reorg file structure: Turn into package?
@@ -317,6 +300,7 @@ TODO
 * Defaults file (fail_gently, liveplotting, mkl.set_num_threads, etc)
 * Replace set_ilabel by [eval("ax.set_%slabel('%s')"%(s,s)) for s in "xyz"]
 * Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
+* Rename common to DAPPER_workspace.
 * Make citation format for DAPPER
 * Upgrade example_4 with plot_1d_minz ?
 * Implement spatialized inflation?
@@ -324,6 +308,7 @@ TODO
 * Fix Windows bug (key listening: ncurses?)
 * Fix issue with anaconda python framework install or whatever that fucks figure interaction
 * Use inspect somehow instead of C.update_setting
+* pass name from DAC_list to tqdm in assimilator?
 * Use AlignedDict for DA_Config's repr?
 * Get good/simple local PF with reproduction of Alban's results
 * rename do_tab to tab

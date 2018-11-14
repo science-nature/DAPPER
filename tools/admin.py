@@ -540,4 +540,18 @@ def typeset(lst,do_tab):
     ss    = [s.ljust(width) for s in ss]
   return ss
 
+def trim_table(list_of_strings):
+  """Make (narrow) columns with only whitespace to width 1."""
+  # Definitely not an efficient implementation.
+  table = list_of_strings
+  j = 0
+  while True:
+    if j==min(len(row) for row in table):
+      break
+    if all(row[j-1:j+1]=="  " for row in table):    # check if col has 2 spaces
+      table = [row[:j]+row[j+1:] for row in table]  # remove column j
+    else:
+      j += 1
+  return table
+
 

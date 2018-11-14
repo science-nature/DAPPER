@@ -5,20 +5,22 @@ sd0 = seed(3)
 ##############################
 # DA Configurations
 ##############################
-from mods.Lorenz95.boc15loc import setup
-setup.t.KObs = 1000 # length (num of cycles) of each experiment
+from mods.Lorenz95.sak08 import setup
+# setup.t.BurnIn = 5
+setup.t.T = 4**3.5
+setup.t.dkObs = 3
 
 # Get experiment control variable (CtrlVar) from arguments
 CtrlVar = sys.argv[1]
 # Set range of experimental settings
-if CtrlVar == 'dkObs': # time scale ratio
-  xticks = 1+arange(8)
-  #xticks = [min(xticks, key=lambda x:abs(x-s)) for s in [10,12]]
+if CtrlVar == 'N': # ens size
+  # xticks = [30]
+  xticks = [15, 17, 20, 25, 30, 40, 60, 200]
 
-xticks = array(xticks).repeat(2)
+xticks = array(xticks).repeat(3)
 
 # Parallelization and save-path setup
-xticks, save_path, iiRep = distribute(__file__,sys.argv,xticks,CtrlVar,nCore=12)
+xticks, save_path, iiRep = distribute(__file__,sys.argv,xticks,CtrlVar)
 
 
 ##############################
@@ -28,22 +30,21 @@ cfgs  = List_of_Configs()
 
 # BASELINES
 cfgs += Climatology()
+cfgs += OptInterp()
 cfgs += Var3D()
 
-iMax  = 5
-LAG   = '0.4'
-infls = round2sigfig(CurvedSpace(1,2,0.9,20),nfig=3)
-xNs   = [1, 1.5, 2, 4]
-#for N in [25]:
-for N in [20, 25, 35, 50, 100]:
-  ROT  = 1 if N>20 else 0
-  for xN in xNs:
-    cfgs += EnKF_N(        N=N,  xN=xN,  rot=ROT,                  )
-    cfgs += iEnKS('-N'    ,N=N,  xN=xN,  rot=ROT, Lag=1  ,iMax=iMax)
-    cfgs += iEnKS('-N'    ,N=N,  xN=xN,  rot=ROT, Lag=LAG,iMax=iMax)
-  for infl in infls:
-    cfgs += EnKF('PertObs',N=N,infl=infl,                          )
-    cfgs += EnRML('NA'    ,N=N,infl=infl,         Lag=1  ,iMax=iMax)
+nIter  = 10
+Lag    = 3   # TODO: 8 is optimal ?
+infls  = [1.01, 1.02, 1.04, 1.06, 1.10, 1.2, 1.4]
+# infls  = [1.01, 1.03, 1.07, 1.25]
+
+for infl in infls:
+  cfgs +=   EnKF ('PertObs', N='?', infl=infl,)
+  for rot in [False, True]:
+    cfgs += EnKF ('Sqrt'   , N='?', infl=infl, rot=rot, )
+    cfgs += iEnKS('Sqrt'   , N='?', infl=infl, rot=rot, Lag=Lag, nIter=nIter)
+  cfgs +=   iEnKS('EnRML'  , N='?', infl=infl,          Lag=Lag, nIter=nIter)
+  cfgs +=   iEnKS('ES-MDA' , N='?', infl=infl,          Lag=Lag, nIter=nIter)
 
 
 ##############################
@@ -53,17 +54,16 @@ avrgs = np.empty((len(xticks),1,len(cfgs)),dict)
 stats = np.empty_like(avrgs)
 
 for iX,(X,iR) in enumerate(zip(xticks,iiRep)):
-  print_c('\n'+CtrlVar,'value:', X,'index:',iX,'/',len(xticks)-1)
-  setattr(setup.t,CtrlVar,X)
+  with coloring(): print('\n'+"xticks[",iX,'/',len(xticks)-1,"] ",CtrlVar,': ',X,sep="")
+  # setattr(setup.t,CtrlVar,X)
 
   sd    = seed(sd0 + iR)
   xx,yy = simulate(setup)
 
   for iC,C in enumerate(cfgs):
-    if isinstance(getattr(C,'Lag',None),str):
-      # Set Lag (specified in cycles) to LAG (unitless time)
-      Lag = int(round(float(C.Lag)/setup.t.dtObs))
-      C = C.update_settings(Lag=Lag)
+
+    if CtrlVar=='N' and hasattr(C,'N'):
+      C = C.update_settings(N=X)
 
     seed(sd)
 
@@ -76,49 +76,47 @@ for iX,(X,iR) in enumerate(zip(xticks,iiRep)):
 
 #plot_time_series(stats[-1])
 
+np.savez(save_path,
+    avrgs      = avrgs,
+    xlabel     = CtrlVar,
+    xticks     = xticks,
+    tuning_tag = 'infl', 
+    labels     = cfgs.gen_names(do_tab=True),
+    meta       = {'dkObs':setup.t.dkObs})
+
 
 ##############################
-# Save
+# Results load & presentation
 ##############################
-cfgs.assign_names(do_tab=False,ow='prepend')
-cnames = [c.name for c in cfgs]
-print("Saving to",save_path)
-np.savez(save_path,avrgs=avrgs,xticks=xticks,labels=cnames)
+if 'WORKER' in sys.argv: sys.exit(0) # quit if script is running as worker.
+
+R = ResultsTable(save_path)
+# R = ResultsTable("data/Stoch_iEnS/bench_L95/P2720L/N_run2")
+
+# with coloring(): print("Averages over experiment repetition:")
+# R.print_mean_field('rmse_a',1,1,cols=slice(0,2))
+
+BaseLineMethods = R.split(['Climatology', 'OptInterp', 'Var3D','ExtKF'])
+
+# Plot
+fig, ax = plt.subplots()
+# R.plot_1d('rmse_a',)
+ax, ax_, lhs = R.plot_1d_minz('rmse_a',)
+ax.legend()
+plt.sca(ax)
+# if 'checkmarks' not in locals(): checkmarks = []
+# checkmarks += [toggle_lines()];
+BaseLineMethods.plot_1d('rmse_a',color='k')
+
+# Adjust plot
+ax.set_yscale('log')
+ax.set_xscale('log')
+ax.grid(True,'minor')
+xt = R.xticks
+yt = [0.1, 0.2, 0.5, 1, 2, 5]
+ax.set_xticks(xt); ax.set_xticklabels(xt)
+ax.set_yticks(yt); ax.set_yticklabels(yt)
 
 
-
-
-# Archived:
-#  In the loop:  set_infl(C,avrgs[iX,0])
-# 
-#  def set_infl(cfg,avrgs):
-#  
-#    if cfg._is(EnKF_N) or getattr(cfg,'upd_a',0)=='-N' or not hasattr(cfgs,'N'):
-#      return cfg
-#  
-#    def find_iC(cond):
-#      # Find index in cfgs cond 
-#      iC = [i for i,C in enumerate(cfgs) if cond(C)]
-#      assert len(iC)==1
-#      return iC[0]
-#  
-#  
-#    if cfg._is(EnKF):
-#  
-#      iC = find_iC(lambda C: C._is(EnKF_N) and C.N==cfg.N)
-#      
-#      if   cfg.upd_a=='Sqrt'   : a = 1;    b = 0
-#      elif cfg.upd_a=='PertObs': a = 1.73; b = 0.23
-#  
-#    elif cfg._is(iEnKS) or cfg._is(EnRML):
-#  
-#      iC = find_iC(lambda C: C._is(iEnKS) and C.upd_a=='-N' and C.N==cfg.N and C.Lag==cfg.Lag)
-#  
-#      if   cfg._is(iEnKS): a = 1;    b = 0
-#      elif cfg._is(EnRML): a = 1.73; b = 0.23
-#  
-#    infl = avrgs[iC]['infl'].val
-#    infl = 1 + a*(infl-1) + b
-#  
-#    return cfg.update_settings(infl=infl)
+##
 

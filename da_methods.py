@@ -438,8 +438,7 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
   def assimilator(stats,twin,xx,yy):
     f,h,chrono,X0 = twin.f, twin.h, twin.t, twin.X0
 
-    N1 = N-1
-
+    N1   = N-1
     R    = h.noise
     Rm12 = h.noise.C.sym_sqrt_inv
 
@@ -503,7 +502,7 @@ def effective_N(YR,dyR,xN,g):
   as measured by the finite-size EnKF-N
   """
   N, P = YR.shape
-  N1 = N-1
+  N1   = N-1
 
   V,s,UT = svd0(YR)
   du     = UT @ dyR
@@ -922,10 +921,8 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs
   mods/Lorenz63/boc12.py
   """
 
-  N1 = N-1
-
   def assimilator(stats,twin,xx,yy):
-    f,h,chrono,X0,R,KObs = twin.f, twin.h, twin.t, twin.X0, twin.h.noise.C, twin.t.KObs
+    f,h,chrono,X0,R,KObs, N1 = twin.f, twin.h, twin.t, twin.X0, twin.h.noise.C, twin.t.KObs, N-1
     Rm12 = h.noise.C.sym_sqrt_inv
     assert f.noise.C is 0, "Q>0 not yet supported. See Sakov et al 2017: 'An iEnKF with mod. error'"
 
@@ -2180,7 +2177,7 @@ def RHF(N,ordr='rand',infl=1.0,rot=False,**kwargs):
   def assimilator(stats,twin,xx,yy):
     f,h,chrono,X0 = twin.f, twin.h, twin.t, twin.X0
 
-    N1 = N-1
+    N1         = N-1
     step       = 1/N
     cdf_grid   = linspace(step/2, 1-step/2, N)
 

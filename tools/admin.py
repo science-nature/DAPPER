@@ -242,6 +242,10 @@ class DAC(ImmutableAttributes):
       s += format_(key,getattr(self,key))
     return s[:-2]+')'
 
+  def __eq__(self, config):
+    prep = lambda obj: {k:v for k,v in obj.__dict__.items() if k!="assimilate"}
+    return prep(self)==prep(config)
+
   def _is(self,decorated_da_method):
     "Test if cfg is an instance of the decorator of the da_method."
     return self.da_method.__name__ == decorated_da_method.__name__
@@ -259,10 +263,12 @@ class List_of_Configs(list):
   excluded = DAC.excluded + ['name']
   ordering = ['da_method','N','upd_a','infl','rot']
 
-  def __init__(self,*args):
+  def __init__(self,*args,unique=False):
     """
     List_of_Configs() -> new empty list
     List_of_Configs(iterable) -> new list initialized from iterable's items
+
+    If unique: don't APPEND duplicate entries.
     """
     for cfg in args:
       if isinstance(cfg, DAC):
@@ -270,13 +276,20 @@ class List_of_Configs(list):
       elif isinstance(cfg, list):
         for b in cfg:
           self.append(b)
+    self.unique = unique
 
-  def __iadd__(self,val):
-    if not hasattr(val,'__iter__'):
-      val = [val]
-    for item in val:
+  def __iadd__(self,cfg):
+    if not hasattr(cfg,'__iter__'):
+      cfg = [cfg]
+    for item in cfg:
       self.append(item)
     return self
+
+  def append(self,cfg):
+    if self.unique and cfg in self:
+      return
+    else:
+      super().append(cfg)
 
   def sublist(self,inds):
     """

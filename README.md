@@ -315,6 +315,7 @@ TODO
 * Make function DA_Config() a member called 'method' of DAC. Rename DAC to DA_Config.
     => Yields (???) decorator syntax @DA_Config.method  (which would look nice) 
 * Rename setup to HMM
+* Rename DA_Config to DA_method or something
 * Change m to M and ndim? (what about model?)
 * EITHER: Rm *args, **kwargs from da_methods? (less spelling errors)
 *         Replace with opts argument (could be anything).

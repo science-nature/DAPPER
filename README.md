@@ -373,6 +373,16 @@ Colin Grudzien,
 Maxime Tondeur,
 Remy Dubois
 
+Powered by
+------------------------------------------------
+<div>
+<img src="./data/figs/logos/python.png"  alt="Python"  height="100">
+<img src="./data/figs/logos/numpy.png"   alt="Numpy"   height="100">
+<img src="./data/figs/logos/pandas.png"  alt="Pandas"  height="100">
+<img src="./data/figs/logos/jupyter.png" alt="Jupyter" height="100">
+</div>
+
+
 <!--
 "Outreach"
 ---------------

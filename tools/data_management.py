@@ -101,6 +101,7 @@ class ResultsTable():
       """
 
       # xticks, labels
+      # Also see section below for self._scalars.
       # -------------------
       xticks = [] # <--> xlabel
       labels = [] # <--> tuning_tag (if applicable)
@@ -111,6 +112,7 @@ class ResultsTable():
       # Make labels and xticks unique
       xticks = np.sort(np.unique(ccat(*xticks)))
       labels = keep_order_unique(ccat(*labels))
+
       # Assign
       self.xticks = xticks
       self.labels = labels
@@ -133,7 +135,7 @@ class ResultsTable():
 
       # Non-array attributes (i.e. must be the same in all datasets).
       # --------------------------------------------------------------
-      self._scalars = ['xlabel', 'tuning_tag'] # Register attributes.
+      self._scalars = ['xlabel', 'tuning_tag', 'meta'] # Register attributes.
       # NB: If you add a new attribute but not by registering them in _scalars,
       #     then you must also manage it in __deepcopy__().
       scalars = {key:[] for key in self._scalars} # Init
@@ -296,6 +298,7 @@ class ResultsTable():
     s = self._headr()
     if hasattr(self,'xticks'):
       s +="\n\nfields:\n"      + str(self.fields)     +\
+          "\n\nmeta: "         + str(self.meta)       +\
           "\n\nxlabel: "       + str(self.xlabel)     +\
           "\nxticks: "         + str(self.xticks)     +\
           "\n\ntuning_tag: "   + str(self.tuning_tag) +\
@@ -496,14 +499,15 @@ class ResultsTable():
       tuning_vals = ma.masked_array(tuning_vals, mask=fieldvals.mask)
       
       lhs  += [ ax .plot(self.xticks,fieldvals  ,label=group_name,**kwargs)[0] ]
-      lhs_ += [ ax_.plot(self.xticks,tuning_vals,                 **kwargs)[0] ]
+      lhs_ += [ ax_.plot(self.xticks,tuning_vals,label=group_name,**kwargs)[0] ]
 
     ax_.set_xlabel(self.xlabel)
     ax_.set_ylabel("opt. " + self.tuning_tag)
     ax .set_ylabel(field)
     ax .set_title(self._headr())
+    plt.sca(ax)
 
-    return ax, ax_, lhs
+    return ax, ax_, lhs, lhs_
 
 
   def plot_2d(self,field='rmse_a',log=False,cMin=None,cMax=None,

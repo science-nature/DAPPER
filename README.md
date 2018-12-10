@@ -8,6 +8,20 @@
 ! 
 -->
 
+<!--
+Table of Contents
+------------------------------------------------
+- [Intro](#intro)
+- [Installation](#installation)
+- [Methods](#methods)
+- [Models](#models)
+- [Additional features](#additional-features)
+- [Alternative projects](#alternative-projects)
+- [References](#references)
+- [Contributors](#contributors)
+- [Powered by](#powered-by)
+-->
+
 DAPPER is a set of templates for benchmarking the performance of
 [data assimilation (DA)](https://sites.google.com/site/patricknraanespro/DA_tut.pdf)
 methods.
@@ -48,6 +62,7 @@ I.e. it is not designed for the assimilation of real data in operational models 
 There is no unified documentation,
 but the code is reasonably well commented, including docstrings.
 Alternatively, see the `tutorials` folder for an intro to DA.
+
 
   
 Installation
@@ -95,6 +110,12 @@ Tuned with inflation and "random, orthogonal rotations".
 <sup>2</sup>: Resampling: multinomial (including systematic/universal and residual).  
 The particle filter is tuned with "effective-N monitoring", "regularization/jittering" strength, and more.
 
+**To add a new method:**
+Just add it to `da_methods.py`, using the others in there as templates.
+Remember: DAPPER is a *set of templates* (not a framework);
+do not hesitate make your own scripts and functions
+(instead of squeezing everything into standardized configuration files).
+
 
 
 
@@ -111,6 +132,36 @@ LorenzUV    | No      | 2x 1d     | 256 + 8 * | ≈60      | Raanes
 Quasi-Geost | No      | 2d        | 129²≈17k  | ≈140     | Sakov
 
 *: flexible; set as necessary
+
+**To add a new model:**
+* Make a new dir: `DAPPER/mods/`**your_mod** and add the empty file `__init__.py`
+* See other examples, e.g. `DAPPER/mods/Lorenz63/sak12.py`
+* Make sure that the model (and obs operator) supports
+  2D-array (i.e. ensemble) and 1D-array (single realization) input.
+  See `Lorenz63` and `Lorenz95` for typical implementation.
+
+More conventions: each model directory should have a main file (usually called `core.py`) that
+defines the core functionality and provides some documentation and references. 
+In addition, there should be a `demo.py` file and possibly a `liveplotting.py` file.
+The rest of the python files typically defines setups for twin experiments.
+
+
+<!--
+* To begin with, test whether the model works
+    * on 1 realization
+    * on several realizations (simultaneously)
+* Thereafter, try assimilating using
+    * a big ensemble
+    * a safe (e.g. 1.2) inflation value
+    * small initial perturbations
+      (big/sharp noises might cause model blow up)
+    * small(er) integrational time step
+      (assimilation might create instabilities)
+    * very large observation noise (free run)
+    * or very small observation noise (perfectly observed system)
+-->
+
+
 
 
 Additional features
@@ -149,63 +200,20 @@ Also has:
 -->
 
 
-What it can't do
-------------------------------------------------
-* Highly efficient DA on very big models (see discussion in introduction).
-* Time-dependent error covariances and changes in lengths of state/obs
-     (but models f and h may otherwise be time-dependent).
-* Non-uniform time sequences not fully supported.
-
-
-How to
-------------------------------------------------
-DAPPER is like a *set of templates* (not a framework);
-do not hesitate make your own scripts and functions
-(instead of squeezing everything into standardized configuration files).
-
-#### Add a new method
-Just add it to `da_methods.py`, using the others in there as templates.
-
-
-#### Add a new model
-* Make a new dir: `DAPPER/mods/`**your_mod**
-* Add the empty file `__init__.py`
-* See other examples, e.g. `DAPPER/mods/Lorenz63/sak12.py`
-* Make sure that the model (and obs operator) supports
-  2D-array (i.e. ensemble) and 1D-array (single realization) input.
-  See `Lorenz63` and `Lorenz95` for typical implementation.
-
-
-
-<!--
-* To begin with, test whether the model works
-    * on 1 realization
-    * on several realizations (simultaneously)
-* Thereafter, try assimilating using
-    * a big ensemble
-    * a safe (e.g. 1.2) inflation value
-    * small initial perturbations
-      (big/sharp noises might cause model blow up)
-    * small(er) integrational time step
-      (assimilation might create instabilities)
-    * very large observation noise (free run)
-    * or very small observation noise (perfectly observed system)
--->
-
-
 
 Alternative projects
 ------------------------------------------------
-If you have an *operational* (real-world) application,
+DAPPER is aimed at research and teaching (see discussion on top).
+Example of limitations:
+ * It is not suited for very big models (>60k unknowns).
+ * Time-dependent error covariances and changes in lengths of state/obs
+     (although models f and h may otherwise be time-dependent).
+ * Non-uniform time sequences not fully supported.
+Also, DAPPER comes with no guarantees/support.
+
+Therefore, if you have an *operational* (real-world) application,
 you should look into one of the alternatives,
 sorted by approximate project size.
-
-
-Alternative projects
-------------------------------------------------
-DAPPER is for research/teaching with DA. Not *operational* application.
-
-Sorted by approximate project size.
 
 Name               | Developers            | Purpose (approximately)
 ------------------ | --------------------- | -----------------------------
@@ -254,6 +262,77 @@ IEnKS code*        | Bocquet               | Python, personal publications
 [16]: http://hickmank.github.io/pyda/
 [17]: https://github.com/sakov/enkf-c
 [18]: https://github.com/kingaa/pomp
+
+
+
+
+
+References
+------------------------------------------------
+- Sakov (2008)   : Sakov and Oke. "A deterministic formulation of the ensemble Kalman filter: an alternative to ensemble square root filters".  
+- Anderson (2010): "A Non-Gaussian Ensemble Filter Update for Data Assimilation"
+- Bocquet (2010) : Bocquet, Pires, and Wu. "Beyond Gaussian statistical modeling in geophysical data assimilation".  
+- Bocquet (2011) : Bocquet. "Ensemble Kalman filtering without the intrinsic need for inflation,".  
+- Sakov (2012)   : Sakov, Oliver, and Bertino. "An iterative EnKF for strongly nonlinear systems".  
+- Bocquet (2012) : Bocquet and Sakov. "Combining inflation-free and iterative ensemble Kalman filters for strongly nonlinear systems".  
+- Bocquet (2014) : Bocquet and Sakov. "An iterative ensemble Kalman smoother".  
+- Bocquet (2015) : Bocquet, Raanes, and Hannart. "Expanding the validity of the ensemble Kalman filter without the intrinsic need for inflation".  
+- Tödter (2015)  : Tödter and Ahrens. "A second-order exact ensemble square root filter for nonlinear data assimilation".  
+- Raanes (2015)  : Raanes, Carrassi, and Bertino. "Extending the square root method to account for model noise in the ensemble Kalman filter".  
+- Raanes (2016a) : Raanes. "On the ensemble Rauch-Tung-Striebel smoother and its equivalence to the ensemble Kalman smoother".  
+- Raanes (2016b) : Raanes. "Improvements to Ensemble Methods for Data Assimilation in the Geosciences".  
+- Wiljes (2017)  : Aceved, Wilje and Reich. "Second-order accurate ensemble transform particle filters".  
+
+Further references are given in the code.
+
+<!--
+Licence
+------------------------------------------------
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./licence.txt)
+-->
+
+Contributors
+------------------------------------------------
+Patrick N. Raanes,
+Colin Grudzien,
+Maxime Tondeur,
+Remy Dubois
+
+If you use this software in a publication, please cite as follows.
+
+```bibtex
+@misc{raanes2018dapper,
+  author = {Patrick N. Raanes and others},
+  title  = {nansencenter/DAPPER: Version 0.8},
+  month  = December,
+  year   = 2018,
+  doi    = {10.5281/zenodo.2029296},
+  url    = {https://doi.org/10.5281/zenodo.2029296}
+}
+```
+
+
+<!--
+[![DOI](https://zenodo.org/badge/62547494.svg)](https://zenodo.org/badge/latestdoi/62547494)
+-->
+
+<!--
+"Outreach"
+---------------
+* http://stackoverflow.com/a/38191145/38281
+* http://stackoverflow.com/a/37861878/38281
+* http://stackoverflow.com/questions/43453707
+-->
+
+Powered by
+------------------------------------------------
+<div>
+<img src="./data/figs/logos/python.png"  alt="Python"  height="100">
+<img src="./data/figs/logos/numpy.png"   alt="Numpy"   height="100">
+<img src="./data/figs/logos/pandas.png"  alt="Pandas"  height="100">
+<img src="./data/figs/logos/jupyter.png" alt="Jupyter" height="100">
+</div>
+
 
 
 
@@ -327,74 +406,6 @@ TODO
 * Post version on nersc and link from enkf.nersc
 * Post version on norce
 -->
-
-
-References
-------------------------------------------------
-- Sakov (2008)   : Sakov and Oke. "A deterministic formulation of the ensemble Kalman filter: an alternative to ensemble square root filters".  
-- Anderson (2010): "A Non-Gaussian Ensemble Filter Update for Data Assimilation"
-- Bocquet (2010) : Bocquet, Pires, and Wu. "Beyond Gaussian statistical modeling in geophysical data assimilation".  
-- Bocquet (2011) : Bocquet. "Ensemble Kalman filtering without the intrinsic need for inflation,".  
-- Sakov (2012)   : Sakov, Oliver, and Bertino. "An iterative EnKF for strongly nonlinear systems".  
-- Bocquet (2012) : Bocquet and Sakov. "Combining inflation-free and iterative ensemble Kalman filters for strongly nonlinear systems".  
-- Bocquet (2014) : Bocquet and Sakov. "An iterative ensemble Kalman smoother".  
-- Bocquet (2015) : Bocquet, Raanes, and Hannart. "Expanding the validity of the ensemble Kalman filter without the intrinsic need for inflation".  
-- Tödter (2015)  : Tödter and Ahrens. "A second-order exact ensemble square root filter for nonlinear data assimilation".  
-- Raanes (2015)  : Raanes, Carrassi, and Bertino. "Extending the square root method to account for model noise in the ensemble Kalman filter".  
-- Raanes (2016a) : Raanes. "On the ensemble Rauch-Tung-Striebel smoother and its equivalence to the ensemble Kalman smoother".  
-- Raanes (2016b) : Raanes. "Improvements to Ensemble Methods for Data Assimilation in the Geosciences".  
-- Wiljes (2017)  : Aceved, Wilje and Reich. "Second-order accurate ensemble transform particle filters".  
-
-Further references are listed in the code.
-
-<!--
-Licence
-------------------------------------------------
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./licence.txt)
--->
-
-Contributors
-------------------------------------------------
-Patrick N. Raanes,
-Colin Grudzien,
-Maxime Tondeur,
-Remy Dubois
-
-If you use this software in a publication, please cite as follows.
-
-```bibtex
-@misc{raanes2018dapper,
-  author = {Patrick N. Raanes and others},
-  title  = {nansencenter/DAPPER: Version 0.8},
-  month  = December,
-  year   = 2018,
-  doi    = {10.5281/zenodo.2029296},
-  url    = {https://doi.org/10.5281/zenodo.2029296}
-}
-```
-
-
-<!--
-[![DOI](https://zenodo.org/badge/62547494.svg)](https://zenodo.org/badge/latestdoi/62547494)
--->
-
-<!--
-"Outreach"
----------------
-* http://stackoverflow.com/a/38191145/38281
-* http://stackoverflow.com/a/37861878/38281
-* http://stackoverflow.com/questions/43453707
--->
-
-Powered by
-------------------------------------------------
-<div>
-<img src="./data/figs/logos/python.png"  alt="Python"  height="100">
-<img src="./data/figs/logos/numpy.png"   alt="Numpy"   height="100">
-<img src="./data/figs/logos/pandas.png"  alt="Pandas"  height="100">
-<img src="./data/figs/logos/jupyter.png" alt="Jupyter" height="100">
-</div>
-
 
 
 

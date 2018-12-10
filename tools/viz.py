@@ -1091,8 +1091,8 @@ def toggle_lines(ax=None,autoscl=True,numbering=False,txtwidth=15,txtsize=None,s
   lines = lines[~lines.label.str.startswith('_')]
 
   # Adjust labels
-  if numbering: lines['label'] = [str(i)+': '+lb for i,lb in enumerate(lines['label'])]
-  if txtwidth:  lines['label'] = [textwrap.fill(n,width=txtwidth) for n in lines['label']]
+  if numbering: lines['label'] = [str(i)+': '+lbl for i,lbl in enumerate(lines['label'])]
+  if txtwidth:  lines['label'] = [textwrap.fill(lbl,width=txtwidth) for lbl in lines['label']]
 
   # Set state. BUGGY? sometimes causes MPL complaints after clicking boxes
   if state is not None:
@@ -1103,9 +1103,10 @@ def toggle_lines(ax=None,autoscl=True,numbering=False,txtwidth=15,txtsize=None,s
 
   # Setup buttons
   # When there's many, the box-sizing is awful, but difficult to fix.
-  W = 0.23 * txtwidth/15 * txtsize/10
-  N = len(lines)
-  H = min(1,0.07*N)
+  W       = 0.23 * txtwidth/15 * txtsize/10
+  N       = len(lines)
+  nBreaks = sum(lbl.count('\n') for lbl in lines['label']) # count linebreaks
+  H       = min(1,0.05*(N+nBreaks))
   plt.subplots_adjust(left=W+0.12,right=0.97)
   rax = plt.axes([0.05, 0.5-H/2, W, H])
   check = CheckButtons(rax, lines.label, lines.visible)

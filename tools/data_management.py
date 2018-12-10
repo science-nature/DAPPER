@@ -101,6 +101,7 @@ class ResultsTable():
       """
 
       # xticks, labels
+      # Also see section below for self._scalars.
       # -------------------
       xticks = [] # <--> xlabel
       labels = [] # <--> tuning_tag (if applicable)
@@ -111,6 +112,7 @@ class ResultsTable():
       # Make labels and xticks unique
       xticks = np.sort(np.unique(ccat(*xticks)))
       labels = keep_order_unique(ccat(*labels))
+
       # Assign
       self.xticks = xticks
       self.labels = labels
@@ -133,7 +135,7 @@ class ResultsTable():
 
       # Non-array attributes (i.e. must be the same in all datasets).
       # --------------------------------------------------------------
-      self._scalars = ['xlabel', 'tuning_tag'] # Register attributes.
+      self._scalars = ['xlabel', 'tuning_tag', 'meta'] # Register attributes.
       # NB: If you add a new attribute but not by registering them in _scalars,
       #     then you must also manage it in __deepcopy__().
       scalars = {key:[] for key in self._scalars} # Init
@@ -172,34 +174,34 @@ class ResultsTable():
     return np.vectorize(lambda x: len(x))(self.TABLE)
 
 
-  def rm(self,cond,INV=False):
+  def rm(self,conditions,INV=False):
     """
-    Delete configs where cond is True.
-    Also, cond can be indices or a regex.
+    Delete configs where conditions is True.
+    Also, conditions can be indices or a regex.
     Examples:
     delete if inflation>1.1:   Res.rm('infl 1\.[1-9]')
     delete if contains tag 50: Res.rm('tag 50')
     """
 
-    if isinstance(cond,int):
-      cond = [cond]
+    if not isinstance(conditions,list):
+      conditions = [conditions]
 
-    def _cond(name):
-      if hasattr(cond,'__call__'):
-        match = cond(name)
-      elif isinstance(cond,str):
-        match = bool(re.search(cond,name))
-      else: # assume indices
-        match = name in self.labels[cond]
-      # Use xnor to inverse (if INV)
-      return not (not(INV) ^ match) 
+    def check_conds(ind, label):
+      for cond in conditions:
+        if hasattr(cond,'__call__'): match = cond(label)
+        elif isinstance(cond,str):   match = bool(re.search(cond,label))
+        else:                        match = ind==cond # works for inds
+        if match:
+          break
+      if INV: match = not match
+      return match
 
     for ds in self.datasets.values():
-      ii = [i for i,name in enumerate(ds['labels']) if _cond(name)]
-      ds['labels'] = np.delete(ds['labels'], ii)
-      ds['avrgs']  = np.delete(ds['avrgs'] , ii, axis=-1)
-      # stackoverflow.com/q/46611571
+      inds = [i for i,label in enumerate(ds['labels']) if check_conds(i,label)]
+      ds['labels'] = np.delete(ds['labels'], inds)
+      ds['avrgs']  = np.delete(ds['avrgs'] , inds, axis=-1)
       ds['avrgs']  = np.ascontiguousarray(ds['avrgs'])
+      # for ascontiguousarray, see stackoverflow.com/q/46611571
 
     self.regen_table()
 
@@ -296,6 +298,7 @@ class ResultsTable():
     s = self._headr()
     if hasattr(self,'xticks'):
       s +="\n\nfields:\n"      + str(self.fields)     +\
+          "\n\nmeta: "         + str(self.meta)       +\
           "\n\nxlabel: "       + str(self.xlabel)     +\
           "\nxticks: "         + str(self.xticks)     +\
           "\n\ntuning_tag: "   + str(self.tuning_tag) +\
@@ -452,7 +455,8 @@ class ResultsTable():
     for iC,(row,name) in enumerate(zip(Z,labels)): 
       lhs += [ ax.plot(self.xticks,row,'-o',label=name,**kwargs)[0] ]
 
-    ax.set_xlabel(self.xlabel)
+    if ax.is_last_row():
+      ax.set_xlabel(self.xlabel)
     ax.set_ylabel(field)
     ax.set_title(self._headr() + title_)
 
@@ -468,8 +472,11 @@ class ResultsTable():
     ax , ax_   = axs
     lhs, lhs_  = [], []
 
-    # Remove tuning_tag
-    names = [re.sub(' *'+self.tuning_tag+':\S*','',n) for n in self.labels]
+    # Remove tuning tag (repl by spaces to avoid de-alignment in case of 1.1 vs 1.02 for ex).
+    pattern  = '(?<!\S)'+self.tuning_tag+':\S*' # (no not whitespace), tuning_tag, (not whitespace)
+    repl_fun = lambda m: ' '*len(m.group())     # replace by spaces of same length
+    names    = [re.sub(pattern, repl_fun, n) for n in self.labels]
+    names    = trim_table(names)
 
     Z = self.mean_field(field)[0]
 
@@ -492,14 +499,15 @@ class ResultsTable():
       tuning_vals = ma.masked_array(tuning_vals, mask=fieldvals.mask)
       
       lhs  += [ ax .plot(self.xticks,fieldvals  ,label=group_name,**kwargs)[0] ]
-      lhs_ += [ ax_.plot(self.xticks,tuning_vals,                 **kwargs)[0] ]
+      lhs_ += [ ax_.plot(self.xticks,tuning_vals,label=group_name,**kwargs)[0] ]
 
     ax_.set_xlabel(self.xlabel)
     ax_.set_ylabel("opt. " + self.tuning_tag)
     ax .set_ylabel(field)
     ax .set_title(self._headr())
+    plt.sca(ax)
 
-    return ax, ax_, lhs
+    return ax, ax_, lhs, lhs_
 
 
   def plot_2d(self,field='rmse_a',log=False,cMin=None,cMax=None,

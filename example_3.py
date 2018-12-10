@@ -4,12 +4,12 @@
 # with each curve being one method configuration.
 #
 # Specifically, we will reproduce figure 6.6 from [1], accessible through 
-# http://books.google.no/books?id=FtDZDQAAQBAJ&q=figure+6.6.
+# http://books.google.no/books?id=FtDZDQAAQBAJ&q=figure+6.6
 # The figure reveals the relative importance of localization and inflation in the EnKF.
 # Ref[1]: Book: "Data Assimilation: Methods, Algorithms, and Applications"
 #         by M. Asch, M. Bocquet, M. Nodet.
 #
-# Also demostrates:
+# Also demonstrates:
 #  - Parallelization (distribution of experiment settings (xticks)).
 #  - Result data saving, loading, plotting. 
 
@@ -53,21 +53,21 @@ xticks, save_path, rep_inds = distribute(__file__,sys.argv,xticks,CtrlVar)
 N = '?' if CtrlVar=='N' else 20
 
 cfgs  = List_of_Configs()
-cfgs += Climatology()                                                # Baseline method
-cfgs += OptInterp()                                                  # Baseline method
+cfgs += Climatology()                                                 # Baseline method
+cfgs += OptInterp()                                                   # Baseline method
 
-for upd_a in ['PertObs','Sqrt']:                                     # Update (_a) forms: stoch, determ.
-  cfgs += EnKF(upd_a,N                                             ) # Pure EnKF
-  cfgs += EnKF(upd_a,N            ,infl=1.01                       ) # + fixed, post-inflation, good around N=50.
-  cfgs += EnKF(upd_a,N            ,infl=1.05                       ) # + idem                 , good around N=17.
-  cfgs += EnKF(upd_a,N            ,infl=1.10                       ) # + idem                 , good around N=16.
-cfgs += EnKF_N(      N                                             ) # + adaptive (≈optimal) inflation.
-cfgs += EnKF_N(      N                       ,xN=2                 ) # + idem, with 2x confidence in inflation hyper-prior.
-cfgs += LETKF(       N,loc_rad=2                                   ) # + localization with radius=2.
-cfgs += LETKF(       N,loc_rad='?'                                 ) # + localization with ≈optimal radius(N)
-cfgs += LETKF(       N,loc_rad='?',infl='-N' ,xN=2                 ) # + idem, with adaptive (≈optimal) inflation.
-cfgs += LETKF(       N,loc_rad='$',infl='-N' ,xN=2                 ) # + idem, with adaptive (≈optimal) inflation.
-cfgs += iLEnKS('-N' ,N,loc_rad='?'           ,xN=2 ,iMax=4,Lag='?' ) # + iterations, localization and adaptive inflation.
+for upd_a in ['PertObs','Sqrt']:                                      # Update (_a) forms: stoch, determ.
+  cfgs += EnKF(upd_a,N                                              ) # Pure EnKF
+  cfgs += EnKF(upd_a,N            ,infl=1.01                        ) # + fixed, post-inflation, good around N=50.
+  cfgs += EnKF(upd_a,N            ,infl=1.05                        ) # + idem                 , good around N=17.
+  cfgs += EnKF(upd_a,N            ,infl=1.10                        ) # + idem                 , good around N=16.
+cfgs += EnKF_N(      N                                              ) # + adaptive (≈optimal) inflation.
+cfgs += EnKF_N(      N                       ,xN=2                  ) # + idem, with 2x confidence in inflation hyper-prior.
+cfgs += LETKF(       N,loc_rad=2                                    ) # + localization with radius=2.
+cfgs += LETKF(       N,loc_rad='?'                                  ) # + localization with ≈optimal radius(N)
+cfgs += LETKF(       N,loc_rad='?',infl='-N' ,xN=2                  ) # + idem, with adaptive (≈optimal) inflation.
+cfgs += LETKF(       N,loc_rad='$',infl='-N' ,xN=2                  ) # + idem, with adaptive (≈optimal) inflation.
+cfgs += iLEnKS('-N' ,N,loc_rad='?'           ,xN=2 ,nIter=4,Lag='?' ) # + iterations, localization and adaptive inflation.
 
 
 ##############################
@@ -162,8 +162,8 @@ BaseLineMethods = R.split(lambda x: x in ['Climatology', 'OptInterp', 'Var3D','E
 fig, ax = plt.subplots()
 R.plot_1d('rmse_a',)
 # The commented-out lines make checkmarks that toggle on/off the curves.
-if 'checkmarks' not in locals(): checkmarks = []
-checkmarks += [toggle_lines()];
+# if 'checkmarks' not in locals(): checkmarks = []
+# checkmarks += [toggle_lines()];
 BaseLineMethods.plot_1d('rmse_a',color='k')
 
 # Adjust plot

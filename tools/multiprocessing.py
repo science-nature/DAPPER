@@ -299,10 +299,12 @@ def distribute(script,sysargs,xticks,prefix='',nCore=0.99,xCost=None):
         cc  = np.cumsum(cc)              # ...cumulatively
         cc /= cc[-1]                     # ...normalized
         # Find index dividors between cc such that cumsum deltas are approx const:
-        divs     = [find_1st_ind(cc>c+1e-6) for c in linspace(0,1,nBatch+1)]
+        divs     = array([find_1st_ind(cc>c+1e-6) for c in linspace(0,1,nBatch+1)])
         divs[-1] = len(xticks)
-        # Split
-        xticks   = array(xticks)[divs[iWorker-1]:divs[iWorker]]
+        # The above partition may be "unlucky": fix by some ad-hoc post-processing.
+        divs[[i+1 for i, d in enumerate(diff(diff(divs))) if d>0]] += 1
+        # Select iWorker's part.
+        xticks   = array(xticks)  [divs[iWorker-1]:divs[iWorker]]
         rep_inds = array(rep_inds)[divs[iWorker-1]:divs[iWorker]]
 
       print("xticks partition index:",iWorker)

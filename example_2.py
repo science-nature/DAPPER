@@ -26,13 +26,15 @@ cfgs += PartFilt(       N=800 ,reg=0.9  ,NER=0.2)         # 0.28
 # cfgs += PFxN(xN=1000,  N=30  ,Qs=2     ,NER=0.2)        # 0.56
 
 # from mods.Lorenz95.sak08 import setup ##################### Expected RMSE_a:
-# cfgs += ExtKF(infl=6)
-# cfgs += EnKF('PertObs',N=40,infl=1.06)                     # 0.22
-# cfgs += EnKF('DEnKF  ',N=40,infl=1.01)                     # 0.18
-# cfgs += EnKF('PertObs',N=28,infl=1.08)                     # 0.24
-# cfgs += EnKF('Sqrt   ',N=24,infl=1.02,rot=True)            # 0.18
+# cfgs += Climatology()                                     # 3.6
+# cfgs += OptInterp()                                       # 0.95
+# cfgs += Var3D(infl=1.05)                                  # 0.41 
+# cfgs += ExtKF(infl=6)                                     # 0.24
+# cfgs += EnKF('PertObs'        ,N=40,infl=1.06)            # 0.22
+# cfgs += EnKF('Sqrt'           ,N=28,infl=1.02,rot=True)   # 0.18
 # 
-# cfgs += EnKF_N(N=24,rot=True)                             # 0.18
+# cfgs += EnKF_N(N=24,rot=True)                             # 0.21
+# cfgs += EnKF_N(N=24,rot=True,xN=2)                        # 0.18
 # cfgs += iEnKS('Sqrt',N=40,infl=1.01,rot=True)             # 0.17
 # 
 # cfgs += LETKF(         N=7,rot=True,infl=1.04,loc_rad=4)  # 0.22

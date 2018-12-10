@@ -60,20 +60,22 @@ def ens_compatible(func):
 def anom(E,axis=0):
   mu = mean(E,axis=axis, keepdims=True)
   A  = E - mu
+  # TODO: Why squeeze? I don't think this is very np "canonical",
+  #       and can yield some broadcasting issues.
   return A, mu.squeeze()
 
 def center(E,rescale=True):
   """
   Center sample,
-  but rescale to maintain its (expected) variance.
+  but rescale to maintain the (expected) variance.
 
   Note: similarly, one could correct a sample's 2nd moment,
         (on the diagonal, or other some other subset),
         however this is typically not worth it.
   """
-  N = E.shape[0]
   A = E - mean(E,0)
   if rescale:
+    N  = E.shape[0]
     A *= sqrt(N/(N-1))
   return A
 

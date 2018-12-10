@@ -347,9 +347,11 @@ References
 
 Further references are listed in the code.
 
+<!--
 Licence
 ------------------------------------------------
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./licence.txt)
+-->
 
 Contributors
 ------------------------------------------------
@@ -358,14 +360,11 @@ Colin Grudzien,
 Maxime Tondeur,
 Remy Dubois
 
-*Contact:*
-patrick. n. raanes AT gmail
-
-[![DOI](https://zenodo.org/badge/62547494.svg)](https://zenodo.org/badge/latestdoi/62547494)
+If you use this software in a publication, please cite as follows.
 
 ```bibtex
 @misc{raanes2018dapper,
-	author = {Patrick N. Raanes and others},
+  author = {Patrick N. Raanes and others},
   title  = {nansencenter/DAPPER: Version 0.8},
   month  = December,
   year   = 2018,
@@ -375,12 +374,25 @@ patrick. n. raanes AT gmail
 ```
 
 <!--
+[![DOI](https://zenodo.org/badge/62547494.svg)](https://zenodo.org/badge/latestdoi/62547494)
+-->
+
+<!--
 "Outreach"
 ---------------
 * http://stackoverflow.com/a/38191145/38281
 * http://stackoverflow.com/a/37861878/38281
 * http://stackoverflow.com/questions/43453707
 -->
+
+Powered by
+------------------------------------------------
+<div>
+<img src="./data/figs/logos/python.png"  alt="Python"  height="100">
+<img src="./data/figs/logos/numpy.png"   alt="Numpy"   height="100">
+<img src="./data/figs/logos/pandas.png"  alt="Pandas"  height="100">
+<img src="./data/figs/logos/jupyter.png" alt="Jupyter" height="100">
+</div>
 
 
 

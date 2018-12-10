@@ -1137,11 +1137,8 @@ def toggle_lines(ax=None,autoscl=True,numbering=False,txtwidth=15,txtsize=None,s
 
 
 @vectorize0
-def toggle_viz(h,prompt=True,legend=True):
-  """
-  Toggle visibility of the handle h,
-  which can also be a list of handles.
-  """
+def toggle_viz(h,prompt=False,legend=False):
+  """Toggle visibility of the graphics with handle h."""
 
   # Core functionality: turn on/off
   is_viz = not h.get_visible()
@@ -1150,31 +1147,32 @@ def toggle_viz(h,prompt=True,legend=True):
   if prompt:
     input("Press <Enter> to continue...")
 
+  # Legend updating. Basic version: works by
+  #  - setting line's label to actual_label/'_nolegend_' if is_viz/not
+  #  - re-calling legend()
   if legend:
-    if is_viz:
-      try:
-        h.set_label(h.old_label)
-      except AttributeError:
-        pass
-    else:
-      h.old_label = h.get_label()
-      h.set_label('_nolegend_')
+      if is_viz:
+        try:
+          h.set_label(h.actual_label)
+        except AttributeError:
+          pass
+      else:
+        h.actual_label = h.get_label()
+        h.set_label('_nolegend_')
+      # Legend refresh
+      ax = h.axes
+      with warnings.catch_warnings():
+        warnings.simplefilter("error",category=UserWarning)
+        try:
+          ax.legend()
+        except UserWarning:
+          # If all labels are '_nolabel_' then ax.legend() throws warning,
+          # and quits before refreshing. => Refresh by creating/rm another legend.
+          ax.legend('TMP').remove()
 
-    # Legend update
-    ax = h.axes
-    with warnings.catch_warnings():
-      warnings.simplefilter("error",category=UserWarning)
-      try:
-        ax.legend()
-      except UserWarning:
-        # If there's no remaining legend entries, ax.legend() throws warning.
-        # And yet it does NOT remove the last entry!
-        # Also ax._legend.remove() won't work either coz now _legend does not exist!
-        lh = ax.legend('NOT ASSOCIATED TO ANY OBJECT') # Spur mpl back into action
-        lh.remove()
-
-  plt.pause(0.04)
+  plt.pause(0.02)
   return is_viz
+
 
 def freshfig(num=None,figsize=None,*args,**kwargs):
   """

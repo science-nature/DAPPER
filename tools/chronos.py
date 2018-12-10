@@ -170,9 +170,9 @@ class Chronology:
     next(tckr)
     return tckr
 
-  def obs_range(self,kObs):
+  def cycle_to_obs(self,kObs):
     """
-    The range (in kk) observation kObs and kObs+1.
+    The range (in kk) between observation kObs-1 and kObs.
     Also yields t and dt.
     """
     for k in kObs * self.dkObs + arange(1,self.dkObs+1):

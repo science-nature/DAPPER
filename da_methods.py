@@ -60,7 +60,7 @@ def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
         YC = mrdiv(Y, C)
         KG = A.T @ YC
         HK = Y.T @ YC
-        dE = (KG @ ( y + D - hE ).T).T
+        dE = (KG @ ( y - D - hE ).T).T
         E  = E + dE
 
     elif 'Sqrt' in upd_a:
@@ -318,7 +318,7 @@ def reshape_fr(E,m):
 
 
 @DA_Config
-def EnKS(upd_a,N,tLag,infl=1.0,rot=False,**kwargs):
+def EnKS(upd_a,N,Lag,infl=1.0,rot=False,**kwargs):
   """
   EnKS (ensemble Kalman smoother)
 
@@ -343,8 +343,7 @@ def EnKS(upd_a,N,tLag,infl=1.0,rot=False,**kwargs):
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E[k])
 
-        kLag     = find_1st_ind(chrono.tt >= t-tLag)
-        kkLag    = range(kLag, k+1)
+        kkLag    = range(k-Lag*chrono.dkObs, k+1)
         ELag     = E[kkLag]
 
         hE       = h(E[k],t)
@@ -881,39 +880,34 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
 
 
 @DA_Config
-def iEnKS(upd_a,N,Lag=1,nIter=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs):
+def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,rot=False,**kwargs):
   """
-  Iterative EnKS-N.
+  Iterative EnKS.
+
+  As in Boc14, optimization uses Gauss-Newton. See Boc12 for Levenberg-Marquardt.
+  If MDA=True, then there's not really any optimization, but rather Gaussian annealing.
+
+  - upd_a : Analysis update form (flavour). One of:
+    * 'Sqrt'   : as in ETKF  , using a deterministic matrix square root transform.
+    * 'PertObs': as in EnRML , using stochastic, perturbed-observations.
+    * 'Order1' : as in DEnKF of Sakov (2008).
+  - Lag   : Length of the DA window (DAW), in multiples of dkObs (i.e. cycles).
+            Lag=1 (default) => iterative "filter" iEnKF (Sakov et al 2012).
+            Lag=0           => maximum-likelihood filter (Zupanski 2005).
+  - Shift : How far (in cycles) to slide the DAW. Fixed at 1 for simplicity.
+  - nIter : Maximal num. of iterations used (>=1).
+            Supporting nIter==0 requires more code than it's worth.
+  - wTol  : Rel. tolerance defining convergence. Default: 0 => always do nIter iterations.
+  - MDA   : Use iterations of the "multiple data assimlation" type.
+  - bundle: Use finite-diff. linearization instead of of least-squares regression.
+  - xN    : If set, use EnKF_N() pre-inflation. See further documentation there.
+
+  Total number of model simulations (of duration dtObs): N * (nIter*Lag + 1).
+  (due to boundary cases: only asymptotically valid)
   
   References:
-  Boc14: Marc Bocquet, and Pavel Sakov. (2014):
-  "An iterative ensemble Kalman smoother."
-  Boc12: Marc Bocquet, and Pavel Sakov. (2012):
-  "Combining inflation-free and iterative EnKFs ..."
-
-  - upd_a : Analysis update form. One of:
-    * 'Sqrt'  : as in ETKF  , using a deterministic matrix square root transform.
-    * '-N'    : as in EnKF-N, which is like the ETKF, but also estimates inflation.
-    * 'EnRML' : as in EnRML , using stochastic, perturbed-observations.
-    * 'ES-MDA': as in ES-MDA, using perturbed obs and annealing.
-                Also applicable to (quasi-static) "progressive assimilation", cf. below.
-  - Lag   : length of the DA window (DAW), in multiples of dkObs.
-            Lag=1 (default) yields the iterative "filter" iEnKF.
-            Note: the shift (S) is fixed at 1.
-  - nIter : Maximal num. of iterations allowed.
-            NB: Its minimum (1) still yields 2 forecasts per step.
-  - bundle: Use bundle (finite-diff) linearization instead of
-            of ensemble-based least-squares regression.
-            For details, see Boc12.
-            NB: yields artificially small spread statistics (TODO: fix).
-  - xN    : Described in EnKF_N().
-
-  As in Boc14, the minimization is done with Gauss-Newton.
-  See Boc12 for a Levenberg-Marquardt approach.
-
-  MDA (progressive assimilation / quasi-static optimization ) is not implemented coz
-   - The 'balancing step' is complicated.
-   - Trouble playing nice with '-N' inflation estimation.
+  - Boc12: M. Bocquet, and P. Sakov. (2012): "Combining inflation-free and iterative EnKFs ..."
+  - Boc14: M. Bocquet, and P. Sakov. (2014): "An iterative ensemble Kalman smoother."
 
   Settings for reproducing literature benchmarks may be found in
   mods/Lorenz95/sak08.py
@@ -921,129 +915,270 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,xN=1.0,bundle=False,infl=1.0,rot=False,**kwargs
   mods/Lorenz63/boc12.py
   """
 
+  # NB It's very difficult to know what should happen to all of the time indices in all cases of
+  # nIter and Lag. => Any changes to this function must be unit-tested via scripts/test_iEnKS.py.
+
+  # TODO:
+  # - Implement MDA (quasi-static optimization). Boc notes:
+  #   * The 'balancing step' is complicated.
+  #   * Trouble playing nice with '-N' inflation estimation.
+  # - Modularize upd_a (and localization?)
+
   def assimilator(stats,twin,xx,yy):
     f,h,chrono,X0,R,KObs, N1 = twin.f, twin.h, twin.t, twin.X0, twin.h.noise.C, twin.t.KObs, N-1
     Rm12 = h.noise.C.sym_sqrt_inv
-    assert f.noise.C is 0, "Q>0 not yet supported. See Sakov et al 2017: 'An iEnKF with mod. error'"
 
-    # Init DA cycles
+    assert f.noise.C is 0, "Q>0 not yet supported. TODO: implement Sakov et al 2017"
+
+    # Makes the iEnKS very much alike the iExtKS. 
+    if bundle: EPS = 1e-4 # Sakov/Boc use T=1e-4*eye(N), but I prefer using T*=1e-4,
+    else     : EPS = 1.0  # yielding a conditional shape for the bundle.
+
+    def make_CVar(E,scaling=1.0):
+      "Define change-of-var's from ens space to ens subspace (of state space)."
+      X,x = anom(E)
+      w2x = lambda w: x + (scaling*w)@X
+      return w2x
+
+    # Initial ensemble
     E = X0.sample(N)
-    stats.iters = np.full(KObs+1,nan)
 
-    # Loop DA cycles
-    with printoptions(precision=9):
-      for kObs in progbar(arange(KObs+1)):
+    # Loop for sliding the DA window (DAW).
+    for DAW_right in progbar(arange(-1,KObs+Lag+1)):
+        DAW_left = DAW_right-Lag+1 # => len(DAW)==Lag
 
-          # Set current DA Window (DAW) -- max length: Lag.
-          DAW_0 = kObs-Lag+1
-          DAW   = arange(max(0,DAW_0),DAW_0+Lag)
+        # Crop to to obs chronology
+        DAW = range( max(0,DAW_left), min(KObs,DAW_right) + 1)
 
-          # Decompose (and store the components of) prior ensemble. Define CVar from ens space.
-          A0,x0 = anom(E)
-          w2x   = lambda w: x0 + w @ A0
+        if 0<=DAW_right<=KObs: # if ∃ "not-fully-assimlated" obs (todo: quasi-static).
 
-          # Init iterations. Note: E = w2x(w + T).
-          w     = zeros(N)
-          T     = eye(N)
-          Tinv  = eye(N) # Avoiding tinv(T) saves significant time for small systems.
+            # Init iterations.
+            w2x_left = make_CVar(E) # CVar for x[DAW_left-1] based on ens. prior to yy[DAW_right] assim.
+            w        = zeros(N)     # Control vector for the mean state.
+            T        = eye(N)       # Anomalies transform matrix.
+            Tinv     = eye(N)       # Rather than on-demand tinv(T), an explicit Tinv variable allows for
+                                    # merging MDA code with iEnKS/EnRML, and sometimes for flop savings.
 
-          # Loop iterations
-          for iteration in arange(nIter):
+            for iteration in arange(nIter):
 
-              if bundle:
-                # T is non-dimensional => don't really need to make _eps tunable.
-                Eps  = 1e-4
-                T    = eye(N) * Eps
-                Tinv = eye(N) / Eps
+                # Forecast from [DAW_left-1] to [DAW_right]
+                E = w2x_left(w + T*EPS)                         # Reconstruct smoothed ensemble.
+                for kObs in DAW:                                # Loop len(DAW) cycles.
+                  for k,t,dt in chrono.cycle_to_obs(kObs):      # Loop dkObs steps
+                    E = f(E,t-dt,dt)                            # Forecast 1 dt step
+                if iteration==0: w2x_right = make_CVar(E,1/EPS) # CVar for x[DAW_right], used for f/a stats.
 
-              # Forecast across whole DAW, Observe.
-              E = w2x(w+T)                            # Reconstruct ensemble
-              for kDAW in DAW:                        # Loop Lag cycles
-                for k,t,dt in chrono.obs_range(kDAW): # Loop dkObs steps (1 cycle)
-                  E = f(E,t-dt,dt)                    # Forecast 1 dt step (1 dkObs)
-              if iteration==0:                        # 'f' stats obtained at 0th iteration
-                stats.assess(k,kObs,'f',E=E)          # Assess
-              hE = h(E,t)                             # Run obs model
+                # Prepare analysis of current obs: yy[kObs], where kObs==DAW_right if len(DAW)>0
+                hE     = h(E,t)            # Observe ensemble.
+                y      = yy[DAW_right]     # Select current obs/data.
+                Y,hx   = anom(hE)          # Get obs {anomalies, mean}.
+                dy     = (y - hx) @ Rm12.T # Transform obs space.
+                Y      = Y        @ Rm12.T # Transform obs space.
+                Y0     = (Tinv/EPS) @ Y    # "De-condition" the obs anomalies.
+                V,s,UT = svd0(Y0)          # Decompose Y0.
 
-              # Prepare the analysis of y_kObs (already assim'd yy[:kObs])
-              y      = yy[kObs]          # Get actual obs
-              Y,hx   = anom(hE)          # Get ensemble obs {anomalies, mean}
-              dy     = (y - hx) @ Rm12.T # Transform obs space 
-              Y      = Y        @ Rm12.T # Transform obs space
-              Y0     = Tinv @ Y          # "De-condition" the observation anomalies.
-              V,s,UT = svd0(Y0)          # Decompose Y0
+                # Set the prior cov normalizt. factor ("effective ensemble size").
+                # => set the pre-inflation, implicitly via: za = (N-1)/infl^2.
+                if xN is None: za  = N1
+                else         : za  = zeta_a(*hyperprior_coeffs(s,N,xN), w)
+                if MDA       : za *= nIter # inflation (factor: nIter) of the ObsErrCov
 
-              # Set "effective ensemble size" (indicates infl. need): za = (N-1)/pre_inflation^2
-              if   upd_a == 'Sqrt'  : za = N1
-              elif upd_a == '-N'    : za = zeta_a(*hyperprior_coeffs(s,N,xN), w)
-              elif upd_a == 'EnRML' : za = N1
-              elif upd_a == 'ES-MDA': za = N1 * nIter
+                # Post. cov (approx) of w, estimated at current iteration, raised to power.
+                Pw_pwr = lambda expo: (V * (pad0(s**2,N) + za)**-expo) @ V.T
+                Pw     = Pw_pwr(1.0)
 
-              # Posterior cov (approx), for w, estimated at current iteration, raised to some power.
-              Pw_pwr = lambda expo: (V * (pad0(s**2,N) + za)**-expo) @ V.T
-              Pw     = Pw_pwr(1.0)
+                if MDA: # Frame update using annealing (progressive assimilation).
+                    Pw = Pw @ T # apply previous update
+                    w += dy @ Y.T @ Pw
+                    if 'PertObs' in upd_a:   ### "ES-MDA". By Emerick/Reynolds.
+                      D     = center(randn(Y.shape)) * sqrt(nIter)
+                      T    -= (Y + D) @ Y.T @ Pw
+                    elif 'Sqrt' in upd_a:    ### "ETKF-ish". By Raanes.
+                      T     = Pw_pwr(0.5) * sqrt(za) @ T
+                    elif 'Order1' in upd_a:  ### "DEnKF-ish". By Emerick.
+                      T    -= 0.5 * Y @ Y.T @ Pw
+                    # Tinv = eye(N) [as initialized] coz MDA does not de-condition.
 
-              if upd_a == 'Sqrt' or upd_a == '-N':
-                grad = Y0@dy - w*za           # Cost function gradient
-                w    = w + grad@Pw            # Gauss-Newton step
-                T    = Pw_pwr(0.5) * sqrt(N1) # Sqrt-transforms
-                Tinv = Pw_pwr(-.5) / sqrt(N1) # Inv
+                else: # Frame update as Gauss-Newton optimzt. of log-posterior.
+                    grad  = Y0@dy - w*za # Cost function gradient
+                    w     = w + grad @Pw # Gauss-Newton step
+                    if 'Sqrt' in upd_a:      ### "ETKF-ish". By Bocquet/Sakov.
+                      T     = Pw_pwr(0.5) * sqrt(N1) # Sqrt-transforms
+                      Tinv  = Pw_pwr(-.5) / sqrt(N1) # Saves time [vs tinv(T)] when M<N
+                    elif 'PertObs' in upd_a: ### "EnRML". By Oliver/Chen/Raanes/Evensen/Stordal.
+                      D     = center(randn(Y.shape)) if iteration==0 else D
+                      gradT = -(Y+D)@Y0.T + N1*(eye(N) - T)
+                      T     = T + gradT@Pw
+                      Tinv  = tinv(T)
+                    elif 'Order1' in upd_a:  ### "DEnKF-ish". By Raanes.
+                      # Included for completeness; a non-MDA Order1 version does not make much sense.
+                      gradT = -0.5*Y@Y0.T + N1*(eye(N) - T)
+                      T     = T + gradT@Pw
+                      Tinv  = tinv(T)
+                # END if MDA
 
-              elif upd_a == 'EnRML':
-                # EnRML implementation using mean-anomalies decomposition (as for 'Sqrt'):
-                grad = Y0@dy - w*za
-                w    = w + grad@Pw            
-                D    = center(randn(Y.shape)) if iteration==0 else D
-                grad = -(Y + D)@Y0.T + N1*(eye(N) - T)
-                T    = T + grad@Pw
-                Tinv = tinv(T)
-                # EnRML w/ mean-anomalies together is "prettier":
-                # W    = w + T
-                # dY   = (y - hE) @ Rm12.T
-                # grad = (dY - D)@Y0.T + N1*(eye(N) - W)
-                # W    = W + grad@Pw
-                # T,w  = anom(W)
-                # Tinv = tinv(T)
+                # Check for convergence
+                if wTol and np.linalg.norm(w) < N*1e-4: break
 
-              elif upd_a == 'ES-MDA': # i.e. Annealing.
-                grad = Y0@dy
-                w    = w + grad@Pw            
-                D    = sqrt(nIter) * center(randn(Y.shape))
-                grad = -(Y + D)@Y0.T
-                T    = T + grad@Pw
-                Tinv = eye(N)
+            # END loop iteration
 
+            # Forecast ('f') and analysis ('a') stats for E[DAW_right]. The 'a' stats might also be recorded
+            # at the end of the last iteration or during first iteration (after the shift), which would yield
+            # different results in the non-linear case. The definition used here has the
+            # advantage of being simple and not breaking in the special cases of L=0 and/or nIter=1.
+            stats.assess(k,DAW_right,'f', E = w2x_right(eye(N)) )
+            stats.assess(k,DAW_right,'a', E = w2x_right(w+T) )
+            stats.iters   [DAW_right]       = iteration+1
+            stats.infl    [DAW_right]       = sqrt(N1/za)
+            stats.trHK    [DAW_right]       = trace(Y0.T @ Pw @ Y0)/h.noise.m # TODO mda
 
-              # Stopping condition
-              # if np.linalg.norm(dw) < N*1e-4:
-                # break
+            # Final estimate of E at [DAW_left-1]
+            E = w2x_left(w+T)
+            E = post_process(E,infl,rot)
+        # END if 0<=DAW_right<=KObs
 
-          # Analysis 'a' stats for E[kObs].
-          stats.assess(k,kObs,'a',E=E)
-          stats.trHK [kObs] = trace(Y0.T @ Pw @ Y0)/h.noise.m
-          stats.iters[kObs] = iteration+1
-          stats.infl [kObs] = sqrt(N1/za)
-
-          # Final (smoothed) estimate of E[kObs-Lag]
-          E = w2x(w+T)
-          E = post_process(E,infl,rot)
-
-          # Forecast shift (shift fixed at 1 (1*dkObs) for simplicity)
-          if DAW_0 >= 0:
-            for k,t,dt in chrono.obs_range(DAW_0):
-              stats.assess(k-1,None,'u',E=E)
-              E = f(E,t-dt,dt)
-
-    # Assess the last (Lag-1) obs ranges
-    for kDAW in arange(DAW[0]+1,KObs+1):
-      for k,t,dt in chrono.obs_range(kDAW):
-        stats.assess(k-1,None,'u',E=E)
-        E = f(E,t-dt,dt)
-    # Assess the very last time instance 
-    stats.assess(chrono.K,None,'u',E=E)
-
+        # Shift/Slide DAW by propagating smoothed ('u') ensemble [DAW_left-1]
+        if 0 <= DAW_left <= KObs:
+          for k,t,dt in chrono.cycle_to_obs(DAW_left):
+            stats.assess(k-1,None,'u',E=E)
+            E = f(E,t-dt,dt)
+    # END loop DAW_right
   return assimilator
 
+
+
+# TESTED TO CHECK THAT ITS WORKING with scripts/test_iEnKS.
+@DA_Config
+def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,rot=False,**kwargs):
+  def assimilator(stats,twin,xx,yy):
+    f,h,chrono,X0,R,KObs, N1 = twin.f, twin.h, twin.t, twin.X0, twin.h.noise.C, twin.t.KObs, N-1
+    Rm12 = h.noise.C.sym_sqrt_inv
+
+    assert f.noise.C is 0, "Q>0 not yet supported. TODO: implement Sakov et al 2017"
+
+    # Makes the iEnKS very much alike the iExtKS. 
+    if bundle: EPS = 1e-4 # Sakov/Boc use T=1e-4*eye(N), but I prefer using T*=1e-4,
+    else     : EPS = 1.0  # yielding a conditional shape for the bundle.
+
+    def make_CVar(E,scaling=1.0):
+      "Define change-of-var's from ens space to ens subspace (of state space)."
+      X,x = anom(E)
+      w2x = lambda w: x + (scaling*w)@X
+      return w2x
+
+    # Initial ensemble
+    E = X0.sample(N)
+
+    # Loop for sliding the DA window (DAW).
+    for DAW_right in progbar(arange(-1,KObs+Lag+1)):
+        DAW_left = DAW_right-Lag+1 # => Lag == len(DAW)
+
+        if 0<=DAW_right<=KObs: # if ∃ "not-fully-assimlated" obs (todo: quasi-static).
+
+            # Crop DAW to chronology.
+            DAW = arange(  max(0, DAW_left),  min(DAW_right, KObs)+1  )
+
+            # Init iterations.
+            w2x_left = make_CVar(E) # CVar for x[k-Lag] based on prior ensemble.
+            w        = zeros(N)     # Control vector for the mean state.
+            T        = eye(N)       # Anomalies transform matrix.
+            Tinv     = eye(N)       # Rather than on-demand tinv(T), an explicit Tinv variable allows for
+                                    # merging MDA code with iEnKS/EnRML, and sometimes for flop savings.
+
+            for iteration in arange(nIter):
+
+                # Forecast across whole DAW
+                E = w2x_left(w + T*EPS)                         # Reconstruct smoothed ensemble.
+                for kObs in DAW:                                # Loop Lag cycles.
+                  for k,t,dt in chrono.cycle_to_obs(kObs):      # Loop dkObs steps (1 cycle).
+                    E = f(E,t-dt,dt)                            # Forecast 1 dt step (1 dkObs).
+                if iteration==0: w2x_right = make_CVar(E,1/EPS) # CVar for x[k], used for f/a stats.
+
+                # Prepare analysis of current obs: yy[DAW_right]
+                hE     = h(E,t)            # Observe ensemble.
+                y      = yy[DAW_right]     # Select current obs/data.
+                Y,hx   = anom(hE)          # Get obs {anomalies, mean}.
+                dy     = (y - hx) @ Rm12.T # Transform obs space.
+                Y      = Y        @ Rm12.T # Transform obs space.
+                Y0     = (Tinv/EPS) @ Y    # "De-condition" the obs anomalies.
+                V,s,UT = svd0(Y0)          # Decompose Y0.
+
+                # Set "pre-inflation" via the "effective ensemble size" za = (N-1)/infl^2
+                if xN is None: za  = N1
+                else         : za  = zeta_a(*hyperprior_coeffs(s,N,xN), w)
+                if MDA       : za *= nIter # corresponds to ObsErrCov *= nIter.
+
+                # Post. cov (approx) of w, estimated at current iteration, raised to power.
+                Pw_pwr = lambda expo: (V * (pad0(s**2,N) + za)**-expo) @ V.T
+                Pw     = Pw_pwr(1.0)
+
+                if MDA: # Frame update using annealing (progressive assimilation).
+                    Pw = Pw @ T # apply previous update
+                    if 'PertObs' in upd_a:   ### "ES-MDA". By Emerick/Reynolds.
+                      D     = center(randn(Y.shape)) * sqrt(nIter)
+                      w    +=      dy @ Y.T @ Pw
+                      T    -= (Y + D) @ Y.T @ Pw
+                    elif 'Sqrt' in upd_a:    ### "ETKF-ish". By Raanes.
+                      w    +=      dy @ Y.T @ Pw
+                      T     = Pw_pwr(0.5) * sqrt(za) @ T
+                    elif 'Order1' in upd_a:  ### "DEnKF-ish". By Emerick.
+                      w    +=      dy @ Y.T @ Pw
+                      T    -= 0.5 * Y @ Y.T @ Pw
+                    # Tinv = eye(N) [as initialized] coz MDA does not de-condition.
+
+                else: # Frame update as Gauss-Newton optimzt. of log-posterior.
+                    if 'Sqrt' in upd_a:      ### "ETKF-ish". By Bocquet/Sakov.
+                      grad  = Y0@dy - w*za           # Cost function gradient
+                      T     = Pw_pwr(0.5) * sqrt(N1) # Sqrt-transforms
+                      Tinv  = Pw_pwr(-.5) / sqrt(N1) # Saves time [vs tinv(T)] when M<N
+                      w     = w + grad@Pw            # Gauss-Newton step
+                    elif 'PertObs' in upd_a: ### "EnRML". By Oliver/Chen/Raanes/Evensen/Stordal.
+                      grad  = Y0@dy - w*za
+                      D     = center(randn(Y.shape)) if iteration==0 else D
+                      gradT = -(Y+D)@Y0.T + N1*(eye(N) - T)
+                      w     = w + grad @Pw
+                      T     = T + gradT@Pw
+                      # It's prettier with W=w+T, i.e. T,w=anom(W):
+                      # dY    = (y - hE) @ Rm12.T
+                      # grad  = (dY - D)@Y0.T + N1*(eye(N) - W)
+                      # W     = W + grad@Pw
+                      Tinv  = tinv(T)
+                    elif 'Order1' in upd_a:  ### "DEnKF-ish". By Raanes.
+                      # Included for completeness; a non-MDA Order1 version does not make much sense.
+                      grad  = Y0@dy - w*za
+                      gradT = -0.5*Y@Y0.T + N1*(eye(N) - T)
+                      w     = w + grad @Pw
+                      T     = T + gradT@Pw
+                      Tinv  = tinv(T)
+                # END if MDA
+
+                # Check for convergence
+                if wTol and np.linalg.norm(w) < N*1e-4: break
+
+            # END loop iteration
+
+            # Forecast ('f') and analysis ('a') stats for E[DAW_right]. The 'a' stats might also be recorded
+            # at the end of the last iteration or during first iteration (after the shift), which would yield
+            # different results in the non-linear case. The definition used here has the
+            # advantage of being simple and not breaking in the special cases of L=0 and/or nIter=1.
+            stats.assess(k,DAW_right,'f', E = w2x_right(eye(N)) )
+            stats.assess(k,DAW_right,'a', E = w2x_right(w+T) )
+            stats.iters   [DAW_right]       = iteration+1
+            stats.infl    [DAW_right]       = sqrt(N1/za)
+            stats.trHK    [DAW_right]       = trace(Y0.T @ Pw @ Y0)/h.noise.m # TODO mda
+
+            # Final estimate of E[DAW_left]
+            E = w2x_left(w+T)
+            E = post_process(E,infl,rot)
+        # END if 0<=DAW_right<=KObs
+
+        # Shift/Slide DAW, assess smoothing ('u') stats.
+        if 0 <= DAW_left <= KObs:
+          for k,t,dt in chrono.cycle_to_obs(DAW_left):
+            stats.assess(k-1,None,'u',E=E)
+            E = f(E,t-dt,dt)
+    # END loop DAW_right
+  return assimilator
 
 
 
@@ -1057,7 +1192,6 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
   which describes the other input arguments.
 
   - upd_a : - 'Sqrt' (i.e. ETKF)
-            - 'Stoch' (i.e. perturbed-observations) 
             - '-N' (i.e. EnKF-N)
   
   References:
@@ -1102,9 +1236,9 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
               E[:,ii] = x0[ii] + w[ib]@A0[:,ii]+ T[ib]@A0[:,ii]
 
             # Forecast
-            for kDAW in DAW:                        # Loop Lag cycles
-              for k,t,dt in chrono.obs_range(kDAW): # Loop dkObs steps (1 cycle)
-                E = f(E,t-dt,dt)                    # Forecast 1 dt step (1 dkObs)
+            for kDAW in DAW:                           # Loop Lag cycles
+              for k,t,dt in chrono.cycle_to_obs(kDAW): # Loop dkObs steps (1 cycle)
+                E = f(E,t-dt,dt)                       # Forecast 1 dt step (1 dkObs)
 
             if iteration==0:
               stats.assess(k,kObs,'f',E=E)
@@ -1171,13 +1305,13 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
 
         # Forecast smoothed ensemble by shift (1*dkObs)
         if DAW_0 >= 0:
-          for k,t,dt in chrono.obs_range(DAW_0):
+          for k,t,dt in chrono.cycle_to_obs(DAW_0):
             stats.assess(k-1,None,'u',E=E)
             E = f(E,t-dt,dt)
 
     # Assess the last (Lag-1) obs ranges
     for kDAW in arange(DAW[0]+1,KObs+1):
-      for k,t,dt in chrono.obs_range(kDAW):
+      for k,t,dt in chrono.cycle_to_obs(kDAW):
         stats.assess(k-1,None,'u',E=E)
         E = f(E,t-dt,dt)
     stats.assess(chrono.K,None,'u',E=E)
@@ -1310,7 +1444,7 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
         KG  = As.T@mrdiv(Ys,C)
         E  += sample_quickly_with(As)[0]
         D   = h.noise.sample(N)
-        dE  = KG @ (y-h(E,t)+D).T
+        dE  = KG @ (y-h(E,t)-D).T
         E   = E + dE.T
 
         # Importance weighting
@@ -2301,3 +2435,6 @@ def laplace_lklhd(xx):
   w      = exp(logw)     # non-log
   w     /= w.sum()       # normalize
   return w
+
+
+

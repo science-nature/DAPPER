@@ -305,6 +305,7 @@ TODO
 * Upgrade example_4 with plot_1d_minz ?
 * Implement spatialized inflation?
 * Replace print_c and termcolors dict by 'with coloring:'
+* Rename fs (alias for self.new_FAU_series in stats.py) to new
 * Fix Windows bug (key listening: ncurses?)
 * Fix issue with anaconda python framework install or whatever that fucks figure interaction
 * Use inspect somehow instead of C.update_setting
@@ -314,7 +315,9 @@ TODO
 * rename do_tab to tab
 * Make function DA_Config() a member called 'method' of DAC. Rename DAC to DA_Config.
     => Yields (???) decorator syntax @DA_Config.method  (which would look nice) 
-* Rename setup to HMM
+* Rename twin/setup to HMM
+* Get rid of Tuple assignment of twin/setup items
+* Rm vectorize0 (too messy). See SO.com/questions/29318459 and more
 * Rename DA_Config to DA_method or something
 * Change m to M and ndim? (what about model?)
 * EITHER: Rm *args, **kwargs from da_methods? (less spelling errors)
@@ -342,11 +345,7 @@ References
 - Raanes (2016b) : Raanes. "Improvements to Ensemble Methods for Data Assimilation in the Geosciences".  
 - Wiljes (2017)  : Aceved, Wilje and Reich. "Second-order accurate ensemble transform particle filters".  
 
-Further references are provided in the algorithm codes.
-
-Contact
-------------------------------------------------
-patrick. n. raanes AT gmail
+Further references are listed in the code.
 
 Licence
 ------------------------------------------------
@@ -358,6 +357,22 @@ Patrick N. Raanes,
 Colin Grudzien,
 Maxime Tondeur,
 Remy Dubois
+
+*Contact:*
+patrick. n. raanes AT gmail
+
+[![DOI](https://zenodo.org/badge/62547494.svg)](https://zenodo.org/badge/latestdoi/62547494)
+
+```bibtex
+@misc{raanes2018dapper,
+	author = {Patrick N. Raanes and others},
+  title  = {nansencenter/DAPPER: Version 0.8},
+  month  = December,
+  year   = 2018,
+  doi    = {10.5281/zenodo.2029296},
+  url    = {https://doi.org/10.5281/zenodo.2029296}
+}
+```
 
 <!--
 "Outreach"

@@ -83,6 +83,11 @@ def sinusoidal_sample(m,k,N):
   return sample 
 
 
+def periodic_distance_range(m):
+  return np.minimum(np.arange(m),np.arange(m,0,-1))
+  #return np.roll(np.abs(np.arange(m) - m//2), (m+1)//2)
+  #return np.concatenate((range((m+1)//2), range(m//2,0,-1)))
+
 
 # Initialization as suggested by evensen'2009
 def homogeneous_1D_cov(m,d,kind='Expo'):
@@ -90,7 +95,6 @@ def homogeneous_1D_cov(m,d,kind='Expo'):
   Generate initial correlations for Linear Advection experiment.
   d - decorr length, where the unit distance = m(i)-m(i-1) for all i
   """
-  from mods.Lorenz95.core import periodic_distance_range
   row1 = periodic_distance_range(m)
 
   # If the correlation function is strictly non-negative,

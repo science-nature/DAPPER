@@ -1,12 +1,11 @@
-# A mix of Evensen'2009 and sakov'2008
+# A mix of Evensen'2009 and Sakov'2008
 
 # NB: Since there is no noise, and the system is stable,
-#     the benchmarks obtained from this configuration
-#     - go to zero as T-->infty
-#     - are highly dependent on the initial error.
-
-# Doc: Consider deeply the ensemble subspace,
-# and the model's stability.
+#     the rmse's from this setup go to zero as T-->infty.
+#     => benchmarks largely depend on the initial error,
+#     and so these absolute rmse values are not so useful
+#     for quantatative evaluation of DA methods.
+#     For that purpose, see mods/LA/raanes2015.py instead.
 
 from common import *
 
@@ -19,12 +18,13 @@ jj = equi_spaced_integers(m,p)
 
 tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1)
 
-#def step(x,t,dt):
-  #return np.roll(x,1,axis=x.ndim-1)
-Fm = Fmat(m,-1,1,tseq.dt)
+Fm = Fmat(m,c=-1,dx=1,dt=tseq.dt)
 def step(x,t,dt):
   assert dt == tseq.dt
   return x @ Fm.T
+
+# WITHOUT explicit matrix (assumes dt == dx/c):
+# step = lambda x,t,dt: np.roll(x,1,axis=x.ndim-1)
 
 f = {
     'm'    : m,
@@ -53,9 +53,5 @@ setup = TwinSetup(f,h,tseq,X0,
 ####################
 # Suggested tuning
 ####################
-
-# Not carefully tuned.
-# NB: Note how inflation is not necessary for good rmse performance.
 # config = EnKF('PertObs',N=100,infl=1.02)
-config = EnKF('PertObs',N=30 ,infl=3.4) # 0.3
 

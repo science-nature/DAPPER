@@ -1,13 +1,10 @@
-# Small-ish
-
-# NB: Since there is no noise, and the system is stable,
-#     the benchmarks obtained from this configuration
-#     - go to zero as T-->infty
-#     - are highly dependent on the initial error.
+# Smaller version.
+# => convenient for debugging, e.g., scripts/test_iEnKS.py
 
 from common import *
 
 from mods.LA.core import Fmat, homogeneous_1D_cov
+from mods.Lorenz95.liveplotting import LP_setup
 
 tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1)
 
@@ -34,13 +31,15 @@ h  = partial_direct_obs_setup(m,jj)
 h['noise'] = 0.01
 
  
-other = {'name': os.path.relpath(__file__,'mods/')}
-setup = TwinSetup(f,h,tseq,X0,**other)
-
+setup = TwinSetup(f,h,tseq,X0,
+    name = os.path.relpath(__file__,'mods/'),
+    LP   = LP_setup(jj),
+    )
 
 
 ####################
 # Suggested tuning
 ####################
+# cfgs += EnKF('PertObs',N=16 ,infl=1.02)
+# cfgs += EnKF('Sqrt'   ,N=16 ,infl=1.0)
 
-# config.N = 100

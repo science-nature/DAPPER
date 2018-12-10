@@ -78,8 +78,7 @@ from mods.Lorenz95.sak08 import *
 p = 12
 
 
-mu0,P0 = typical_init_params(m)
-X0 = GaussRV(mu0, 0.01*P0)
+X0 = GaussRV(m=m, C=0.001) 
 
 def make_H(p,m):
   xx = linspace(-1,1,m+1)[1:]

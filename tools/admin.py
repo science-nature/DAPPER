@@ -268,15 +268,15 @@ class List_of_Configs(list):
     List_of_Configs() -> new empty list
     List_of_Configs(iterable) -> new list initialized from iterable's items
 
-    If unique: don't APPEND duplicate entries.
+    If unique: don't append duplicate entries.
     """
+    self.unique = unique
     for cfg in args:
       if isinstance(cfg, DAC):
         self.append(cfg)
       elif isinstance(cfg, list):
         for b in cfg:
           self.append(b)
-    self.unique = unique
 
   def __iadd__(self,cfg):
     if not hasattr(cfg,'__iter__'):

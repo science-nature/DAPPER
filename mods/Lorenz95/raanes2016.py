@@ -9,7 +9,7 @@ setup.name = os.path.relpath(__file__,'mods/')
 
 
 # from mods.Lorenz95.raanes2016 import setup
-# cfgs += EnKS ('Sqrt',N=25,infl=1.08,rot=False,tLag=2.0)
+# cfgs += EnKS ('Sqrt',N=25,infl=1.08,rot=False,Lag=12)
 # cfgs += EnRTS('Sqrt',N=25,infl=1.08,rot=False,cntr=0.99)
 # ...
 # print_averages(cfgs,avrgs,[],['rmse_u'])

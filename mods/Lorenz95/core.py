@@ -51,25 +51,4 @@ def dfdx(x,t,dt):
   return integrate_TLM(TLM(x),dt,method='analytic')
 
 
-def typical_init_params(m):
-  """
-  Approximate (3 degrees of acf of) climatology.
-  Obtained for F=8, m=40.
-
-  NB: Should not be used for X0 because it's like
-  starting the filter from a state of divergence,
-  which might be too challenging to particle filters.
-  The code has been left here for legacy reasons.
-  """
-  mu0 = 2.34*np.ones(m)
-  # Auto-cov-function
-  acf = lambda i: 0.0 + 14*(i==0) + 0.9*(i==1) - 4.7*(i==2) - 1.2*(i==3)
-  P0  = circulant(acf(periodic_distance_range(m)))
-  return mu0, P0
-
-def periodic_distance_range(m):
-  return np.minimum(np.arange(m),np.arange(m,0,-1))
-  #return np.roll(np.abs(np.arange(m) - m//2), (m+1)//2)
-  #return np.concatenate((range((m+1)//2), range(m//2,0,-1)))
-
 

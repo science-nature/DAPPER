@@ -31,7 +31,7 @@ class Stats(MLR_Print):
     KObs = setup.t.KObs ; assert KObs==yy.shape[0]-1
 
     # time-series constructor alias
-    fs = self.new_FAU_series 
+    fs = self.new_FAU_series
     self.mu     = fs(m) # Mean
     self.var    = fs(m) # Variances
     self.mad    = fs(m) # Mean abs deviations
@@ -59,9 +59,10 @@ class Stats(MLR_Print):
     self.svals = fs(m_Nm) # Principal component (SVD) scores
     self.umisf = fs(m_Nm) # Error in component directions
 
-    # Other. 
-    self.trHK = np.full(KObs+1, nan)
-    self.infl = np.full(KObs+1, nan)
+    # Other
+    self.trHK  = np.full(KObs+1, nan)
+    self.infl  = np.full(KObs+1, nan)
+    self.iters = np.full(KObs+1, nan)
 
 
   def assess(self,k,kObs=None,f_a_u=None,
@@ -79,8 +80,7 @@ class Stats(MLR_Print):
     # Initial consistency checks.
     if k==0:
       if kObs is not None:
-        raise KeyError("Should not have any obs at initial time."+
-            "This very easily leads to bugs, and not 'DA convention'.")
+        raise KeyError("DAPPER convention: no obs at t=0. Helps avoid bugs.")
       if self._is_ens==True:
         def rze(a,b,c):
           raise TypeError("Expected "+a+" input, but "+b+" is "+c+" None")
@@ -91,13 +91,12 @@ class Stats(MLR_Print):
         if mu is None:     rze("mu/Cov","mu","")
 
     # Intelligent defaults: f_a_u 
-    if f_a_u is None:    # Append 'u'; Assume 'a' if kObs:
-      f_a_u = 'u' if kObs is None else 'au'
-    elif f_a_u == 'f':   # Append 'u':
-      f_a_u = 'fu'
-    elif f_a_u == 'fau': # This is for Climatology() only:
-      if kObs is None:
-        f_a_u = 'u'
+    if   f_a_u is None : f_a_u = 'au' if (kObs is not None) else 'u'
+    elif f_a_u == 'a'  : f_a_u = 'au'
+    elif f_a_u == 'f'  : f_a_u = 'fu'
+    elif f_a_u == 'fau': # as used by Climatology()
+      if kObs is None:   f_a_u = 'u'
+
     # Assemble key
     key = (k,kObs,f_a_u)
 

@@ -463,22 +463,13 @@ class ResultsTable():
     return lhs
 
 
-  def plot_1d_minz(self,field='rmse_a',**kwargs):
-    assert self.tuning_tag
 
+  def plot_1d_minz(self,field='rmse_a',**kwargs):
     fig = plt.gcf()
     fig.clear()
     fig, axs = plt.subplots(nrows=2,ncols=1,sharex=True,gridspec_kw={'height_ratios':[3, 1]},num=fig.number)
     ax , ax_   = axs
     lhs, lhs_  = [], []
-
-    # Remove tuning tag (repl by spaces to avoid de-alignment in case of 1.1 vs 1.02 for ex).
-    pattern  = '(?<!\S)'+self.tuning_tag+':\S*' # (no not whitespace), tuning_tag, (not whitespace)
-    repl_fun = lambda m: ' '*len(m.group())     # replace by spaces of same length
-    names    = [re.sub(pattern, repl_fun, n) for n in self.labels]
-    names    = trim_table(names)
-
-    Z = self.mean_field(field)[0]
 
     c  = deepcopy(plt.rcParams["axes.prop_cycle"])
     c += plt.cycler(marker=(['o','s','x','+','*'   ]*99)[:len(c)])
@@ -486,20 +477,12 @@ class ResultsTable():
     ax .set_prop_cycle(c)
     ax_.set_prop_cycle(c)
 
-    from numpy import ma
-    unique = OrderedDict.fromkeys(n for n in names)
-    for group_name in unique:
-      gg = [i for i, n in enumerate(names) if n==group_name]
+    unique, _, tuning_vals, fieldvals = self.select_optimal(field)
 
-      Zg = ma.masked_invalid(Z[gg])
-
-      fieldvals   = Zg.min(axis=0)
-      tuning_inds = Zg.argmin(axis=0)
-      tuning_vals = self.tuning_vals()[gg][tuning_inds]
-      tuning_vals = ma.masked_array(tuning_vals, mask=fieldvals.mask)
+    for group_name, tunings, vals in zip(unique, tuning_vals, fieldvals):
       
-      lhs  += [ ax .plot(self.xticks,fieldvals  ,label=group_name,**kwargs)[0] ]
-      lhs_ += [ ax_.plot(self.xticks,tuning_vals,label=group_name,**kwargs)[0] ]
+      lhs  += [ ax .plot(self.xticks,vals   ,label=group_name,**kwargs)[0] ]
+      lhs_ += [ ax_.plot(self.xticks,tunings,label=group_name,**kwargs)[0] ]
 
     ax_.set_xlabel(self.xlabel)
     ax_.set_ylabel("opt. " + self.tuning_tag)
@@ -599,6 +582,37 @@ class ResultsTable():
     tuning_vals = self.tuning_vals()[tuning_inds]
     fieldvals   = Z[tuning_inds,arange(len(tuning_inds))]
     return tuning_inds, tuning_vals, fieldvals 
+
+  def select_optimal(self,field='rmse_a'):
+    assert self.tuning_tag
+    from numpy import ma
+
+    # Remove tuning tag (repl by spaces to avoid de-alignment in case of 1.1 vs 1.02 for ex).
+    pattern  = '(?<!\S)'+self.tuning_tag+':\S*' # (no not whitespace), tuning_tag, (not whitespace)
+    repl_fun = lambda m: ' '*len(m.group())     # replace by spaces of same length
+    names    = [re.sub(pattern, repl_fun, n) for n in self.labels]
+    names    = trim_table(names)
+
+    Z = self.mean_field(field)[0]
+
+    unique      = OrderedDict.fromkeys(n for n in names)
+    tuning_inds = []
+    tuning_vals = []
+    fieldvals   = []
+
+    for group_name in unique:
+      gg           = [i for i, n in enumerate(names) if n==group_name]   # Indices  of group
+      Zg           = ma.masked_invalid(Z[gg])                            # Vals     of group, with invalids masked.
+      fieldvalsg   = Zg.min(axis=0)                                      # Minima   of group; yields invalid if all are invalid
+      tuning_indsg = Zg.argmin(axis=0)                                   # Indices     of minima
+      tuning_valsg = self.tuning_vals()[gg][tuning_indsg]                # Tuning vals of minmia
+      tuning_valsg = ma.masked_array(tuning_valsg, mask=fieldvalsg.mask) # Apply mask for invalids
+      # Append
+      tuning_inds += [tuning_indsg]
+      tuning_vals += [tuning_valsg]
+      fieldvals   += [fieldvalsg]
+
+    return unique, tuning_inds, tuning_vals, fieldvals
 
 
 def pprop(labels,propID,cast=float,fillval=np.nan):

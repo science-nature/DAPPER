@@ -1,11 +1,10 @@
 # Test if the *average* sensitivity is *exact* for
-# - Gaussian distributions                   # Yes
+# - Gaussian distributions                   # Yes [by Stein's identity]
 # - Non-Gaussian, with the nonlinear h being a polynomial of degree:
 #   - 2: Only if skew=0. But the sensitivity *at* the mean is the same anyways.
 #   - 3: No -- even with skew = 0
 
-#
-
+##
 
 from common import *
 import seaborn as sns

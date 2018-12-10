@@ -1,0 +1,44 @@
+# Try to make it WYSIWYG
+
+figure.figsize    : 5.0, 4.0
+savefig.bbox      : tight
+savefig.pad_inches: 0.1
+# toolbar           : None # doesn't work since mpl 2.0 ?
+
+# font.family       : serif
+# mathtext.fontset  : cm
+font.size         : 9.0
+axes.labelsize    : large
+legend.fontsize   : large
+axes.titlesize    : large
+xtick.labelsize   : medium
+ytick.labelsize   : medium
+
+lines.linewidth   : 2
+
+axes.facecolor    : white   # axes background color
+axes.edgecolor    : black   # axes edge color
+axes.linewidth    : 0.8     # edge linewidth
+
+axes.grid        : True       # display grid or not
+grid.color       : black
+grid.linestyle   :   :         # solid
+grid.linewidth   :   0.8       # in points
+grid.alpha       :   0.4       # transparency, between 0.0 and 1.0
+
+xtick.color       : k
+xtick.major.width : 1.2
+xtick.direction   : in
+xtick.major.size  : 5.5
+
+ytick.color       : k
+ytick.major.width : 1.2
+ytick.direction   : in
+ytick.major.size  : 5.5
+
+xtick.minor.size: 3
+ytick.minor.size: 3
+
+image.cmap        : BrBG
+
+

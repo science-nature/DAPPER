@@ -5,25 +5,34 @@ from common import *
 
 sd0 = seed_init()
 
+GUI = False # else make animation
+
 # N=2 gives the interesting tinv case.
 # Use N>2 for validation purposes.
 N  = 2 
 N1 = N-1
+
+xlims = [-2,7]
 
 y = array([[3],[4]])
 
 # Setup figure
 plt.figure(1,figsize=(6,5)).clear()
 fig, ax = plt.subplots(num=1,subplot_kw={})
-fig.subplots_adjust(bottom=0.2,top=1-0.05)
 
-xlims = [-2,7]
-
+####################
 # Slider controls
-from matplotlib.widgets import Slider
-x1 = Slider(fig.add_axes([1/8 , 1.0/9, 2/8 , 0.6/9]), '$E^f_1$ offset', -3, 7, y[0])
-x2 = Slider(fig.add_axes([1/8 , 0.2/9, 2/8 , 0.6/9]), '$E^f_2$ offset', -2, 2, 0)
-th = Slider(fig.add_axes([6/10, 0.2/9, 3/10, 0.6/9]), '$\\theta$', 0, 180, 0 )
+####################
+if GUI:
+  fig.subplots_adjust(bottom=0.2,top=1-0.05)
+  from matplotlib.widgets import Slider
+  x1 = Slider(fig.add_axes([1/8 , 1.0/9, 2/8 , 0.6/9]), '$E^f_1$ offset', -3, 7, y[0])
+  x2 = Slider(fig.add_axes([1/8 , 0.2/9, 2/8 , 0.6/9]), '$E^f_2$ offset', -2, 2, 0)
+  th = Slider(fig.add_axes([6/10, 0.2/9, 3/10, 0.6/9]), '$\\theta$', 0, 180, 0 )
+else:
+  x1 = Bunch(val=y[0])
+  x2 = Bunch(val=0)
+  th = Bunch(val=0)
 
 hh = dict()
 output = [None]
@@ -113,11 +122,6 @@ def foo(_):
 
 foo(None)
 
-# Activate listeners
-x1.on_changed(foo)
-x2.on_changed(foo)
-th.on_changed(foo)
-
 # Adjust
 ax.set_aspect('equal')
 ax.set_xlim(xlims)
@@ -128,6 +132,26 @@ ax.set_xticklabels([])
 ax.set_yticklabels([])
 ax.set_title('EnKF analysis update illustration')
 ax.legend(fontsize=12,loc='upper left')
+
+if GUI:
+  # Activate listeners
+  x1.on_changed(foo)
+  x2.on_changed(foo)
+  th.on_changed(foo)
+else:
+  savefig_n.index = 1
+  def save(param,val):
+    param.val = val
+    foo(None)
+    savefig_n('data/Stoch_iEnS/figs/prez/pinv_Pa_illust_n')
+  ax.set_title('')
+
+  mpl.rcParams['savefig.bbox'] = 'tight'
+  for val in ccat(arange(3,-1,-.5),arange(-1,6,1)):                save(x1,val)
+  for val in ccat(arange(0,-2,-.5),arange(-2,2,1),arange(2,0,-1)): save(x2,val)
+  for val in ccat(arange(6,3,-1)):                                 save(x1,val)
+  th.val = 30
+  for val in ccat(arange(3,-1,-.5),arange(-1,6,1)):                save(x1,val)
 
 
 

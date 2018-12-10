@@ -1,125 +1,216 @@
-# To run script, use -i option: %run -i [this_script)
-#
-# Script that loads batches of related data,
-# makes seletions and grouping (database ops) on them,
-# and presents them.
-# The script is a sandbox, with quick and ephemeral changes, 
-# and naming conventions that are not really thought-through,
-# => it's not really legible.
-# In order to understand anything,
-# go through it line-by-line, printing the intermediate results,
-# (e.g. >>> Singls['FULL'])
-
-######
-
+##
 from common import *
-
-# The variable 'check' must be left in interactive namespace
-# in order for the checkmarks to remain live after creating new figures.
-if 'check' not in locals(): check = []
-
-def xtract_prop(list_of_strings,propID,cast=float,fillval=np.nan):
-  "E.g. xtract_prop(R1.labels,'infl',float)"
-  props = []
-  for s in list_of_strings:
-    x = re.search(r'.*'+propID+':(.+?)(\s|$)',s)
-    props += [cast(x.group(1))] if x else [fillval]
-  return array(props)
-
-def optimz(RT,field):
-  mu   = RT.mean_field(field)[0]
-  best = np.nanmin(mu,0)
-  return best
-
-def cselect(RT,cond,field):
-  RT = deepcopy(RT).split(cond)
-  return RT.mean_field(field)[0][0]
-
-######
-
-# Score transformation.
-# Overwrite (below) to use
-Skill = lambda x: x 
-
-OD      = OrderedDict # short alias
-Singls  = OD()        # each label is here will be plotted 
-Groups  = OD()        # for each group: only min (per xticks) is plotted
-AxProps = OD()        # labels, etc
-OnOff   = None
+OD = OrderedDict # alias
+DFLT   = OD(ls='-',lw=2,marker='o',ms=6,markeredgewidth=0)
+hollow = OD(lw=0,markerfacecolor='none',ms=10,markeredgewidth=1.5)
 
 ##
+def style(ax):
+  for line in ax.get_lines():
+    label = line.get_label() 
+    if label != 'dontstyle':
+      props = compile_style(label)
+      line.set(**props)
 
-DFLT = {'ls':'-','marker':'o','ms':3,'lw':2}
+def compile_style(label):
+  """Compile all matching styles for a given label."""
+  style_dict = DFLT.copy()       # Init
+  for pattern, style in STYLES:  # Loop through style rows
+    if re.search(pattern,label): # Match label
+      style_dict.update(style)   # Update/overwrite
+  return style_dict
+
 STYLES = [
-    ('Climatology'      , None        , OD(c=blend_rgb('k' ,1.0))),
-    ('Var3D'            , '3D-Var'    , OD(c=blend_rgb('k' ,0.7))),
-    ('(EnRML|PertObs)'  , None        , OD(c='C6')),
-    ('iEnKS'            , None        , OD(c='C0')),
-    ('EnKF'             , None        , OD(c='C1')),
-    ('Lag:1'            , None        , OD(ls='--')),
+    # Label                         , Style props
+    ('(Climatology|OptInterp)'      , OD(c=blend_rgb('k',0.7),ls='-',lw=1.0,ms=0) ),
+    ('EnKF'                         , OD(ls=':',ms=0                ) ),
+    ('upd_a:Sqrt'                   , OD(c='mlr',marker='s'         ) ), # [.83,.56,.74]
+    ('upd_a:PertObs'                , OD(c='mlb',marker='X'         ) ), # [.64,.66,.83]
+    ('upd_a:Sqrt.*MDA:1'            , OD(c='mly',marker='^',zorder=0) ), # [.28,.69,.64]
+    ('upd_a:PertObs.*MDA:1'         , OD(c='mlg',marker='o',zorder=0) ), # [.89,.31,.13]
+    ('upd_a:(Order1|DEnKF)'         , OD(c='mlv',marker='v'         ) ), # 
+    ('upd_a:Order1.*MDA:1'          , OD(c='mlv',marker='P',zorder=0) ), #
+    ('nIter:10'                     , hollow                          ),
     ]
 
-def style(label):
-  "Apply matching styles in their order"
-  D = DFLT.copy()
-  D['label'] = label
-  matches = [i for i,row in enumerate(STYLES) if re.search(row[0],label)]
-  for i in matches:
-    row = STYLES[i]
-    D.update(row[2])
-    if i and row[1] is not None:
-      D['label'] = re.sub(row[0],row[1],D['label'])
-  return D
+
+def edit_entries(ax, conversion_table):
+  "Edit legend entries: rename, order, turn on/off."
+  # Initialise legend entries with blanks
+  invisible_line, = ax.plot(np.NaN, np.NaN, '-', color='none', label='placeholder')
+  labels   = np.full((99,99),''            , dtype=object)
+  handles  = np.full((99,99),invisible_line, dtype=object)
+  lines_with_actual_labels = {}
+  # For cropping the completed table
+  I = 0
+  J = 0
+  # Loop through current legend, change entries according to table
+  for handle, label in zip(*ax.get_legend_handles_labels()):
+    for pattern, sub, (i,j) in conversion_table:
+      if all(re.search(x, label) for x in list(pattern)):
+        if handles[i,j] is not invisible_line:
+          print("\nWarning: some entries from the "+\
+              "conversion_table use same coordinates.\n")
+        handles[i,j] = handle
+        labels [i,j] = sub
+        I = max(I,i)
+        J = max(J,j)
+        lines_with_actual_labels[label] = handle
+        break
+  ncol = J+1
+  # Crop and make into lists
+  handles = list( handles[:I+1, :J+1].ravel('F') )
+  labels  = list( labels [:I+1, :J+1].ravel('F') )
+  return handles, labels, ncol, lines_with_actual_labels
+
+FRMT = [
+    # pattern                        , sub                , table_coord
+    # ( ['Climatology'               ] , 'System var.'      , (0 , 0) ) ,
+    # ( ['OptInterp'                 ] , 'Opt. Interp.'     , (0 , 0) ) ,
+    #
+    # ( ['Order1' ,'MDA:0','nIter:3' ] , 'Order1 iEnKS 3'   , (0 , 0) ),
+    # ( ['Order1' ,'MDA:1','nIter:3' ] , 'Order1 MDA 3'     , (0 , 0) ),
+    #
+    ( ['EnKF.*PertObs'             ] , 'Stoch. EnKF'      , (0 , 0) ),
+    ( ['EnKF.*Sqrt'                ] , 'Determ. EnKF'     , (0 , 0) ),
+    ( ['EnKF.*DEnKF'               ] , 'Order1 EnKF'      , (0 , 0) ),
+    #
+    ( ['PertObs','MDA:1','nIter:3' ] , 'Stoch. MDA 3'     , (0 , 0) ),
+    ( ['PertObs','MDA:0','nIter:3' ] , 'EnRML 3'          , (1 , 0) ),
+    ( ['Sqrt'   ,'MDA:1','nIter:3' ] , 'Determ. MDA 3'    , (2 , 0) ),
+    ( ['Sqrt'   ,'MDA:0','nIter:3' ] , 'iEnKS 3'          , (3 , 0) ),
+    #
+    ( ['PertObs','MDA:1','nIter:10'] , '10'               , (0 , 1) ),
+    ( ['PertObs','MDA:0','nIter:10'] , '10'               , (1 , 1) ),
+    ( ['Sqrt'   ,'MDA:1','nIter:10'] , '10'               , (2 , 1) ),
+    ( ['Sqrt'   ,'MDA:0','nIter:10'] , '10'               , (3 , 1) ),
+    ]
 
 
-
-##############################
-# LorenzUV
-##############################
-
-##############################
-AxProps['title'] = 'L95'
-AxProps['xlabel'] = 'Time interval between observations ($\Delta t$)'
-
-S = ResultsTable('data/remote/Stoch_iEnS/bench_L95/dkObs_run4')
-
-NGroups = OD()
-for N in [20, 25, 35, 50, 100]:
-  NGroups[str(N)] = S.split('N:'+str(N))
-
-R = NGroups['25']
-Singls['R'] = R
-Groups['PertObs'] = R.split('^EnKF .*PertObs')
-Groups['EnRML 1'] = R.split('^EnRML .*Lag:1')
-Groups['EnRML L'] = R.split('^EnRML .*Lag:0.4')
-
-AxProps['ylim'] = (0.15,1.1)
-AxProps['xticks'] = R.xticks
-AxProps['xticklabels'] = 0.05*R.xticks
-
-#OnOff = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
-##############################
-# Plot
-##############################
-AxProps['ylabel'] = 'rmse_a'
-
-fig, ax = plt.subplots()
-
-for RT in Singls.values():
-  if RT and len(RT.labels):
-    for iC,(row,name) in enumerate(zip(RT.mean_field('rmse_a')[0],RT.labels)): 
-      ax.plot(RT.xticks,Skill(row),**style(name))
-
-for lbl, RT in Groups.items():
-  if RT:
-    ax.plot(RT.xticks,Skill(optimz(RT,'rmse_a')),**style(lbl))
-
-G = Groups['PertObs']
-infls = xtract_prop(G.labels,'infl')[np.nanargmin(G.mean_field('rmse_a')[0],0)]
-
-for k,v in AxProps.items(): ax.set(**{k:v})
-check += [toggle_lines(state=OnOff,txtwidth=22,txtsize=10)]
 
 ##
+R = ResultsTable("data/Stoch_iEnS/bench_L95/P2720L/N_run8"); LAG=2           # dkObs=4
+# R = ResultsTable("data/Stoch_iEnS/bench_L95/P2724L/N_run2"); LAG=1            # dkObs=8
+
+# with coloring(): print("Averages over experiment repetition:")
+# R.print_mean_field('rmse_a',1,1,cols=slice(0,2))
+
+BaseLineMethods = R.split(['Climatology', 'OptInterp', 'Var3D','ExtKF'])
+BaseLineMethods.rm('Var3D')
+
+R.rm("rot:0")
+R.rm("upd_a:(Order1|DEnKF)")
+# R.rm("upd_a:Order1.*MDA:0")
+R.rm("EnKF")
+
+
+## Plotting
+plt.style.use('Stoch_iEnS/paper.mplstyle')
+
+# Make Broken axis using figure with 2 subplots.
+fig, axs = plt.subplots(nrows=2,sharex=True,
+    gridspec_kw={'height_ratios':[1, 4], 'hspace':0.04})
+ax0, ax1 = axs
+ax0.set_ylim(1,5)
+ax0.set_yticks([2,3,4,5])
+ax1.set_ylim(0.25,1)
+# Remove border between axes
+ax0.spines['bottom'].set_visible(False)
+ax1.spines['top']   .set_visible(False)
+ax0.xaxis.tick_top()
+ax1.xaxis.tick_bottom()
+ax0.tick_params(labeltop='off')
+# Add wavy/squiggly line to show axis is broken
+ax0.set_xlim(12,105)
+xs =                    LogSp(*ax0.get_xlim(),401)
+ys = 0.8 + 0.1*cos(5*linspace(*ax0.get_xlim(),401))
+ax0.plot(xs, ys, 'k-',lw=2, alpha=0.8, clip_on=False,label='dontstyle')
+
+# Plot
+field = 'rmse_a'
+unique, _, tuning_vals, fieldvals = R.select_optimal(field)
+for ax in axs:
+  for group_name, tunings, vals in zip(unique, tuning_vals, fieldvals):
+    if ax is ax0: # Alter out-of-bounds data to avoid markers halfway appearing along lower edge
+      vals = copy(vals); vals[vals<1] = 0.2  # NB slightly changes the angle
+    ax.plot(R.xticks, vals, label=group_name)
+  for vals, label in zip(BaseLineMethods.mean_field(field)[0], BaseLineMethods.labels):
+    ax.plot(R.xticks, vals, label=label)
+  style(ax)
+
+# Legend
+# if 'checkmarks' not in locals(): checkmarks = []
+# checkmarks += [toggle_lines()];
+handles, labels, ncol, hh = edit_entries(ax0,FRMT)
+leg = ax0.legend(handles, labels, ncol=ncol,
+    markerfirst   = 0,             columnspacing = 0.9,
+    loc           = 'upper right', handletextpad = 0.2,
+    framealpha    = 1.0,           handlelength  = 1.5,
+    borderaxespad = 0.1,
+    )
+ax0.set_zorder(9) # raise legend above ax1
+
+# Axes props
+# ax0.set_title(R.meta)
+ax1.grid(True,'minor')
+ax1.set_xscale('log')
+xl = ax1.set_xlabel("Ensemble size ($N$)")
+fig.text(0.04, 0.5, "Average RMS error", # "analysis RMSE"
+    va='center', rotation='vertical',fontsize=xl.get_fontsize())
+
+
+# xticks
+# ax1.xaxis.set_minor_formatter(mpl.ticker.LogFormatter())
+if R.xlabel=='N':
+  xt = [20, 30, 40, 60, 80, 100]
+elif R.xlabel=='nIter':
+  xt = [1, 2, 4, 8, 16, 32]
+# xt = R.xticks
+ax1.set_xticks(xt); ax1.set_xticklabels(xt)
+# Log scaling and associated xtick problems:
+# stackoverflow.com/a/14530857/38281
+# stackoverflow.com/a/42886695/38281
+ax1.xaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
+ax1.xaxis.set_minor_formatter(mpl.ticker.NullFormatter())
+
+
+
+## Populate plot frame-by-frame for animation effects.
+savefig_n.index = 1
+def save():
+  # savefig_n('data/Stoch_iEnS/figs/prez/'+R.xlabel+'_dkObs_%d'%R.meta['dkObs']+'_i')
+  pass
+
+# NB: Don't abbreviate this. I tried a lot (and it was a waste of time):
+# - unifying dicts by zipping over all axes (fails coz all axes don't contain all lines)
+# - findobj (fails coz complicates getting _legmarker and text)
+# - looping over axes (gets messier than this)
+objects = {}
+objects[ax0] = {line.get_label(): line                          for line in           ax0.get_lines()}
+objects[ax1] = {line.get_label(): line                          for line in           ax1.get_lines()}
+objects[leg] = {line.get_label(): [line, line._legmarker, text] for line, text in zip(leg.get_lines(), leg.get_texts())}
+def tog(label):
+  for key in objects:
+    toggle_viz(objects[key][label])
+
+  # Text seems sometimes not responsive to set_visible() calls.
+  # Hack: plot & rm an arbitrary line to flush the calls.
+  ax1.plot(ax1.get_xlim(), ax1.get_ylim())[0].remove()
+
+# Hide all elements
+for h in hh: tog(h)
+
+# Animate
+save()
+tog('iEnKS N:? upd_a:PertObs       Lag:%s MDA:0 nIter:3 '%LAG); save()
+tog('iEnKS N:? upd_a:PertObs       Lag:%s MDA:0 nIter:10'%LAG); save()
+tog('iEnKS N:? upd_a:PertObs       Lag:%s MDA:1 nIter:3 '%LAG); save()
+tog('iEnKS N:? upd_a:PertObs       Lag:%s MDA:1 nIter:10'%LAG); save()
+tog('iEnKS N:? upd_a:Sqrt    rot:1 Lag:%s MDA:0 nIter:3 '%LAG); save()
+tog('iEnKS N:? upd_a:Sqrt    rot:1 Lag:%s MDA:0 nIter:10'%LAG); save()
+tog('iEnKS N:? upd_a:Sqrt    rot:1 Lag:%s MDA:1 nIter:3 '%LAG); save()
+tog('iEnKS N:? upd_a:Sqrt    rot:1 Lag:%s MDA:1 nIter:10'%LAG); save()
+
+##
+
 

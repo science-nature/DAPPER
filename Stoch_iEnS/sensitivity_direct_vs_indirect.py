@@ -1,10 +1,9 @@
-# In the context of and EnKF update, experiment with 
+# Try to explain which is better of:
 #   - explicit regression (to obtain H from state to obs space)
-#   - ensemble-estimation of HBH and BH,
-#     which, via Woodbury, can be shown to be direct regression to the ensemble,
-#     as opposed to indirect regression (to the ensemble) via H.
-# This only matters in the case of nonlinear h() and N-1 > M.
-# 
+#   - ensemble-estimation of HBH and BH, which, via Woodbury, can be shown to be
+#     direct regression to the ensemble.
+# Recall that these only differ in the case of nonlinear h() and N-1 > M.
+# Context: (single-cycle update of non-iterative) EnKF.
 
 from common import *
 from scipy.stats import norm

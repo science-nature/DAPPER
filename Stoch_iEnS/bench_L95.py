@@ -6,19 +6,22 @@ sd0 = seed(3)
 # DA Configurations
 ##############################
 from mods.Lorenz95.sak08 import setup
-setup.t.T = 4**3.5
-setup.t.dkObs = 4
+setup.t.T = 120
+setup.t.dkObs = 8 # 4, 8.
+LAG = round(0.4 / setup.t.dtObs)
 
 # Get experiment control variable (CtrlVar) from arguments
 CtrlVar = sys.argv[1]
 # Set range of experimental settings
 if CtrlVar == 'N': # ens size
-  xticks = [13, 15, 17, 20, 25, 30, 40, 60, 100]
+  xticks = [13, 16, 17, 18, 20, 22, 25, 30, 40, 60, 100]
+if CtrlVar == 'nIter': # max num of iterations
+  xticks = [1, 2, 4, 8, 16, 32]
 
-xticks = array(xticks).repeat(16)
+xticks = array(xticks).repeat(5)
 
 # Parallelization and save-path setup
-xticks, save_path, iiRep = distribute(__file__,sys.argv,xticks,CtrlVar)
+xticks, save_path, iiRep = distribute(__file__,sys.argv,xticks,CtrlVar,nCore=8)
 
 
 ##############################
@@ -30,15 +33,19 @@ cfgs += Climatology()
 cfgs += OptInterp()
 cfgs += Var3D()
 
-for infl in [1.01, 1.02, 1.04, 1.06, 1.10, 1.16, 1.25, 1.4]:
-  for nIter in [3, 10]:
-    for Lag = [1, 2, 4]: # 
-      for rot in [False, True]:
-        cfgs +=  EnKF('PertObs', N='?', infl=infl,)
-        cfgs +=  EnKF('Sqrt'   , N='?', infl=infl, rot=rot, )
-        cfgs += iEnKS('Sqrt'   , N='?', infl=infl, rot=rot, Lag=Lag, nIter=nIter)
-        cfgs += iEnKS('EnRML'  , N='?', infl=infl,          Lag=Lag, nIter=nIter)
-        cfgs += iEnKS('ES-MDA' , N='?', infl=infl,          Lag=Lag, nIter=nIter)
+for N in [25]:
+  if CtrlVar=='N': N = '?' # short-circuit
+  for nIter in [3,10]:
+    if CtrlVar=='nIter': nIter = '?' # short-circuit
+    for infl in [1.01, 1.02, 1.04, 1.06, 1.10, 1.16, 1.25, 1.4]:
+      for MDA in [False,True]:
+        for rot in [False, True]:
+          cfgs +=  EnKF('PertObs', N=N, infl=infl,                                       )
+          cfgs +=  EnKF('Sqrt'   , N=N, infl=infl, rot=rot,                              )
+          cfgs +=  EnKF('DEnKF'  , N=N, infl=infl, rot=rot,                              )
+          cfgs += iEnKS('PertObs', N=N, infl=infl,          Lag=LAG, nIter=nIter, MDA=MDA)
+          cfgs += iEnKS('Sqrt'   , N=N, infl=infl, rot=rot, Lag=LAG, nIter=nIter, MDA=MDA)
+          cfgs += iEnKS('Order1' , N=N, infl=infl, rot=rot, Lag=LAG, nIter=nIter, MDA=MDA)
 
 
 ##############################
@@ -56,8 +63,8 @@ for iX,(X,iR) in enumerate(zip(xticks,iiRep)):
 
   for iC,C in enumerate(cfgs):
 
-    if CtrlVar=='N' and hasattr(C,'N'):
-      C = C.update_settings(N=X)
+    if (CtrlVar in ['N', 'nIter']) and hasattr(C,CtrlVar):
+      C = C.update_settings(**{CtrlVar:X})
 
     seed(sd)
 
@@ -86,41 +93,19 @@ if 'WORKER' in sys.argv: sys.exit(0) # quit if script is running as worker.
 
 # R = ResultsTable(save_path)
 
-# dkObs = 1
-# R = ResultsTable("data/Stoch_iEnS/bench_L95/P2720L/N_run2")
-
-# dkObs = 3
-# R = ResultsTable("data/Stoch_iEnS/bench_L95/P2720L/N_run3")
-# R          .load("data/Stoch_iEnS/bench_L95/ip-172-31-45-145/N_run1")
-# R.rm("rot:0")
-
-# dkObs = 4:
-
-
-# with coloring(): print("Averages over experiment repetition:")
-# R.print_mean_field('rmse_a',1,1,cols=slice(0,2))
+with coloring(): print("Averages over experiment repetition:")
+R.print_mean_field('rmse_a',1,1,cols=slice(0,2))
 
 BaseLineMethods = R.split(['Climatology', 'OptInterp', 'Var3D','ExtKF'])
+BaseLineMethods.rm('Var3D')
+
+R.rm("rot:0")
+# R.rm("EnKF")
 
 # Plot
 fig, ax = plt.subplots()
-# R.plot_1d('rmse_a',)
-ax, ax_, lhs = R.plot_1d_minz('rmse_a',)
-ax.legend()
-plt.sca(ax)
-# if 'checkmarks' not in locals(): checkmarks = []
-# checkmarks += [toggle_lines()];
+ax, ax2, _, _ = R.plot_1d_minz('rmse_a',)
 BaseLineMethods.plot_1d('rmse_a',color='k')
-
-# Adjust plot
-ax.set_yscale('log')
-ax.set_xscale('log')
-ax.grid(True,'minor')
-xt = R.xticks
-yt = [0.1, 0.2, 0.5, 1, 2, 5]
-ax.set_xticks(xt); ax.set_xticklabels(xt)
-ax.set_yticks(yt); ax.set_yticklabels(yt)
-
 
 ##
 

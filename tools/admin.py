@@ -255,8 +255,12 @@ class List_of_Configs(list):
   """
   List of DA configs.
 
-  Purpose: presentation (facilitate printing tables of attributes, results, etc).
-  Also implement += operator for easy use.
+  This class is quite hackey. But convenience is king for its purposes:
+   - pretty printing (using common/distinct attrs)
+   - make += accept (a single) item
+   - unique kw.
+   - indexing with lists.
+   - searching for indices by attributes [inds()].
   """
 
   # Print settings
@@ -286,77 +290,22 @@ class List_of_Configs(list):
     return self
 
   def append(self,cfg):
+    "Implemented in order to support 'unique'"
     if self.unique and cfg in self:
       return
     else:
       super().append(cfg)
 
-  def sublist(self,inds):
-    """
-    List only supports slice indexing.
-    This enables accessing (i.e. getitem) by list of inds
-    """
-    return List_of_Configs([self[i] for i in inds])
+  def __getitem__(self, keys):
+    """Implement indexing by a list"""
+    try:              B=List_of_Configs([self[k] for k in keys]) # list
+    except TypeError: B=list.__getitem__(self, keys)             # int, slice
+    return B
 
-  @property
-  def da_names(self):
-    return [config.da_method.__name__ for config in self]
 
-  # HUGE WASTE OF TIME.
-  # Better to rely on manual (but brief) filter_out(xcld) to use gen_names().
-  # def distinct_attrs(self,grouped=0):
-  #   """
-  #   Yields list of the attributes that are distinct (not all the same or absent/None).
-
-  #   grouped:
-  #     Does (various levels of) group-wise comparisons (grouping by da_name)
-  #     to eliminate some attrs from the list.
-  #     NB: Setting grouped>0 can be quite useful, but "comes with no guarantees".
-  #         I.e. the behaviour is only strictly predictable for grouped=0.
-  #     NB: If grouped>0, then some attributes may be eliminated,
-  #         in which case: {common UNION distinct} < {all attributes}.
-  #   """
-  #   attrs = self.separate_distinct_common()[0]
-
-  #   if grouped>=1: # Eliminate single-appearance attrs that belong to single-appearance names.
-  #       names = self.da_names
-  #       for key in list(attrs):
-  #         nn_inds = [i for i,x in enumerate(attrs[key]) if x is not None]        # not-None indices
-  #         if len(nn_inds)==1:                                                    # if  ∃! not-None val
-  #           if names.count(names[nn_inds[0]])==1:                                # and ∃! of the corresponding name 
-  #             del attrs[key]
-
-  #   if grouped>=2: # Elim if constant within all non-singleton groups.
-  #       groups  = list(keep_order_unique(array(names)))                          # groups: unique names
-  #       g_inds  = [ [i for i,n in enumerate(names) if n==g] for g in groups ]    # get indices per group 
-  #       g_attrs = [self.sublist(inds).distinct_attrs() for inds in g_inds ]      # distinct_attrs per group
-
-  #       # Here be dragons!
-  #       for key in list(attrs):
-  #         nn_inds  = [i for i,x in enumerate(attrs[key]) if x is not None]       # not-None indices
-  #         is_const = []                                                          # list where duplicates were found
-  #         for gi,inds in enumerate(g_inds):                                      # Loop over groups
-  #           if len(inds)>1:                                                      #   ensure non-singleton group
-  #             if all([i in nn_inds for i in inds]):                              #   ensure vals are not all None (globally)
-  #               is_const.append( key not in g_attrs[gi] )                        #   check if constant
-  #         if len(is_const)>0:                                                    # if non-singleton/None groups were found
-  #           if all(is_const):                                                    # if all were constant 
-  #             del attrs[key]                                                     # eliminate attribute
-
-  #   if grouped>=3: # Eliminate those that are not distinct in any group.
-  #       # Get distinct_attrs per group.
-  #       g_keys  = [list(attrs.keys()) for attrs in g_attrs ]                     # use keys only
-  #       g_keys  = keep_order_unique(array([a for keys in g_keys for a in keys])) # Merge (flatten, unique)
-
-  #       # Eliminate, but retain ordering.
-  #       for key in list(attrs): 
-  #         if key not in g_keys: del attrs[key]
-
-  #   return attrs
-
-  def distinct_attrs(self): return self.separate_distinct_common()[0]
-  def   common_attrs(self): return self.separate_distinct_common()[1]
-
+  # NB: In principle, it is possible to list fewer attributes as distinct,
+  #     by using groupings. However, doing so intelligently is difficult,
+  #     and I wasted a lot of time trying. So don't go there...
   def separate_distinct_common(self):
     """
     Compile the attributes of the DAC's in the List_of_Confgs,
@@ -395,6 +344,10 @@ class List_of_Configs(list):
 
     return dist, comn
 
+  def distinct_attrs(self): return self.separate_distinct_common()[0]
+  def   common_attrs(self): return self.separate_distinct_common()[1]
+
+
   def __repr__(self):
     if len(self):
       # Prepare
@@ -411,6 +364,10 @@ class List_of_Configs(list):
     else:
       s = "List_of_Configs([])"
     return s
+
+  @property
+  def da_names(self):
+    return [config.da_method.__name__ for config in self]
 
   def gen_names(self,abbrev=4,trim=False,do_tab=False,xcld=[]):
 
@@ -468,22 +425,40 @@ class List_of_Configs(list):
       elif ow == 'prepend':
         if t: s = s+' '+t
       config.name = s
+
+
+  def inds(self,strict=True,da=None,**kw):
+    """Find indices of configs with attributes matching the kw dict.
+     - strict: If True, then configs lacking a requested attribute will match.
+     - da: the da_method.
+     """
+
+    def fill(fillval):
+      return 'empties_dont_match' if strict else fillval
+
+    def matches(C, kw):
+      kw_match = all( getattr(C,k,fill(v))==v for k,v in kw.items())
+      da_match = True if da is None else C._is(da)
+      return (kw_match and da_match)
+
+    return [i for i,C in enumerate(self) if matches(C,kw)]
+
+
     
 
-def print_averages(cfgs,Avrgs,attrkeys=(),statkeys=()):
+def _print_averages(cfgs,avrgs,attrkeys=(),statkeys=()):
   """
   For c in cfgs:
-    Print c[attrkeys], Avrgs[c][statkeys]
+    Print c[attrkeys], avrgs[c][statkeys]
   - attrkeys: list of attributes to include.
       - if -1: only print da_method.
       - if  0: print distinct_attrs
   - statkeys: list of statistics to include.
   """
-
   # Convert single cfg to list
   if isinstance(cfgs,DAC):
     cfgs     = List_of_Configs(cfgs)
-    Avrgs    = [Avrgs]
+    avrgs    = [avrgs]
 
   # Set excluded attributes
   excluded = list(cfgs.excluded)
@@ -517,8 +492,8 @@ def print_averages(cfgs,Avrgs,attrkeys=(),statkeys=()):
     for i in range(len(cfgs)):
       # Format entry
       try:
-        val  = Avrgs[i][key].val
-        conf = Avrgs[i][key].conf
+        val  = avrgs[i][key].val
+        conf = avrgs[i][key].conf
         col.append('{0:@>9.4g} {1: <6g} '.format(val,round2sigfig(conf)))
       except KeyError:
         col.append(' ') # gets filled by tabulate
@@ -531,7 +506,11 @@ def print_averages(cfgs,Avrgs,attrkeys=(),statkeys=()):
 
   # Used @'s to avoid auto-cropping by tabulate().
   table = tabulate(mattr, headr).replace('@',' ')
-  print(table)
+  return table
+
+@functools.wraps(_print_averages)
+def print_averages(*args,**kwargs):
+  print(_print_averages(*args,**kwargs))
 
 
 def formatr(x):

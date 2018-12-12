@@ -102,7 +102,7 @@ for iX,(X,iR) in enumerate(zip(xticks,iiRep)):
 ##############################
 # Save
 ##############################
-cfgs.assign_names(do_tab=False,ow='prepend')
+cfgs.assign_names(tab=False,ow='prepend')
 cnames = [c.name for c in cfgs]
 print("Saving to",save_path)
 np.savez(save_path,avrgs=avrgs,xticks=xticks,labels=cnames)

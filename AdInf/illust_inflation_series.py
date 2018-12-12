@@ -132,7 +132,7 @@ print_averages(cfgs, avrgs,statkeys=
 ##############################
 # Plot
 ##############################
-cfgs.assign_names(do_tab=False,ow=False)
+cfgs.assign_names(tab=False,ow=False)
 
 class trialContextManager:
     def __enter__(self): pass

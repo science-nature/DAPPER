@@ -377,8 +377,6 @@ TODO
 
 * Replace print_c and termcolors dict by 'with coloring:'. Requirements
 
-* Rename fs (alias for self.new_FAU_series in stats.py) to new
-
 * Fix Windows bug (key listening: ncurses?)
 
 * Fix dtObs bug
@@ -386,7 +384,6 @@ TODO
 * Review ens_compatible
 * Rm vectorize0 (too messy). See SO.com/questions/29318459 and more
 
-* rename do_tab to tab
 * Rename twin/setup to HMM
 * rename f til dynamics og h til observation
 

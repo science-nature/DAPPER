@@ -369,7 +369,7 @@ class List_of_Configs(list):
   def da_names(self):
     return [config.da_method.__name__ for config in self]
 
-  def gen_names(self,abbrev=4,trim=False,do_tab=False,xcld=[]):
+  def gen_names(self,abbrev=4,trim=False,tab=False,xcld=[]):
 
     # 1st column: da_method's names
     columns = self.da_names
@@ -397,23 +397,23 @@ class List_of_Configs(list):
         lbls = [x[:-1] for x in lbls] # Remove colon
         vals = [''     for x in lbls] # Make empty val
       else: # Format data
-        vals = typeset(vals,do_tab=True)
+        vals = typeset(vals,tab=True)
 
       # Form column: join columns, lbls and vals.
       columns = [''.join(x) for x in zip(columns,lbls,vals)]           
 
     # Undo all tabulation inside column all at once:
-    if not do_tab: columns = [" ".join(n.split()) for n in columns]
+    if not tab: columns = [" ".join(n.split()) for n in columns]
 
     return columns
 
-  def assign_names(self,ow=False,do_tab=False):
+  def assign_names(self,ow=False,tab=False):
     """
     Assign distinct_names to the individual DAC's.
     If ow: do_overwrite.
     """
     # Process attributes into strings 
-    names = self.gen_names(do_tab)
+    names = self.gen_names(tab)
     
     # Assign strings to configs
     for name,config in zip(names,self):
@@ -521,13 +521,13 @@ def formatr(x):
   if x is None: return ''
   return str(x)
 
-def typeset(lst,do_tab):
+def typeset(lst,tab):
   """
   Convert lst elements to string.
-  If do_tab: pad to min fixed width.
+  If tab: pad to min fixed width.
   """
   ss = list(map(formatr, lst))
-  if do_tab:
+  if tab:
     width = max([len(s)     for s in ss])
     ss    = [s.ljust(width) for s in ss]
   return ss

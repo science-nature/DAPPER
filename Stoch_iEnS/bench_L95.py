@@ -82,7 +82,7 @@ np.savez(save_path,
     xlabel     = CtrlVar,
     xticks     = xticks,
     tuning_tag = 'infl', 
-    labels     = cfgs.gen_names(do_tab=True),
+    labels     = cfgs.gen_names(tab=True),
     meta       = {'dkObs':setup.t.dkObs})
 
 

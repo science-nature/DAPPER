@@ -47,7 +47,7 @@ for k in range(K):
   uu[0] = ones(M)                               # fixed
   uu[1] = rand(M)                               # Uniform
   uu[2] = randn(M)                              # x (NormDist)
-  uu[3] = B12@randn(M) - bx                     # x-bx
+  uu[3] = B12@randn(M) - bx.squeeze()           # x-bx
   uu[4] = B12@randn(M) / sqrt(chi2(g).rvs(1)/g) # t(0,B;g)
 
   for i,u in enumerate(uu):

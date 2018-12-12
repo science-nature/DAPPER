@@ -349,7 +349,6 @@ Conventions:
 <!--
 TODO
 ------------------------------------------------
-* Rename anom to centr. Merge with center.
 * Update list of methods (e.g. ESOPS)
 * Darcy, LotkaVolterra, 2pendulum, Kuramoto-Sivashinsky , Nikolaevskiy Equation
 * Lage demo fil/liveplotting for LorenzUV
@@ -376,6 +375,7 @@ TODO
     => Yields (???) decorator syntax @DA_Config.method  (which would look nice) 
 * Rename twin/setup to HMM
 * rename f til dynamics og h til observation
+* Review ens_compatible
 * Get rid of Tuple assignment of twin/setup items
 * Rm vectorize0 (too messy). See SO.com/questions/29318459 and more
 * Rename DA_Config to DA_method or something

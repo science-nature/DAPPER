@@ -57,12 +57,20 @@ def ens_compatible(func):
     return func(x.T,*kargs,**kwargs).T
   return wrapr
 
-def anom(E,axis=0):
-  mu = mean(E,axis=axis, keepdims=True)
-  A  = E - mu
-  # TODO: Why squeeze? I don't think this is very np "canonical",
-  #       and can yield some broadcasting issues.
-  return A, mu.squeeze()
+def anom(E,axis=0,rescale=False):
+  """Center ensemble.
+
+  Makes use of np features: keepdims and broadcasting.
+
+  - rescale: Inflate to compensate for reduction in the expected variance.
+  """
+  mu = mean(E, axis=axis, keepdims=True)
+  X  = E - mu
+  if rescale:
+    N  = E.shape[axis]
+    X *= sqrt(N/(N-1))
+  return X, mu
+
 
 def center(E,rescale=True):
   """

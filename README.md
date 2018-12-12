@@ -28,10 +28,6 @@ methods.
 The tests provide experimental support and guidance for new developments in DA.
 Example diagnostics:
 
-<!--
-![EnKF - Lorenz'63](./data/figs/anims/Lor63_ens_anim_2.gif)
--->
-
 ![EnKF - Lorenz'63](./data/figs/anims/DAPPER_illust_v2.jpg)
 
 
@@ -47,11 +43,11 @@ The typical set-up is a **twin experiment**, where you
 
 **Pros:** DAPPER enables the numerical investigation of DA methods
 through a variety of typical test cases and statistics.
-It reproduces numerical benchmarks results reported in the literature,
-and facilitates comparative studies,
-thus promoting the reliability and relevance of the results.
-DAPPER is open source, written in Python, and focuses on readability;
-this promotes the reproduction and dissemination of the underlying science,
+It (a) reproduces numerical benchmarks results reported in the literature,
+and (b) facilitates comparative studies,
+thus promoting the (a) reliability and (b) relevance of the results.
+DAPPER is (c) open source, written in Python, and (d) focuses on readability;
+this promotes the (c) reproduction and (d) dissemination of the underlying science,
 and makes it easy to adapt and extend.
 In summary, it is well suited for teaching and fundamental DA research.
 
@@ -134,15 +130,16 @@ Quasi-Geost | No      | 2d        | 129²≈17k  | ≈140     | Sakov
 *: flexible; set as necessary
 
 **To add a new model:**
-* Make a new dir: `DAPPER/mods/`**your_mod** and add the empty file `__init__.py`
+* Make a new dir: `DAPPER/mods/your_model` and add the empty file `__init__.py`
 * See other examples, e.g. `DAPPER/mods/Lorenz63/sak12.py`
 * Make sure that the model (and obs operator) supports
   2D-array (i.e. ensemble) and 1D-array (single realization) input.
-  See `Lorenz63` and `Lorenz95` for typical implementation.
+  See the `core.py` file in `mods/Lorenz63` and `mods/Lorenz95` for typical
+	implementations, and `mods/QG` for how to parallelize the ensemble simulations.
 
 More conventions: each model directory should have a main file (usually called `core.py`) that
 defines the core functionality and provides some documentation and references. 
-In addition, there should be a `demo.py` file and possibly a `liveplotting.py` file.
+Ideally, there should also be a `demo.py` file and possibly a `liveplotting.py` file.
 The rest of the python files typically defines setups for twin experiments.
 
 
@@ -209,8 +206,8 @@ Example of limitations:
  * Time-dependent error covariances and changes in lengths of state/obs
      (although models f and h may otherwise be time-dependent).
  * Non-uniform time sequences not fully supported.
-Also, DAPPER comes with no guarantees/support.
 
+Also, DAPPER comes with no guarantees/support.
 Therefore, if you have an *operational* (real-world) application,
 you should look into one of the alternatives,
 sorted by approximate project size.
@@ -285,11 +282,6 @@ References
 
 Further references are given in the code.
 
-<!--
-Licence
-------------------------------------------------
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./licence.txt)
--->
 
 Contributors
 ------------------------------------------------
@@ -311,18 +303,6 @@ If you use this software in a publication, please cite as follows.
 }
 ```
 
-
-<!--
-[![DOI](https://zenodo.org/badge/62547494.svg)](https://zenodo.org/badge/latestdoi/62547494)
--->
-
-<!--
-"Outreach"
----------------
-* http://stackoverflow.com/a/38191145/38281
-* http://stackoverflow.com/a/37861878/38281
-* http://stackoverflow.com/questions/43453707
--->
 
 Powered by
 ------------------------------------------------
@@ -376,11 +356,11 @@ TODO
 * Reorg file structure: Turn into package?
 * Simplify time management?
 * Use pandas for stats time series?
-* Defaults file (fail_gently, liveplotting, mkl.set_num_threads, etc)
 * Replace set_ilabel by [eval("ax.set_%slabel('%s')"%(s,s)) for s in "xyz"]
 * Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
+* Make global DAPPER config file (insert in common?)
+* Defaults file (fail_gently, liveplotting, mkl.set_num_threads, etc)
 * Rename common to DAPPER_workspace.
-* Make citation format for DAPPER
 * Upgrade example_4 with plot_1d_minz ?
 * Implement spatialized inflation?
 * Replace print_c and termcolors dict by 'with coloring:'
@@ -395,6 +375,7 @@ TODO
 * Make function DA_Config() a member called 'method' of DAC. Rename DAC to DA_Config.
     => Yields (???) decorator syntax @DA_Config.method  (which would look nice) 
 * Rename twin/setup to HMM
+* rename f til dynamics og h til observation
 * Get rid of Tuple assignment of twin/setup items
 * Rm vectorize0 (too messy). See SO.com/questions/29318459 and more
 * Rename DA_Config to DA_method or something
@@ -407,5 +388,13 @@ TODO
 * Post version on norce
 -->
 
+
+<!--
+
+[![DOI](https://zenodo.org/badge/62547494.svg)](https://zenodo.org/badge/latestdoi/62547494)
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./licence.txt)
+
+-->
 
 

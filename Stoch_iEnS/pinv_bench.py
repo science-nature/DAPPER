@@ -7,7 +7,7 @@
 #         E  = E + dE
 #     elif 'pinv' in upd_a:
 #         # Uses tinv(Bb) to compute Pb
-#         D  = center(hnoise.sample(N))
+#         D  = center100(hnoise.sample(N))
 #         H  = stats.setup.h.jacob(np.nan, np.nan)
 #         Bb = A.T @ A / N1
 #         P  = inv( tinv(Bb) + R.inv )

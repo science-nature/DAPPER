@@ -55,7 +55,7 @@ tR, tB, tP = trace(R), trace(B), trace(P)
 
 for k in range(K):
   E     = B_12 @ randn((m,N))
-  A, xb = anom(E,axis=1)
+  A, xb = center(E,axis=1)
   Bb    = A@A.T / nu
   iBb   = invm(Bb)
   Pb    = invm( iR + iBb)

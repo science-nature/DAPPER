@@ -56,7 +56,7 @@ def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
     if 'PertObs' in upd_a:
         # Uses classic, perturbed observations (Burgers'98)
         C  = Y.T @ Y + R.full*N1
-        D  = center(hnoise.sample(N))
+        D  = center100(hnoise.sample(N))
         YC = mrdiv(Y, C)
         KG = A.T @ YC
         HK = Y.T @ YC
@@ -136,7 +136,7 @@ def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
                 Zj *= np.sign(rand()-0.5)    # Random sign
               else:
                 # The usual stochastic perturbations. 
-                Zj = center(randn(N)) # Un-coloured noise
+                Zj = center100(randn(N)) # Un-coloured noise
                 if 'Var1' in upd_a:
                   Zj *= sqrt(N/(Zj@Zj))
 
@@ -202,7 +202,7 @@ def post_process(E,infl,rot):
   do_infl = infl!=1.0 and infl!='-N'
 
   if do_infl or rot:
-    A, mu = anom(E)
+    A, mu = center(E)
     N,m   = E.shape
     T     = eye(N)
 
@@ -231,7 +231,7 @@ def add_noise(E, dt, noise, config):
   if noise.C is 0: return E
 
   N,m  = E.shape
-  A,mu = anom(E)
+  A,mu = center(E)
   Q12  = noise.C.Left
   Q    = noise.C.full
 
@@ -274,7 +274,7 @@ def add_noise(E, dt, noise, config):
     varE2 = (varE0 + dt*diag(Q).sum())
     E, _, Qa12 = sqrt_core()
     if N<=m:
-      A,mu   = anom(E)
+      A,mu   = center(E)
       varE1  = np.var(E,axis=0,ddof=1).sum()
       ratio  = varE2/varE1
       E      = mu + sqrt(ratio)*A
@@ -394,8 +394,8 @@ def EnRTS(upd_a,N,cntr,infl=1.0,rot=False,**kwargs):
 
     # Backward pass
     for k in progbar(range(chrono.K)[::-1]):
-      A  = anom(E[k])[0]
-      Af = anom(Ef[k+1])[0]
+      A  = center(E[k])[0]
+      Af = center(Ef[k+1])[0]
 
       J = tinv(Af) @ A
       J *= cntr
@@ -451,7 +451,7 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
         y    = yy[kObs]
-        inds = serial_inds(ordr, y, R, anom(E)[0])
+        inds = serial_inds(ordr, y, R, center(E)[0])
             
         state_localizer = h.localizer(loc_rad, 'y2x', t, taper)
         for j in inds:
@@ -567,7 +567,7 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
         A  = E - mu
         # Obs space variables
         y    = yy[kObs]
-        Y,hx = anom(h(E,t))
+        Y,hx = center(h(E,t))
         # Transform obs space
         Y  = Y        @ R.sym_sqrt_inv.T
         dy = (y - hx) @ R.sym_sqrt_inv.T
@@ -936,7 +936,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
 
     def make_CVar(E,scaling=1.0):
       "Define change-of-var's from ens space to ens subspace (of state space)."
-      X,x = anom(E)
+      X,x = center(E)
       w2x = lambda w: x + (scaling*w)@X
       return w2x
 
@@ -971,7 +971,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
                 # Prepare analysis of current obs: yy[kObs], where kObs==DAW_right if len(DAW)>0
                 hE     = h(E,t)            # Observe ensemble.
                 y      = yy[DAW_right]     # Select current obs/data.
-                Y,hx   = anom(hE)          # Get obs {anomalies, mean}.
+                Y,hx   = center(hE)          # Get obs {anomalies, mean}.
                 dy     = (y - hx) @ Rm12.T # Transform obs space.
                 Y      = Y        @ Rm12.T # Transform obs space.
                 Y0     = (Tinv/EPS) @ Y    # "De-condition" the obs anomalies.
@@ -991,7 +991,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
                     Pw = Pw @ T # apply previous update
                     w += dy @ Y.T @ Pw
                     if 'PertObs' in upd_a:   ### "ES-MDA". By Emerick/Reynolds.
-                      D     = center(randn(Y.shape)) * sqrt(nIter)
+                      D     = center100(randn(Y.shape)) * sqrt(nIter)
                       T    -= (Y + D) @ Y.T @ Pw
                     elif 'Sqrt' in upd_a:    ### "ETKF-ish". By Raanes.
                       T     = Pw_pwr(0.5) * sqrt(za) @ T
@@ -1006,7 +1006,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
                       T     = Pw_pwr(0.5) * sqrt(N1) # Sqrt-transforms
                       Tinv  = Pw_pwr(-.5) / sqrt(N1) # Saves time [vs tinv(T)] when M<N
                     elif 'PertObs' in upd_a: ### "EnRML". By Oliver/Chen/Raanes/Evensen/Stordal.
-                      D     = center(randn(Y.shape)) if iteration==0 else D
+                      D     = center100(randn(Y.shape)) if iteration==0 else D
                       gradT = -(Y+D)@Y0.T + N1*(eye(N) - T)
                       T     = T + gradT@Pw
                       Tinv  = tinv(T)
@@ -1062,7 +1062,7 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
 
     def make_CVar(E,scaling=1.0):
       "Define change-of-var's from ens space to ens subspace (of state space)."
-      X,x = anom(E)
+      X,x = center(E)
       w2x = lambda w: x + (scaling*w)@X
       return w2x
 
@@ -1097,7 +1097,7 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
                 # Prepare analysis of current obs: yy[DAW_right]
                 hE     = h(E,t)            # Observe ensemble.
                 y      = yy[DAW_right]     # Select current obs/data.
-                Y,hx   = anom(hE)          # Get obs {anomalies, mean}.
+                Y,hx   = center(hE)          # Get obs {anomalies, mean}.
                 dy     = (y - hx) @ Rm12.T # Transform obs space.
                 Y      = Y        @ Rm12.T # Transform obs space.
                 Y0     = (Tinv/EPS) @ Y    # "De-condition" the obs anomalies.
@@ -1115,7 +1115,7 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
                 if MDA: # Frame update using annealing (progressive assimilation).
                     Pw = Pw @ T # apply previous update
                     if 'PertObs' in upd_a:   ### "ES-MDA". By Emerick/Reynolds.
-                      D     = center(randn(Y.shape)) * sqrt(nIter)
+                      D     = center100(randn(Y.shape)) * sqrt(nIter)
                       w    +=      dy @ Y.T @ Pw
                       T    -= (Y + D) @ Y.T @ Pw
                     elif 'Sqrt' in upd_a:    ### "ETKF-ish". By Raanes.
@@ -1134,11 +1134,11 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
                       w     = w + grad@Pw            # Gauss-Newton step
                     elif 'PertObs' in upd_a: ### "EnRML". By Oliver/Chen/Raanes/Evensen/Stordal.
                       grad  = Y0@dy - w*za
-                      D     = center(randn(Y.shape)) if iteration==0 else D
+                      D     = center100(randn(Y.shape)) if iteration==0 else D
                       gradT = -(Y+D)@Y0.T + N1*(eye(N) - T)
                       w     = w + grad @Pw
                       T     = T + gradT@Pw
-                      # It's prettier with W=w+T, i.e. T,w=anom(W):
+                      # It's prettier with W=w+T, i.e. T,w=center(W):
                       # dY    = (y - hE) @ Rm12.T
                       # grad  = (dY - D)@Y0.T + N1*(eye(N) - W)
                       # W     = W + grad@Pw
@@ -1222,7 +1222,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
         nBatch = len(state_batches)
 
         # Store 0th (iteration) estimate as (x0,A0)
-        A0,x0  = anom(E)
+        A0,x0  = center(E)
         # Init iterations
         w      = np.tile( zeros(N) , (nBatch,1) )
         Tinv   = np.tile( eye(N)   , (nBatch,1,1) )
@@ -1245,7 +1245,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
 
             # Analysis of y[kObs] (already assim'd [:kObs])
             y    = yy[kObs]
-            Y,hx = anom(h(E,t))
+            Y,hx = center(h(E,t))
             # Transform obs space
             Y  = Y        @ R.sym_sqrt_inv.T
             dy = (y - hx) @ R.sym_sqrt_inv.T
@@ -2328,7 +2328,7 @@ def RHF(N,ordr='rand',infl=1.0,rot=False,**kwargs):
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
         y    = yy[kObs]
-        inds = serial_inds(ordr, y, R, anom(E)[0])
+        inds = serial_inds(ordr, y, R, center(E)[0])
             
         for i,j in enumerate(inds):
           hE = h(E,t)

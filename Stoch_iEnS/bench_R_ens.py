@@ -6,33 +6,33 @@
 #     if 'PertObs' in upd_a:
 #       if 'Re aug' in upd_a:
 #         # here K = AY'/[YY'+DD']
-#         D  = center(hnoise.sample(N))
+#         D  = center100(hnoise.sample(N))
 #         Re = D.T @ D
 #         C  = Y.T @ Y + Re
 #         YC = Y @ tinv(C)
 #         KG = A.T @ YC
 #       elif 'Re pinv' in upd_a:
 #         # here K = A pinv(Y+D) (lin-reg: x --> h(x)+e)
-#         D  = center(hnoise.sample(N))
+#         D  = center100(hnoise.sample(N))
 #         YD = Y + D
 #         KG = A.T @ tinv(YD.T)
 #       elif 'Re sum' in upd_a:
 #         # here K = A(Y+D)'/[(Y+D)(Y+D)'] (same as pinv)
-#         D  = center(hnoise.sample(N))
+#         D  = center100(hnoise.sample(N))
 #         YD = Y + D
 #         C  = YD.T @ YD
 #         YC = YD @ tinv(C)
 #         KG = A.T @ YC
 #       elif 'Re cross0' in upd_a:
 #         # here K = AY'/[(Y+D)(Y+D)']
-#         D  = center(hnoise.sample(N))
+#         D  = center100(hnoise.sample(N))
 #         YD = Y + D
 #         C  = YD.T @ YD
 #         YC = Y @ tinv(C)
 #         KG = A.T @ YC
 #       elif 'Re cross1' in upd_a:
 #         # here K = A(Y+D)'/[YY'+DD']
-#         D  = center(hnoise.sample(N))
+#         D  = center100(hnoise.sample(N))
 #         Re = D.T @ D
 #         C  = Y.T @ Y + Re
 #         YD = Y + D
@@ -40,7 +40,7 @@
 #         KG = A.T @ YC
 #       elif 'Re proj' in upd_a:
 #         # here K = AY'/[YY'+ P DD' P], where P is Proj mat onto col(Y))
-#         D  = center(hnoise.sample(N))
+#         D  = center100(hnoise.sample(N))
 #         Re = D.T @ D
 #         P  = Y.T @ tinv(Y.T)
 #         C  = Y.T @ Y + P@Re@P
@@ -49,7 +49,7 @@
 #       else: # i.e. just use the true R
 #         # here K = AY'/[YY' + nR]
 #         C  = Y.T @ Y + R.full*N1
-#         D  = center(hnoise.sample(N))
+#         D  = center100(hnoise.sample(N))
 #         YC = Y @ tinv(C)
 #         KG = A.T @ YC
 #         HK = Y.T @ YC

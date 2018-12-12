@@ -12,7 +12,7 @@ M = 3       # State length
 P = 4       # Obs length
 N = 6       # Ens size
 
-cntr = lambda E: anom(E,axis=1)[0]
+cntr = lambda E: center(E,axis=1)[0]
 
 seed(6)
 #B = randcov(M)             # yields non-diag Pi_infty. Why? 

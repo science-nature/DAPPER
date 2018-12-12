@@ -70,7 +70,7 @@ def EAKF_A07(N,var_f=None,damp=0.9,CLIP=0.9,ordr='rand',
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
         y    = yy[kObs]
-        inds = serial_inds(ordr, y, R, anom(E)[0])
+        inds = serial_inds(ordr, y, R, center(E)[0])
             
         for UPDATE_TARGET in ['INFL','STATE']:
           # one pass for estimating inflation, and then

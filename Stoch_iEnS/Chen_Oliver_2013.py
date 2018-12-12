@@ -110,7 +110,7 @@ AN   = eye(N) - Pi1
 
 # Obs perturbations
 D = sqrtm(R)@randn((P,N))
-D = center(D.T).T
+D = center100(D.T).T
 
 # Sqrt initialization matrix
 w      = zeros((N,1))

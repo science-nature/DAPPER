@@ -56,7 +56,7 @@ def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
     if 'PertObs' in upd_a:
         # Uses classic, perturbed observations (Burgers'98)
         C  = Y.T @ Y + R.full*N1
-        D  = center100(hnoise.sample(N))
+        D  = mean0(hnoise.sample(N))
         YC = mrdiv(Y, C)
         KG = A.T @ YC
         HK = Y.T @ YC
@@ -136,7 +136,7 @@ def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
                 Zj *= np.sign(rand()-0.5)    # Random sign
               else:
                 # The usual stochastic perturbations. 
-                Zj = center100(randn(N)) # Un-coloured noise
+                Zj = mean0(randn(N)) # Un-coloured noise
                 if 'Var1' in upd_a:
                   Zj *= sqrt(N/(Zj@Zj))
 
@@ -971,7 +971,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
                 # Prepare analysis of current obs: yy[kObs], where kObs==DAW_right if len(DAW)>0
                 hE     = h(E,t)            # Observe ensemble.
                 y      = yy[DAW_right]     # Select current obs/data.
-                Y,hx   = center(hE)          # Get obs {anomalies, mean}.
+                Y,hx   = center(hE)        # Get obs {anomalies, mean}.
                 dy     = (y - hx) @ Rm12.T # Transform obs space.
                 Y      = Y        @ Rm12.T # Transform obs space.
                 Y0     = (Tinv/EPS) @ Y    # "De-condition" the obs anomalies.
@@ -991,7 +991,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
                     Pw = Pw @ T # apply previous update
                     w += dy @ Y.T @ Pw
                     if 'PertObs' in upd_a:   ### "ES-MDA". By Emerick/Reynolds.
-                      D     = center100(randn(Y.shape)) * sqrt(nIter)
+                      D     = mean0(randn(Y.shape)) * sqrt(nIter)
                       T    -= (Y + D) @ Y.T @ Pw
                     elif 'Sqrt' in upd_a:    ### "ETKF-ish". By Raanes.
                       T     = Pw_pwr(0.5) * sqrt(za) @ T
@@ -1006,7 +1006,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
                       T     = Pw_pwr(0.5) * sqrt(N1) # Sqrt-transforms
                       Tinv  = Pw_pwr(-.5) / sqrt(N1) # Saves time [vs tinv(T)] when M<N
                     elif 'PertObs' in upd_a: ### "EnRML". By Oliver/Chen/Raanes/Evensen/Stordal.
-                      D     = center100(randn(Y.shape)) if iteration==0 else D
+                      D     = mean0(randn(Y.shape)) if iteration==0 else D
                       gradT = -(Y+D)@Y0.T + N1*(eye(N) - T)
                       T     = T + gradT@Pw
                       Tinv  = tinv(T)
@@ -1115,7 +1115,7 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
                 if MDA: # Frame update using annealing (progressive assimilation).
                     Pw = Pw @ T # apply previous update
                     if 'PertObs' in upd_a:   ### "ES-MDA". By Emerick/Reynolds.
-                      D     = center100(randn(Y.shape)) * sqrt(nIter)
+                      D     = mean0(randn(Y.shape)) * sqrt(nIter)
                       w    +=      dy @ Y.T @ Pw
                       T    -= (Y + D) @ Y.T @ Pw
                     elif 'Sqrt' in upd_a:    ### "ETKF-ish". By Raanes.
@@ -1134,7 +1134,7 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
                       w     = w + grad@Pw            # Gauss-Newton step
                     elif 'PertObs' in upd_a: ### "EnRML". By Oliver/Chen/Raanes/Evensen/Stordal.
                       grad  = Y0@dy - w*za
-                      D     = center100(randn(Y.shape)) if iteration==0 else D
+                      D     = mean0(randn(Y.shape)) if iteration==0 else D
                       gradT = -(Y+D)@Y0.T + N1*(eye(N) - T)
                       w     = w + grad @Pw
                       T     = T + gradT@Pw

@@ -57,7 +57,7 @@ def ens_compatible(func):
     return func(x.T,*kargs,**kwargs).T
   return wrapr
 
-def center(E,rescale=False,axis=0):
+def center(E,axis=0,rescale=False):
   """Center ensemble.
 
   Makes use of np features: keepdims and broadcasting.
@@ -65,13 +65,18 @@ def center(E,rescale=False,axis=0):
   - rescale: Inflate to compensate for reduction in the expected variance."""
   x = mean(E, axis=axis, keepdims=True)
   X = E - x
+
   if rescale:
     N  = E.shape[axis]
     X *= sqrt(N/(N-1))
+
+  x = x.squeeze()
+
   return X, x
 
-def center100(E):
-  return center(E,rescale=1,axis=0)[0]
+def mean0(E,axis=0,rescale=True):
+  "Same as: center(E)[0], but with rescale=True as default."
+  return center(E,axis=axis,rescale=rescale)[0]
 
 def inflate_ens(E,factor):
   X, x = center(E)

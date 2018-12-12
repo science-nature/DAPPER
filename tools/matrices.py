@@ -118,7 +118,7 @@ def chol_reduce(Right):
   """
   Return rnk-by-ndim R such that Right.T@Right - R.T@R ≈ 0.
   Example:
-    A = center(randn((20,5)),axis=1)[0]
+    A = mean0(randn((20,5)),axis=1)
     C = A.T @ A
     # sla.cholesky(C) throws error
     R = chol_reduce(A)

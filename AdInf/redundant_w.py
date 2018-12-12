@@ -13,7 +13,7 @@ m = 6 # state/obs dim
 N = 5 # ens size
 
 E = randn((m,N))
-A = center(E,axis=1)[0]
+A = mean0(E,axis=1)
 
 
 U,  Sig,  V_T  = svd(A)      # N-th value is 0

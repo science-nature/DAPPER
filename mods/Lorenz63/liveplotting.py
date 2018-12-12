@@ -41,7 +41,7 @@ def LP_setup(
     ax3.set_title("Phase space trajectories")
     # Tune plots
     for s,i in zip("xyz",range(m)):
-      set_ilim(ax3   ,i,xx,1.5)
+      set_ilim(ax3,i,*fit_lim(xx[:,i],1.5))
       axs[i].set_ylim(*stretch(*span(xx), 1.01))
       eval("ax3.set_%slabel('%s')"%(s,s), {'ax3':ax3} )
       axs[i].set_ylabel(s)

@@ -630,21 +630,18 @@ def update_ylim(data,ax,bottom=None,top=None,Min=-1e20,Max=+1e20,cC=0,cE=1):
   ax.set_ylim(minv,maxv)
 
 
-def set_ilim(ax,i,data,zoom=1.0):
-  """Set bounds (taken from data) on axis i.""" 
-  Min  = data[:,i].min()
-  Max  = data[:,i].max()
+def set_ilim(ax,i,Min=None,Max=None):
+  """Set bounds on axis i.""" 
+  if i is 0: ax.set_xlim(Min,Max)
+  if i is 1: ax.set_ylim(Min,Max)
+  if i is 2: ax.set_zlim(Min,Max)
+
+def fit_lim(data,zoom=1.0):
+  Min  = data.min()
+  Max  = data.max()
   lims = round2sigfig([Min, Max])
   lims = inflate_ens(lims,1/zoom)
-  if i is 0: ax.set_xlim(lims)
-  if i is 1: ax.set_ylim(lims)
-  if i is 2: ax.set_zlim(lims)
-
-def set_ilabel(ax,i):
-  if i is 0: ax.set_xlabel('x')
-  if i is 1: ax.set_ylabel('y')
-  if i is 2: ax.set_zlabel('z')
-
+  return lims
 
 
 def estimate_good_plot_length(xx,chrono=None,mult=100):

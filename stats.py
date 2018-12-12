@@ -31,16 +31,17 @@ class Stats(MLR_Print):
     KObs = setup.t.KObs ; assert KObs==yy.shape[0]-1
 
     # time-series constructor alias
-    fs = self.new_FAU_series
-    self.mu     = fs(m) # Mean
-    self.var    = fs(m) # Variances
-    self.mad    = fs(m) # Mean abs deviations
-    self.err    = fs(m) # Error (mu-truth)
-    self.logp_m = fs(1) # Marginal, Gaussian Log score
-    self.skew   = fs(1) # Skewness
-    self.kurt   = fs(1) # Kurtosis
-    self.rmv    = fs(1) # Root-mean variance
-    self.rmse   = fs(1) # Root-mean square error
+    new_series = self.new_FAU_series
+
+    self.mu     = new_series(m) # Mean
+    self.var    = new_series(m) # Variances
+    self.mad    = new_series(m) # Mean abs deviations
+    self.err    = new_series(m) # Error (mu-truth)
+    self.logp_m = new_series(1) # Marginal, Gaussian Log score
+    self.skew   = new_series(1) # Skewness
+    self.kurt   = new_series(1) # Kurtosis
+    self.rmv    = new_series(1) # Root-mean variance
+    self.rmse   = new_series(1) # Root-mean square error
 
     if hasattr(config,'N'):
       # Ensemble-only init
@@ -48,16 +49,16 @@ class Stats(MLR_Print):
       self._is_ens = True
       N            = config.N
       m_Nm         = min(m,N)
-      self.w       = fs(N)           # Importance weights
-      self.rh      = fs(m,dtype=int) # Rank histogram
+      self.w       = new_series(N)           # Importance weights
+      self.rh      = new_series(m,dtype=int) # Rank histogram
       #self.N      = N               # Use w.shape[1] instead
     else:
       # Linear-Gaussian assessment
       self._is_ens = False
       m_Nm         = m
 
-    self.svals = fs(m_Nm) # Principal component (SVD) scores
-    self.umisf = fs(m_Nm) # Error in component directions
+    self.svals = new_series(m_Nm) # Principal component (SVD) scores
+    self.umisf = new_series(m_Nm) # Error in component directions
 
     # Other
     self.trHK  = np.full(KObs+1, nan)

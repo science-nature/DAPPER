@@ -57,7 +57,7 @@ def ens_compatible(func):
     return func(x.T,*kargs,**kwargs).T
   return wrapr
 
-def anom(E,axis=0,rescale=False):
+def anom(E,rescale=False,axis=0):
   """Center ensemble.
 
   Makes use of np features: keepdims and broadcasting.

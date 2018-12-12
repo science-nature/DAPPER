@@ -38,7 +38,7 @@ BB = zeros((K,M,M))
 
 for k in range(K):
   E     = B12@randn((M,N))            # \sim NormDist(0,B)
-  A, bx = anom(E,1)
+  A, bx = anom(E,axis=1)
   barB  = A@A.T / N1                  # \sim    Wish( B,N1)
   ibB   = inv(barB)                   # \sim InvWish(iB,N1)
   BB[k] = barB

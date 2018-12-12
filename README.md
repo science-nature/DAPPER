@@ -355,37 +355,50 @@ TODO
 * Reorg file structure: Turn into package?
 * Simplify time management?
 * Use pandas for stats time series?
-* Replace set_ilabel by [eval("ax.set_%slabel('%s')"%(s,s)) for s in "xyz"]
-* Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
-* Make global DAPPER config file (insert in common?)
-* Defaults file (fail_gently, liveplotting, mkl.set_num_threads, etc)
-* Rename common to DAPPER_workspace.
 * Upgrade example_4 with plot_1d_minz ?
 * Implement spatialized inflation?
-* Replace print_c and termcolors dict by 'with coloring:'
-* Rename fs (alias for self.new_FAU_series in stats.py) to new
-* Fix Windows bug (key listening: ncurses?)
-* Fix issue with anaconda python framework install or whatever that fucks figure interaction
+
+* EITHER: Rm *args, **kwargs from da_methods? (less spelling errors)
+*         Replace with opts argument (could be anything).
+*     OR: implement warning if config argument was not used
+		      (warns against misspelling, etc)
 * Use inspect somehow instead of C.update_setting
 * pass name from DAC_list to tqdm in assimilator?
 * Use AlignedDict for DA_Config's repr?
-* Get good/simple local PF with reproduction of Alban's results
-* rename do_tab to tab
 * Make function DA_Config() a member called 'method' of DAC. Rename DAC to DA_Config.
     => Yields (???) decorator syntax @DA_Config.method  (which would look nice) 
+* Rename DA_Config to DA_method or something
+
+* Rename common to DAPPER_workspace.
+* Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
+* Defaults file (fail_gently, liveplotting, store_u mkl.set_num_threads, etc)
+
+* Requirements
+
+* Replace print_c and termcolors dict by 'with coloring:'. Requirements
+
+* Rename fs (alias for self.new_FAU_series in stats.py) to new
+
+* Fix Windows bug (key listening: ncurses?)
+
+* Fix dtObs bug
+
+* Review ens_compatible
+* Rm vectorize0 (too messy). See SO.com/questions/29318459 and more
+
+* rename do_tab to tab
 * Rename twin/setup to HMM
 * rename f til dynamics og h til observation
-* Review ens_compatible
+
 * Get rid of Tuple assignment of twin/setup items
-* Rm vectorize0 (too messy). See SO.com/questions/29318459 and more
-* Rename DA_Config to DA_method or something
+
 * Change m to M and ndim? (what about model?)
-* EITHER: Rm *args, **kwargs from da_methods? (less spelling errors)
-*         Replace with opts argument (could be anything).
-*     OR: implement warning if config argument was not used (warns against misspelling, etc)
-* Fix dtObs bug
-* Post version on nersc and link from enkf.nersc
-* Post version on norce
+
+* Post version on norce, nersc and link from enkf.nersc
+
+* Get good/simple local PF with reproduction of Alban's results
+* Reproduce Pulido
+
 -->
 
 

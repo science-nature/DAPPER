@@ -1,7 +1,7 @@
 # Illustrate how to use DAPPER
 # to benchmark a DA method using a "twin experiment".
 
-# Load DAPPER (assumes pwd is <path-to-dapper>)
+# Load DAPPER (assumes current directory is <path-to-dapper>)
 from common import *
 
 # Load "twin experiment" setup: a hidden Markov Model (HMM)
@@ -14,7 +14,8 @@ config = EnKF('Sqrt', N=10, infl=1.02, rot=True, liveplotting=True)
 # Simulate synthetic truth (xx) and noisy obs (yy)
 xx,yy = simulate(HMM)
 
-# Assimilate yy (knowing the HMM). Assess estimate (vs xx).
+# Assimilate yy (knowing the HMM).
+# Assessment of the estimate (vs xx) also takes place.
 stats = config.assimilate(HMM,xx,yy)
 
 # Average stats time series

@@ -116,7 +116,7 @@ plt.style.use(['seaborn-darkgrid','tools/DAPPER.mplstyle'])
 
 
 ##################################
-# Setup DAPPER namespace
+# Imports from DAPPER package
 ##################################
 from tools.colors import *
 from tools.utils import *

@@ -130,17 +130,17 @@ Quasi-Geost | No      | 2d        | 129²≈17k  | ≈140     | Sakov
 *: flexible; set as necessary
 
 **To add a new model:**
-* Make a new dir: `DAPPER/mods/your_model` and add the empty file `__init__.py`
-* See other examples, e.g. `DAPPER/mods/Lorenz63/sak12.py`
-* Make sure that the model (and obs operator) supports
+* Make a new dir: `DAPPER/mods/your_model`. Add the following files:
+* `core.py` to define the core functionality and documentation of your model.
+  The model must (and obs operator) support
   2D-array (i.e. ensemble) and 1D-array (single realization) input.
   See the `core.py` file in `mods/Lorenz63` and `mods/Lorenz95` for typical
-	implementations, and `mods/QG` for how to parallelize the ensemble simulations.
-
-More conventions: each model directory should have a main file (usually called `core.py`) that
-defines the core functionality and provides some documentation and references. 
-Ideally, there should also be a `demo.py` file and possibly a `liveplotting.py` file.
-The rest of the python files typically defines setups for twin experiments.
+  implementations, and `mods/QG` for how to parallelize the ensemble simulations.
+* `demo.py` to visually showcase a simulation of the model.
+* `liveplotting.py` (optional) to define how
+  the assimilation process should be visualized on-line.
+* Files that define a complete Hidden Markov Model ready for a twin experiment (OSSE).
+  See for example `DAPPER/mods/Lorenz63/{sak12,boc12}.py`.
 
 
 <!--

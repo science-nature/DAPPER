@@ -128,10 +128,10 @@ from tools.series import *
 from tools.matrices import *
 from tools.randvars import *
 from tools.viz import *
-from stats import *
-from tools.admin import *
 from tools.convenience import *
 from tools.data_management import *
+from stats import *
+from admin import *
 from da_methods import *
 
 

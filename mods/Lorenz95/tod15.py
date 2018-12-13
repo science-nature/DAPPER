@@ -24,7 +24,7 @@ h['localizer'] = loc_setup( (m,), (1,), jj, periodic=True )
 h['noise'] = LaplaceParallelRV(C=1,m=len(jj))
 
 other = {'name': os.path.relpath(__file__,'mods/')}
-setup = TwinSetup(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(f,h,t,X0,**other)
 
 ####################
 # Suggested tuning

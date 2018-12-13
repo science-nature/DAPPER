@@ -384,7 +384,6 @@ TODO
 * Review ens_compatible
 * Rm vectorize0 (too messy). See SO.com/questions/29318459 and more
 
-* Rename twin/setup to HMM
 * rename f til dynamics og h til observation
 
 * Get rid of Tuple assignment of twin/setup items

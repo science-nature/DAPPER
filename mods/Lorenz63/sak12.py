@@ -26,10 +26,7 @@ jj = arange(m) # obs_inds
 h = partial_direct_obs_setup(m, jj)
 h['noise'] = 2 # GaussRV(C=CovMat(2*eye(p)))
 
-setup = TwinSetup(f,h,t,X0,
-    liveplotting = LP_setup(jj),
-    name         = os.path.relpath(__file__,'mods/'),
-    )
+HMM = HiddenMarkovModel(f,h,t,X0,liveplotting=LP_setup(jj))
 
 
 ####################

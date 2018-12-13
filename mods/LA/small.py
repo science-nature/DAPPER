@@ -31,7 +31,7 @@ h  = partial_direct_obs_setup(m,jj)
 h['noise'] = 0.01
 
  
-setup = TwinSetup(f,h,tseq,X0,
+HMM = HiddenMarkovModel(f,h,tseq,X0,
     name = os.path.relpath(__file__,'mods/'),
     LP   = LP_setup(jj),
     )

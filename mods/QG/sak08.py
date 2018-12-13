@@ -79,7 +79,7 @@ h['loc_shift'] = lambda ii, dt: ii # no movement (suboptimal, but easy)
 ############################
 # Other
 ############################
-setup = TwinSetup(f,h,t,X0, LP=LP_setup(obs_inds) )
+HMM = HiddenMarkovModel(f,h,t,X0, LP=LP_setup(obs_inds) )
 
 
 ####################

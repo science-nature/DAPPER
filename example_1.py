@@ -1,21 +1,21 @@
-# Illustrate how to use DAPPER:
-# Basic benchmarking of DA methods.
+# Illustrate how to use DAPPER
+# to benchmark a DA method using a "twin experiment".
 
 # Load DAPPER (assumes pwd is <path-to-dapper>)
 from common import *
 
-# Load "twin experiment" setup
-from mods.Lorenz63.sak12 import setup
-setup.t.T = 30 # shorten experiment
+# Load "twin experiment" setup: a hidden Markov Model (HMM)
+from mods.Lorenz63.sak12 import HMM
+HMM.t.T = 30 # shorten experiment
 
 # Specify a DA method configuration
 config = EnKF('Sqrt', N=10, infl=1.02, rot=True, liveplotting=True)
 
 # Simulate synthetic truth (xx) and noisy obs (yy)
-xx,yy = simulate(setup)
+xx,yy = simulate(HMM)
 
-# Assimilate yy (knowing the twin setup). Assess estimate (vs xx).
-stats = config.assimilate(setup,xx,yy)
+# Assimilate yy (knowing the HMM). Assess estimate (vs xx).
+stats = config.assimilate(HMM,xx,yy)
 
 # Average stats time series
 avrgs = stats.average_in_time()
@@ -27,7 +27,7 @@ print_averages(config,avrgs,[],['rmse_a','rmv_a'])
 plot_time_series(stats)
 
 # "Explore" objects individually
-# print(setup)
+# print(HMM)
 # print(config)
 # print(stats)
 # print(avrgs)
@@ -37,7 +37,7 @@ plot_time_series(stats)
 # - 3D-Var
 # - Optimal interpolation
 # - The particle filter
-# Hint: suggested DA configs are listed in the setup file (imported above)
+# Hint: suggested DA configs are listed in the HMM file.
 
 # Excercise: Repeat the above excercise, but now with the models:
 # - Lorenz95

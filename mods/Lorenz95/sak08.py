@@ -26,7 +26,7 @@ h['noise'] = 1
 h['localizer'] = loc_setup( (m,), (2,), jj, periodic=True )
 
 
-setup = TwinSetup(f,h,t,X0, LP=LP_setup(jj))
+HMM = HiddenMarkovModel(f,h,t,X0, LP=LP_setup(jj))
 
 
 ####################

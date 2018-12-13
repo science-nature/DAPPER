@@ -37,7 +37,7 @@ h['noise'] = 0.5
 h['localizer'] = loc_setup( (m,), (2,), jj, periodic=True )
 
 other = {'name': os.path.relpath(__file__,'mods/')}
-setup = TwinSetup(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(f,h,t,X0,**other)
 
 
 

@@ -75,7 +75,7 @@ def center(E,axis=0,rescale=False):
   return X, x
 
 def mean0(E,axis=0,rescale=True):
-  "Same as: center(E)[0], but with rescale=True as default."
+  "Same as: center(E,rescale=True)[0]"
   return center(E,axis=axis,rescale=rescale)[0]
 
 def inflate_ens(E,factor):

@@ -30,7 +30,7 @@ f = linear_model_setup(1.2*eye(m))
 f['noise'] = 0.0
 
 #other = {'name': os.path.relpath(__file__,'mods/')}
-setup = TwinSetup(f,h,t,X0)
+HMM = HiddenMarkovModel(f,h,t,X0)
 f,h,chrono,X0 = setup.f, setup.h, setup.t, setup.X0
 
 

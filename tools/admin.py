@@ -1,9 +1,9 @@
 from common import *
 
-class TwinSetup(MLR_Print):
+class HiddenMarkovModel(MLR_Print):
   """
-  Container for Twin experiment (OSSE) settings.
-  OSSE: "observing system simulation experiment"
+  Container for attributes of a Hidden Markov Model (HMM), to run a
+  "twin experiment", i.e. an "OSSE (observing system simulation experiment)".
   """
   def __init__(self,f,h,t,X0,**kwargs):
     self.f  = f  if isinstance(f,  Operator)   else Operator  (**f)

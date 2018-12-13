@@ -57,7 +57,7 @@ f = {
     }
 
 ################### Gather ###################
-setup = TwinSetup(f,h,tseq,X0,
+HMM = HiddenMarkovModel(f,h,tseq,X0,
     name = os.path.relpath(__file__,'mods/'),
     LP   = LP_setup(jj),
     )

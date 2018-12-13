@@ -6,7 +6,7 @@ from common import *
 
 sd0 = seed_init(8) # Base random seed.
 
-from   mods.Lorenz95.boc15loc import setup
+from   mods.Lorenz95.boc15loc import HMM
 import mods.Lorenz95.core as core
 
 CtrlVar = sys.argv[1] # command-line argument #1
@@ -55,12 +55,12 @@ for iX,(X,iR) in enumerate(zip(xticks,rep_inds)):
   with coloring(): print('\n'+"xticks[",iX,'/',len(xticks)-1,"] ",CtrlVar,': ',X,sep="")
 
   seed(sd0+iR)
-  xx,yy = simulate(setup)
+  xx,yy = simulate(HMM)
 
   for iC,C in enumerate(cfgs):
     C = C.update_settings(N=X)
     seed(sd0+iR)
-    stat = C.assimilate(setup,xx,yy)
+    stat = C.assimilate(HMM,xx,yy)
     avrgs[iX,0,iC] = stat.average_in_time()
 
   print_averages(cfgs,avrgs[iX,0])

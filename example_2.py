@@ -40,22 +40,21 @@ cfgs += PartFilt(       N=800 ,reg=0.9  ,NER=0.2)         # 0.28
 # cfgs += LETKF(         N=7,rot=True,infl=1.04,loc_rad=4)  # 0.22
 # cfgs += SL_EAKF(       N=7,rot=True,infl=1.07,loc_rad=6)  # 0.23
 
-
+# Other models (suitable cfgs listed in HMM files):
 # from mods.Lorenz84.harder       import HMM
 # from mods.Lorenz95.sak08        import HMM
 # from mods.LA.raanes2015         import HMM
 # from mods.Lorenz95.raanes2016   import HMM
 # from mods.LorenzUV.wilks05_full import HMM
-# -- Get suggested tuning from setup files --
 
 
 ##############################
 # Generate synthetic truth/obs
 ##############################
 # Adjust experiment duration
-setup.t.T = 100
+HMM.t.T = 100
 
-xx,yy = simulate(setup)
+xx,yy = simulate(HMM)
 
 
 ##############################
@@ -69,7 +68,7 @@ for ic,config in enumerate(cfgs):
   # config.liveplotting = True
   seed(sd0+2)
 
-  stats += [ config.assimilate(setup,xx,yy) ]
+  stats += [ config.assimilate(HMM,xx,yy) ]
   avrgs += [ stats[ic].average_in_time() ]
   # print_averages(config, avrgs[-1])
 print_averages(cfgs,avrgs)
@@ -82,7 +81,7 @@ print_averages(cfgs,avrgs)
 # plot_3D_trajectory (stats[-1])
 # plot_err_components(stats[-1])
 # plot_rank_histogram(stats[-1])
-# plot_hovmoller     (xx,setup.t)
+# plot_hovmoller     (xx,HMM.t)
 
 
 

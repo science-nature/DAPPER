@@ -6,9 +6,9 @@ from mods.Lorenz63.sak12 import HMM
 
 from common import *
 
-setup.h.noise.C = CovMat(eye(3))
+HMM.h.noise.C = CovMat(eye(3))
 
-setup.name = os.path.relpath(__file__,'mods/')
+HMM.name = os.path.relpath(__file__,'mods/')
 
 ####################
 # Suggested tuning

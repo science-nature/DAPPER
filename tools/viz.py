@@ -25,13 +25,13 @@ class LivePlot:
       only=range(99)
     #else: assume only is a list fo fignums
 
-    setup  = stats.setup
+    HMM    = stats.HMM
     config = stats.config
-    m      = setup.f.m
-    dt     = setup.t.dt
+    m      = HMM.f.m
+    dt     = HMM.t.dt
 
     # Store
-    self.setup = setup
+    self.HMM   = HMM
     self.stats = stats
     self.xx    = stats.xx ; xx = stats.xx
     self.yy    = stats.yy ; yy = stats.yy
@@ -206,7 +206,7 @@ class LivePlot:
           ('resmpl' , dict(c='k', label='Resampl?')),
         ])
 
-      chrono       = setup.t
+      chrono       = HMM.t
       chrono.pK    = estimate_good_plot_length(xx,chrono,mult=80)
       chrono.pKObs = int(chrono.pK / chrono.dkObs)
 
@@ -289,8 +289,8 @@ class LivePlot:
     #####################
     # User-defined state
     #####################
-    if 9 in only and hasattr(setup,'liveplotting'):
-      self.fig_custom, self.custom = setup.liveplotting(stats,key,E,P)
+    if 9 in only and hasattr(HMM,'liveplotting'):
+      self.fig_custom, self.custom = HMM.liveplotting(stats,key,E,P)
       win_title(self.fig_custom,"Custom plot")
       set_figpos('2322')
       plot_pause(0.01)
@@ -390,7 +390,7 @@ class LivePlot:
     #####################
     if hasattr(self,'fig_pulse') and plt.fignum_exists(self.fig_pulse.number):
       plt.figure(self.fig_pulse.number)
-      chrono = self.setup.t
+      chrono = self.HMM.t
 
       # Indices with shift
       kkU    = arange(chrono.pK) + max(0,k-chrono.pK)
@@ -701,7 +701,7 @@ def plot_3D_trajectory(stats,dims=0,**kwargs):
 
   xx     = stats.xx
   mu     = stats.mu
-  chrono = stats.setup.t
+  chrono = stats.HMM.t
 
   kk,kkA = get_plot_inds(xx,chrono,mult=100,**kwargs)
 
@@ -747,7 +747,7 @@ def plot_time_series(stats,**kwargs):
   fg, (ax_e,ax_K) = plt.subplots(2,1,sharex=True,num=12)
 
   # Time
-  chrono = stats.setup.t
+  chrono = stats.HMM.t
   xx     = stats.xx
   m      = xx.shape[1]
   dims   = equi_spaced_integers(m, min(m, 10))
@@ -855,7 +855,7 @@ def plot_err_components(stats):
   fgE = plt.figure(15,figsize=(6,6)).clf()
   set_figpos('1312 mac')
 
-  chrono = stats.setup.t
+  chrono = stats.HMM.t
   m      = stats.xx.shape[1]
 
   err   = mean( abs(stats.err  .a) ,0)
@@ -905,7 +905,7 @@ def plot_err_components(stats):
 
 
 def plot_rank_histogram(stats):
-  chrono = stats.setup.t
+  chrono = stats.HMM.t
 
   has_been_computed = \
       hasattr(stats,'rh') and \

@@ -12,8 +12,8 @@ def pa(cfgs,avrgs): return _print_averages(cfgs,avrgs,statkeys=['rmse_a','rmse_f
 # L63
 ##############################
 from mods.Lorenz63.sak12 import HMM
-setup.t.BurnIn=0
-setup.t.KObs=10
+HMM.t.BurnIn=0
+HMM.t.KObs=10
 sd0 = seed(9)
 
 # Cfgs
@@ -33,12 +33,12 @@ cfgs += PartFilt(       N=4000,reg=0.7  ,NER=0.05)
 cfgs += PFxN(xN=1000,   N=30  ,Qs=2     ,NER=0.2)
 
 # Run
-xx,yy = simulate(setup)
+xx,yy = simulate(HMM)
 avrgs = []
 for ic,config in enumerate(cfgs):
   config.store_u = True
   seed(sd0+2)
-  stats = config.assimilate(setup,xx,yy)
+  stats = config.assimilate(HMM,xx,yy)
   avrgs += [ stats.average_in_time() ]
 
 table = pa(cfgs,avrgs)
@@ -77,8 +77,8 @@ def test_tables(lineno):
 # L95
 ##############################
 from mods.Lorenz95.sak08 import HMM
-setup.t.BurnIn=0
-setup.t.KObs=10
+HMM.t.BurnIn=0
+HMM.t.KObs=10
 sd0 = seed(9)
 
 # Cfgs
@@ -99,12 +99,12 @@ cfgs += SL_EAKF(       N=7,rot=True,infl=1.07,loc_rad=6)
 
 
 # Run
-xx,yy = simulate(setup)
+xx,yy = simulate(HMM)
 avrgs = []
 for ic,config in enumerate(cfgs):
   config.store_u = True
   seed(sd0+2)
-  stats = config.assimilate(setup,xx,yy)
+  stats = config.assimilate(HMM,xx,yy)
   avrgs += [ stats.average_in_time() ]
 
 table = pa(cfgs,avrgs)

@@ -7,9 +7,9 @@ from mods.QG.sak08 import HMM
 from mods.QG.core import model_config
 
 dt = 1.25 * 10 # 10 steps between obs (also requires dkObs=1)
-setup.t = Chronology(dt=dt,dkObs=1,T=1000*dt,BurnIn=10*dt)
+HMM.t = Chronology(dt=dt,dkObs=1,T=1000*dt,BurnIn=10*dt)
 
-setup.f.model = model_config("cou09_ens"  ,{"dtout":dt, 'RKH2':2.0e-11}).step
+HMM.f.model = model_config("cou09_ens"  ,{"dtout":dt, 'RKH2':2.0e-11}).step
 truth_model   = model_config("cou09_truth",{"dtout":dt}                ).step
 
 ####################
@@ -30,6 +30,6 @@ truth_model   = model_config("cou09_truth",{"dtout":dt}                ).step
 # - My N=15 rmse << rmse_from_paper. But I only tested a single repetition => maybe I got lucky.
 #
 # - Use this to turn on/off the truth-model before/after truth simulation:
-#   with set_tmp(setup.f,'model',truth_model):
-#     xx,yy = simulate(setup)
+#   with set_tmp(HMM.f,'model',truth_model):
+#     xx,yy = simulate(HMM)
 

@@ -4,8 +4,8 @@ from common import *
 
 from mods.Lorenz95.sak08 import HMM
 
-setup.t = Chronology(0.01,dkObs=15,T=4**5,BurnIn=20)
-setup.name = os.path.relpath(__file__,'mods/')
+HMM.t = Chronology(0.01,dkObs=15,T=4**5,BurnIn=20)
+HMM.name = os.path.relpath(__file__,'mods/')
 
 
 # from mods.Lorenz95.raanes2016 import HMM

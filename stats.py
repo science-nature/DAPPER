@@ -9,11 +9,11 @@ class Stats(MLR_Print):
   comp_threshold_3 = 51
 
   # Used by MLR_Print
-  excluded  = MLR_Print.excluded + ['setup','config','xx','yy']
+  excluded  = MLR_Print.excluded + ['HMM','config','xx','yy']
   precision = 3
   ordr_by_linenum = -1
  
-  def __init__(self,config,setup,xx,yy):
+  def __init__(self,config,HMM,xx,yy):
     """
     Init the default statistics.
     Note: you may well allocate & compute individual stats elsewhere,
@@ -21,14 +21,14 @@ class Stats(MLR_Print):
     """
 
     self.config = config
-    self.setup  = setup
+    self.HMM    = HMM
     self.xx     = xx
     self.yy     = yy
 
-    m    = setup.f.m    ; assert m   ==xx.shape[1]
-    K    = setup.t.K    ; assert K   ==xx.shape[0]-1
-    p    = setup.h.m    ; assert p   ==yy.shape[1]
-    KObs = setup.t.KObs ; assert KObs==yy.shape[0]-1
+    m    = HMM.f.m    ; assert m   ==xx.shape[1]
+    K    = HMM.t.K    ; assert K   ==xx.shape[0]-1
+    p    = HMM.h.m    ; assert p   ==yy.shape[1]
+    KObs = HMM.t.KObs ; assert KObs==yy.shape[0]-1
 
     # time-series constructor alias
     new_series = self.new_FAU_series
@@ -266,7 +266,7 @@ class Stats(MLR_Print):
         elif isinstance(series,np.ndarray):
           if series.ndim > 1:
             raise NotImplementedError
-          t = self.setup.t
+          t = self.HMM.t
           if len(series) == len(t.kkObs):
             inds = t.maskObs_BI
           elif len(series) == len(t.kk):
@@ -298,7 +298,7 @@ class Stats(MLR_Print):
       avrg['rmv_' +fa] = sqrt(mean(getattr(self.var,fa)[:,ii]   ,1))
     # Average in time:
     for key,series in avrg.items():
-      avrg[key] = series_mean_with_conf(series[self.setup.t.maskObs_BI])
+      avrg[key] = series_mean_with_conf(series[self.HMM.t.maskObs_BI])
     return avrg
 
 
@@ -306,14 +306,14 @@ class Stats(MLR_Print):
   def new_FAU_series(self,m,**kwargs):
     "Convenience FAU_series constructor."
     store_u = self.config.store_u
-    return FAU_series(self.setup.t, m, store_u=store_u, **kwargs)
+    return FAU_series(self.HMM.t, m, store_u=store_u, **kwargs)
 
   # TODO: Provide frontend initializer 
 
   # Better to initialize manually (np.full...)
   # def new_array(self,f_a_u,m,**kwargs):
   #   "Convenience array constructor."
-  #   t = self.setup.t
+  #   t = self.HMM.t
   #   # Convert int-len to shape-tuple
   #   if is_int(m):
   #     if m==1: m = ()

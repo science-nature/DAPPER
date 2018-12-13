@@ -33,12 +33,12 @@ stats = np.empty_like(avrgs)
 for i,dk in enumerate(dk_range):
   seed(sd0)
   print_c('\ndkObs: ', dk)
-  setup.t.dkObs = dk
-  setup.t.KObs  = 2000
-  xx,yy = simulate(setup)
+  HMM.t.dkObs = dk
+  HMM.t.KObs  = 2000
+  xx,yy = simulate(HMM)
   for k,config in enumerate(cfgs):
     seed(sd0)
-    stats[i,k] = config.assimilate(setup,xx,yy)
+    stats[i,k] = config.assimilate(HMM,xx,yy)
     avrgs[i,k] = stats[i,k].average_in_time()
   print_averages(cfgs,avrgs[i])
 
@@ -49,7 +49,7 @@ infl_avrgs['var']  = []
 infl_avrgs['90']   = []
 infl_avrgs['nu']   = []
 for k,dk in enumerate(dk_range):
-  infls = stats[k,0].infl[setup.t.maskObs_BI]
+  infls = stats[k,0].infl[HMM.t.maskObs_BI]
   infl_avrgs['mean'] += [np.mean(infls)]
   infl_avrgs['var']  += [np.var(infls)]
   infl_avrgs['90']   += [np.percentile(infls,90)]

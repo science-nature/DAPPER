@@ -8,8 +8,8 @@ sd0 = seed_init(3)
 cfgs  = List_of_Configs(unique=True)
 
 from mods.LA.small import HMM
-setup.t.BurnIn=0
-setup.t.KObs=10
+HMM.t.BurnIn=0
+HMM.t.KObs=10
 
 cfgs +=  EnKF('Sqrt'        , N=20,                      )
 cfgs +=  EnKF('PertObs'     , N=20,                      )
@@ -33,7 +33,7 @@ for iC,C in enumerate(cfgs):
 ##############################
 # Assimilate
 ##############################
-xx,yy = simulate(setup)
+xx,yy = simulate(HMM)
 
 stats = []
 avrgs = []
@@ -41,7 +41,7 @@ avrgs = []
 for ic,config in enumerate(cfgs):
   seed(sd0+2)
 
-  stats += [ config.assimilate(setup,xx,yy) ]
+  stats += [ config.assimilate(HMM,xx,yy) ]
   avrgs += [ stats[ic].average_in_time() ]
 
 
@@ -262,7 +262,7 @@ def test_u():
 # However, the 'u' stats of the non-iterative EnKS(Lag>0) are not reproduced.
 # Re-use cfgs and test with:
 # from mods.Lorenz95.sak08 import HMM
-# setup.t.KObs=100 # Here, must use >100 to avoid indistinguishable rmse stats.
+# HMM.t.KObs=100 # Here, must use >100 to avoid indistinguishable rmse stats.
 
 
 

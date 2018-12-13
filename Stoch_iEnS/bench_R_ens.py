@@ -63,7 +63,7 @@ from common import *
 sd0 = seed_init(4)
 
 from mods.Lorenz95.sak08 import HMM
-setup.t = Chronology(dt=0.05, dkObs=1, T=100, BurnIn=5)
+HMM.t = Chronology(dt=0.05, dkObs=1, T=100, BurnIn=5)
 
 CtrlVar = sys.argv[1] # command-line argument #1
 
@@ -99,12 +99,12 @@ for iX,(X,iR) in enumerate(zip(xticks,rep_inds)):
   with coloring(): print('\n'+"xticks[",iX,'/',len(xticks)-1,"] ",CtrlVar,': ',X,sep="")
 
   seed(sd0+iR)
-  xx,yy = simulate(setup)
+  xx,yy = simulate(HMM)
 
   for iC,C in enumerate(cfgs):
     C = adjust_cfg(C,CtrlVar,X)
     seed(sd0+iR)
-    avrgs[iX,0,iC] = C.assimilate(setup,xx,yy).average_in_time()
+    avrgs[iX,0,iC] = C.assimilate(HMM,xx,yy).average_in_time()
 
   print_averages(cfgs,avrgs[iX,0])
 

@@ -5,7 +5,7 @@ from common import *
 seed(2)
 
 # Note: seed(6) gives yields ICs that are in the basin for
-# the tiny-variability limit cycle at $c=50$ (with Wilks setup),
+# the tiny-variability limit cycle at $c=50$ (with Wilks HMM),
 # as can be seen by plotting up to T = 0.005 * 10**4.
 
 ###########################

@@ -38,7 +38,7 @@ other = {'name': os.path.relpath(__file__,'mods/')}
 
 HMM = HiddenMarkovModel(f,h,t,X0,**other)
 
-setup.liveplotting = LP_setup(arange(m))
+HMM.liveplotting = LP_setup(arange(m))
 
 ####################
 # Suggested tuning

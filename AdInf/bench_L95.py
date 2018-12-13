@@ -9,10 +9,10 @@ from AdInf.filters import *
 sd0 = seed_init(14) # base random seed
 
 import mods.Lorenz95.core as L95
-from   mods.Lorenz95.sak08 import setup
+from   mods.Lorenz95.sak08 import HMM
 
-setup.t.T = 500 # length (unitless time)
-setup.t.dkObs = 3 # DAW
+HMM.t.T = 500 # length (unitless time)
+HMM.t.dkObs = 3 # DAW
 
 
 # Get experiment control variable (CtrlVar) from arguments
@@ -20,8 +20,8 @@ CtrlVar = sys.argv[1]
 
 # Set range of experimental settings
 if CtrlVar == 'Q': # Var of stoch error
-  set_true  = lambda X: setattr(setup.f.noise,'C',CovMat(X*ones(setup.f.m)))
-  set_false = lambda X: setattr(setup.f.noise,'C',0)
+  set_true  = lambda X: setattr(HMM.f.noise,'C',CovMat(X*ones(HMM.f.m)))
+  set_false = lambda X: setattr(HMM.f.noise,'C',0)
   xticks    = round2sigfig(LogSp(1e-6,2,20),nfig=2)
   #xticks   = [1e-6, 1e-3, 0.1, 1]
   #xticks   = [min(xticks, key=lambda x:abs(x-60))]
@@ -77,7 +77,7 @@ for iX,(X,iR) in enumerate(zip(xticks,iiRep)):
   set_true(X)
 
   sd    = seed(sd0 + iR)
-  xx,yy = simulate_or_load(__file__, setup, sd, CtrlVar+'='+str(X))
+  xx,yy = simulate_or_load(__file__, HMM, sd, CtrlVar+'='+str(X))
 
   for iC,Config in enumerate(cfgs):
     seed(sd)
@@ -87,7 +87,7 @@ for iX,(X,iR) in enumerate(zip(xticks,iiRep)):
     else:
       set_false(X)
 
-    stat = Config.assimilate(setup,xx,yy)
+    stat = Config.assimilate(HMM,xx,yy)
     avrg = stat.average_in_time()
 
     #stats[iX,0,iC] = stat

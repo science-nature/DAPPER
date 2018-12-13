@@ -2,8 +2,8 @@
 
 from common import *
 from mods.Lorenz95.tod15 import HMM
-setup.h.noise = GaussRV(C=setup.h.noise.C)
-setup.name = os.path.relpath(__file__,'mods/')
+HMM.h.noise = GaussRV(C=HMM.h.noise.C)
+HMM.name = os.path.relpath(__file__,'mods/')
 
 ####################
 # Suggested tuning

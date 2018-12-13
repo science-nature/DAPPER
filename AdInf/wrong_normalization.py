@@ -31,7 +31,7 @@ f['noise'] = 0.0
 
 #other = {'name': os.path.relpath(__file__,'mods/')}
 HMM = HiddenMarkovModel(f,h,t,X0)
-f,h,chrono,X0 = setup.f, setup.h, setup.t, setup.X0
+f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
 
 
 ##############################
@@ -115,7 +115,7 @@ for ic,config in enumerate(cfgs):
   #config.liveplotting = False
   seed(sd0+2)
 
-  stats += [ config.assimilate(setup,xx,yy) ]
+  stats += [ config.assimilate(HMM,xx,yy) ]
   avrgs += [ stats[ic].average_in_time() ]
   #print_averages(config, avrgs[-1])
 print_averages(cfgs,avrgs)

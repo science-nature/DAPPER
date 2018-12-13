@@ -8,7 +8,7 @@
 #     elif 'pinv' in upd_a:
 #         # Uses tinv(Bb) to compute Pb
 #         D  = mean0(hnoise.sample(N))
-#         H  = stats.setup.h.jacob(np.nan, np.nan)
+#         H  = stats.HMM.h.jacob(np.nan, np.nan)
 #         Bb = A.T @ A / N1
 #         P  = inv( tinv(Bb) + R.inv )
 #         if   'KG' in upd_a:
@@ -25,7 +25,7 @@ from common import *
 sd0 = seed_init(4)
 
 from mods.Lorenz95.sak08 import HMM
-setup.t = Chronology(dt=0.05, dkObs=1, T=20, BurnIn=5)
+HMM.t = Chronology(dt=0.05, dkObs=1, T=20, BurnIn=5)
 
 ##############################
 # DA Configurations
@@ -41,7 +41,7 @@ for UPD_A in ['PertObs','pinv KG','pinv Hess']:
 ##############################
 # Assimilate
 ##############################
-xx,yy = simulate(setup)
+xx,yy = simulate(HMM)
 
 stats = []
 avrgs = []
@@ -49,7 +49,7 @@ avrgs = []
 for ic,config in enumerate(cfgs):
   seed(sd0+2)
 
-  stats += [ config.assimilate(setup,xx,yy) ]
+  stats += [ config.assimilate(HMM,xx,yy) ]
   avrgs += [ stats[ic].average_in_time() ]
   print_averages(config, avrgs[-1])
 print_averages(cfgs,avrgs,[],['rmse_a','rmv_a'])

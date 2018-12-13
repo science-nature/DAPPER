@@ -85,11 +85,11 @@ def DA_Config(da_method):
       ############################
       # Make assimilation caller
       #---------------------------
-      def assim_caller(setup,xx,yy):
+      def assim_caller(HMM,xx,yy):
         name_hook = da_method.__name__ # for pdesc of progbar
 
         # Init stats
-        stats = Stats(cfg,setup,xx,yy)
+        stats = Stats(cfg,HMM,xx,yy)
 
         def crop_traceback(ERR,lvl):
             msg = []
@@ -111,7 +111,7 @@ def DA_Config(da_method):
         # Put assimilator inside try/catch to allow gentle failure
         try:
           try:
-              assimilator(stats,setup,xx,yy)
+              assimilator(stats,HMM,xx,yy)
           except (AssimFailedError,ValueError,np.linalg.LinAlgError) as ERR:
               if getattr(cfg,'fail_gently',True):
                 msg  = ["\n\nCaught exception during assimilation. Printing traceback:"]

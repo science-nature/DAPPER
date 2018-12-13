@@ -6,9 +6,9 @@ sd0 = seed(3)
 # DA Configurations
 ##############################
 from mods.Lorenz95.sak08 import HMM
-setup.t.T = 120
-setup.t.dkObs = 8 # 4, 8.
-LAG = round(0.4 / setup.t.dtObs)
+HMM.t.T = 120
+HMM.t.dkObs = 8 # 4, 8.
+LAG = round(0.4 / HMM.t.dtObs)
 
 # Get experiment control variable (CtrlVar) from arguments
 CtrlVar = sys.argv[1]
@@ -56,10 +56,10 @@ stats = np.empty_like(avrgs)
 
 for iX,(X,iR) in enumerate(zip(xticks,iiRep)):
   with coloring(): print('\n'+"xticks[",iX,'/',len(xticks)-1,"] ",CtrlVar,': ',X,sep="")
-  # setattr(setup.t,CtrlVar,X)
+  # setattr(HMM.t,CtrlVar,X)
 
   sd    = seed(sd0 + iR)
-  xx,yy = simulate(setup)
+  xx,yy = simulate(HMM)
 
   for iC,C in enumerate(cfgs):
 
@@ -68,7 +68,7 @@ for iX,(X,iR) in enumerate(zip(xticks,iiRep)):
 
     seed(sd)
 
-    stat = C.assimilate(setup,xx,yy)
+    stat = C.assimilate(HMM,xx,yy)
     avrg = stat.average_in_time()
 
     # stats[iX,0,iC] = stat
@@ -83,7 +83,7 @@ np.savez(save_path,
     xticks     = xticks,
     tuning_tag = 'infl', 
     labels     = cfgs.gen_names(tab=True),
-    meta       = {'dkObs':setup.t.dkObs})
+    meta       = {'dkObs':HMM.t.dkObs})
 
 
 ##############################

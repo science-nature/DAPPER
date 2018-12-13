@@ -24,7 +24,7 @@ cfgs  = List_of_Configs()
 
 
 from mods.Lorenz95.sak08 import HMM
-setup.t.dkObs = 3
+HMM.t.dkObs = 3
 cfgs += EnKF('Sqrt',N=30 ,infl=1.08,rot=False)
 cfgs += EnKF('Sqrt',N=30 ,infl=1.10,rot=True)
 cfgs += EnKF('Sqrt',N=200,infl=1.03,rot=False)
@@ -36,8 +36,8 @@ cfgs += EnKF('Sqrt',N=200,infl=1.03,rot=(2,0.7))
 ############################
 # Assimilate
 ############################
-setup.t.T = 4**5
-xx,yy = simulate(setup)
+HMM.t.T = 4**5
+xx,yy = simulate(HMM)
 
 stats = []
 avrgs = []
@@ -46,7 +46,7 @@ for ic,config in enumerate(cfgs):
   # config.liveplotting = True
   seed(sd0+2)
 
-  stats += [ config.assimilate(setup,xx,yy) ]
+  stats += [ config.assimilate(HMM,xx,yy) ]
   avrgs += [ stats[ic].average_in_time() ]
   print_averages(config, avrgs[-1])
 print_averages(cfgs,avrgs)

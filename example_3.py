@@ -19,10 +19,10 @@ from common import *
 # between repetitions, not xticks or configurations.
 sd0 = seed_init(8) # Base random seed.
 
-from   mods.Lorenz95.boc15loc import setup
+from   mods.Lorenz95.boc15loc import HMM
 import mods.Lorenz95.core as core
 
-setup.t.T = 4**4.0
+HMM.t.T = 4**4.0
 
 # Specify the control variable (i.e. the plotting xlabel) of interest.
 CtrlVar = sys.argv[1] # command-line argument #1
@@ -119,12 +119,12 @@ for iX,(X,iR) in enumerate(zip(xticks,rep_inds)):
   adjust_osse(CtrlVar,X)
 
   seed(sd0+iR)
-  xx,yy = simulate(setup)
+  xx,yy = simulate(HMM)
 
   for iC,C in enumerate(cfgs):
     C = adjust_cfg(C,CtrlVar,X)
     seed(sd0+iR)
-    stat = C.assimilate(setup,xx,yy)
+    stat = C.assimilate(HMM,xx,yy)
     # stats[iX,0,iC] = stat
     avrgs[iX,0,iC] = stat.average_in_time()
 

@@ -1,7 +1,7 @@
 # A mix of Evensen'2009 and Sakov'2008
 
 # NB: Since there is no noise, and the system is stable,
-#     the rmse's from this setup go to zero as T-->infty.
+#     the rmse's from this HMM go to zero as T-->infty.
 #     => benchmarks largely depend on the initial error,
 #     and so these absolute rmse values are not so useful
 #     for quantatative evaluation of DA methods.

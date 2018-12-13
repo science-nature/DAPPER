@@ -14,7 +14,7 @@ sd0 = seed(5)
 # Set-up
 ############################
 from mods.Lorenz95.sak08 import *
-setup.t.T = 100
+HMM.t.T = 100
 
 # Non-block
 R = inv(sla.circulant([-2,1] + [0]*37 + [1]) + 5*eye(40))
@@ -26,11 +26,11 @@ R = R * 0.6/R[0,0]
 #R = sla.block_diag(block_R, eye(10), block_R, eye(10))
 
 # Define true R.
-setup.h.noise.C = CovMat(R)
+HMM.h.noise.C = CovMat(R)
 
 # Range of different experiments
 dkObs_range = range(1,10)
-dtObs_range = setup.t.dt*array(dkObs_range)
+dtObs_range = HMM.t.dt*array(dkObs_range)
 
 
 ############################
@@ -86,15 +86,15 @@ avrgs = np.empty((len(dkObs_range),nRepeat,len(cfgs)),dict)
 avrg2 = np.empty((len(dkObs_range),        len(cfgs)),dict)
 
 for i,dkObs in enumerate(dkObs_range):
-  setup.t.dkObs = dkObs
+  HMM.t.dkObs = dkObs
   set_infl(dkObs)
   print('\ndkObs: ', dkObs)
   for j in range(nRepeat):
     seed(sd0+j)
-    xx,yy = simulate(setup)
+    xx,yy = simulate(HMM)
     for ic,config in enumerate(cfgs):
       seed(sd0+j)
-      stats         = config.assimilate(setup,xx,yy)
+      stats         = config.assimilate(HMM,xx,yy)
       avrgs[i,j,ic] = stats.average_in_time()
     print_averages(cfgs,avrgs[i,j])
   print_c('Average over',nRepeat,'repetitions:')

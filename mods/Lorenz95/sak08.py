@@ -1,5 +1,5 @@
 # Reproduce results from Table 1 of Sakov et al "DEnKF" (2008).
-# This setup is also used (with small variations) in many other DA papers.
+# This HMM is also used (with small variations) in many other DA papers.
 
 
 from common import *
@@ -63,7 +63,7 @@ HMM = HiddenMarkovModel(f,h,t,X0, LP=LP_setup(jj))
 
 # Reproduce Table 3 (IEnKF) from sakov2012iterative
 # --------------------------------------------------------------------------------
-# setup.t.dkObs = 12
+# HMM.t.dkObs = 12
 # cfgs += iEnKS('Sqrt' ,N=25,Lag=1,nIter=10,infl=1.2,rot=1)     # 0.46
 
 # Reproduce Fig 3 of Bocquet'2015 "expanding"
@@ -82,13 +82,13 @@ HMM = HiddenMarkovModel(f,h,t,X0, LP=LP_setup(jj))
 # cfgs += iEnKS('Sqrt',N=40,infl=1.01,rot=True)                 # 0.17
 # cfgs += iEnKS('-N' , N=20,Lag=10,xN=2.0)                      # 0.163
 # cfgs += iEnKS('-N' , N=20,Lag=20,xN=2.0)                      # 0.160 
-# using setup.t.dkObs = 8:
+# using HMM.t.dkObs = 8:
 # cfgs += iEnKS('-N' , N=20,Lag=2 ,xN=1.0)                      # 0.39
 #
 # Fig 2 (smoother averages):
 # cfgs += iEnKS('-N', N=20,Lag=10,xN=2.0)                       # 0.163
 # The analysis-time smoother averages can be computed as
-# mean(s[indx].rmse.u[setup.t.kkObs_BI])
+# mean(s[indx].rmse.u[HMM.t.kkObs_BI])
 # while universal-time averages are given by 
 # print_averages(cfgs,avrgs,[],['rmse_u'])
 

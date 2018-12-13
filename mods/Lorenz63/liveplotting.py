@@ -25,7 +25,7 @@ def LP_setup(
     xx, yy, mu, var = stats.xx, stats.yy, stats.mu, stats.var
     # Alias
     jj = obs_inds
-    tt = stats.setup.t.tt
+    tt = stats.HMM.t.tt
 
     #####################
     # Set up figure, axes

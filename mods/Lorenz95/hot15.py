@@ -5,8 +5,8 @@
 from mods.Lorenz95.sak08 import HMM
 
 # Experiments are repeated 10 times. 
-setup.t.T = 365
-setup.t.BurnIn = 4
+HMM.t.T = 365
+HMM.t.BurnIn = 4
 # Sometimes used: dkObs=4.
 # Sometimes used: obs_inds = arange(m)[::2]
 # Used localization: as in Whitaker/Hamill'2002: GC, with R (length scale) defined as in DAPPER.

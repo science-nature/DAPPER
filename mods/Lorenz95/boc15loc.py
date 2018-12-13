@@ -8,11 +8,11 @@ def loc_shift(ii,dt):
   shift = int(np.round(6.0*dt)) # Taken from Fig 4 of bocquet2015localization
   # NB: don't use builtin round; it returns integers -- except for round(0.0) !!!
   ii_new = ii + shift
-  ii_new = np.remainder(ii_new, setup.f.m) # periodicity
-  assert setup.f.m == setup.h.m, "This func assumes the obs operator is identity."
+  ii_new = np.remainder(ii_new, HMM.f.m) # periodicity
+  assert HMM.f.m == HMM.h.m, "This func assumes the obs operator is identity."
   return ii_new
 
-setup.h.loc_shift = loc_shift
+HMM.h.loc_shift = loc_shift
 
 
 
@@ -20,7 +20,7 @@ setup.h.loc_shift = loc_shift
 # Suggested tuning
 ####################
 # Reproduce data point dt=0.4 from figure 5                                # Expected RMSE_a:
-# setup.t.dkObs = 8
+# HMM.t.dkObs = 8
 # cfgs += iEnKS('-N'  , N=20)                                              # 0.40
 # cfgs += iLEnKS('Sqrt',N=10,loc_rad=12/1.82,infl=1.07)                    # 0.42
 # cfgs += iLEnKS('-N' , N=10,loc_rad=12/1.82)                              # 0.45

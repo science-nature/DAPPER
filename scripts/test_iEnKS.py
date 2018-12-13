@@ -7,7 +7,7 @@ sd0 = seed_init(3)
 
 cfgs  = List_of_Configs(unique=True)
 
-from mods.LA.small import setup
+from mods.LA.small import HMM
 setup.t.BurnIn=0
 setup.t.KObs=10
 
@@ -261,7 +261,7 @@ def test_u():
 # are reproduced by the iEnKS with Lag=0 (and nIter==1 if h is also nonlin).
 # However, the 'u' stats of the non-iterative EnKS(Lag>0) are not reproduced.
 # Re-use cfgs and test with:
-# from mods.Lorenz95.sak08 import setup
+# from mods.Lorenz95.sak08 import HMM
 # setup.t.KObs=100 # Here, must use >100 to avoid indistinguishable rmse stats.
 
 

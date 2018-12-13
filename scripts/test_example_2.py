@@ -11,7 +11,7 @@ def pa(cfgs,avrgs): return _print_averages(cfgs,avrgs,statkeys=['rmse_a','rmse_f
 ##############################
 # L63
 ##############################
-from mods.Lorenz63.sak12 import setup
+from mods.Lorenz63.sak12 import HMM
 setup.t.BurnIn=0
 setup.t.KObs=10
 sd0 = seed(9)
@@ -76,7 +76,7 @@ def test_tables(lineno):
 ##############################
 # L95
 ##############################
-from mods.Lorenz95.sak08 import setup
+from mods.Lorenz95.sak08 import HMM
 setup.t.BurnIn=0
 setup.t.KObs=10
 sd0 = seed(9)

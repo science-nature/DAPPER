@@ -36,7 +36,7 @@ HMM = HiddenMarkovModel(f,h,t,X0,**other)
 ####################
 # Reproduce benchmarks for NETF and ESRF (here EnKF-N)
 # from left pane of Fig 1.
-# from mods.Lorenz63.wiljes2017 import setup ################ Expected RMSE_a:
+# from mods.Lorenz63.wiljes2017 import HMM   ################ Expected RMSE_a:
 # cfgs += EnKF_N(N=5)                                        # 2.67
 # cfgs += EnKF_N(N=30,rot=True)                              # 2.43
 # cfgs += LNETF(N=40,rot=True,infl=1.02,Rs=1.0,loc_rad='NA') # 2.13

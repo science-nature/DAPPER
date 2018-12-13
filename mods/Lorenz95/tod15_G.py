@@ -1,7 +1,7 @@
 # Like tod15 but with Gaussian likelihood.
 
 from common import *
-from mods.Lorenz95.tod15 import setup
+from mods.Lorenz95.tod15 import HMM
 setup.h.noise = GaussRV(C=setup.h.noise.C)
 setup.name = os.path.relpath(__file__,'mods/')
 

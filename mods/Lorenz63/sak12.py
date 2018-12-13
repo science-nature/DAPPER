@@ -32,7 +32,7 @@ HMM = HiddenMarkovModel(f,h,t,X0,liveplotting=LP_setup(jj))
 ####################
 # Suggested tuning
 ####################
-# from mods.Lorenz63.sak12 import setup ##################### Expected RMSE_a:
+# from mods.Lorenz63.sak12 import HMM   ##################### Expected RMSE_a:
 # cfgs += Climatology()  # no tuning!                       # 7.6
 # cfgs += OptInterp()    # no tuning!                       # 1.25
 # cfgs += Var3D(infl=0.9)# tuning not strictly required     # 1.03 

@@ -8,13 +8,13 @@ from AdInf.filters import *
 
 sd0 = seed_init(14) # base random seed
 
-from mods.LorenzUV.lorenz95 import setup_full, setup_trunc, LUV
+from mods.LorenzUV.lorenz95 import HMM_full, HMM_trunc, LUV
 #(nU=36,J=10,F=10,h=1,b=10,c=10)
 
 T     = 500  # length (unitless time) of each experiment
 dtObs = 0.15 # DAW
-tF = setup_full .t; tF.dkObs = round(dtObs/tF.dt); tF.T = T; 
-tT = setup_trunc.t; tT.dkObs = round(dtObs/tT.dt); tT.T = T; 
+tF = HMM_full .t; tF.dkObs = round(dtObs/tF.dt); tF.T = T; 
+tT = HMM_trunc.t; tT.dkObs = round(dtObs/tT.dt); tT.T = T; 
 dk = validate_int(tT.dt / tF.dt)
 
 
@@ -46,20 +46,20 @@ nU = LUV.nU # num of "U"-vars
 # Estimate linear (deterministic) parameterization of unresovled scales.
 # See mods/LorenzUV/illust_parameterizations.py for more details.
 # Yields "good enough" estimates for T>100.
-# There's little diff whether using dt of setup_trunc or setup_full.
+# There's little diff whether using dt of HMM_trunc or HMM_full.
 # Polynom order 2,3,4 only really work around c=10.
 def estimate_parameterization(xx):
     TC = xx[tF.mask_BI,:nU] # Truth cropped to: burn-in and "U"-vars 
     gg = np.zeros_like(TC)  # "Unresolved tendency"
-    if True: # Estimate based on dt of setup_full
+    if True: # Estimate based on dt of HMM_full
       dt_ = tF.dt
-    else:    # Estimate based on dt of setup_trunc
+    else:    # Estimate based on dt of HMM_trunc
       TC  = TC[::dk]                 
       dt_ = tT.dt
       
     with set_tmp(LUV,'prmzt',lambda t,x: 0): # No parameterization
       for k,x in enumerate(progbar(TC[:-1],desc='Paramzt')):
-        Mod   = setup_trunc.f(x,np.nan,dt_)
+        Mod   = HMM_trunc.f(x,np.nan,dt_)
         Diff  = Mod - TC[k+1]
         gg[k] = Diff/dt_
 
@@ -156,7 +156,7 @@ for iX,(X,iR) in enumerate(zip(xticks,iiRep)):
   setattr(LUV,CtrlVar,X)
 
   sd    = seed(sd0 + iR)
-  xx,yy = simulate_or_load(__file__, setup_full, sd, CtrlVar+'='+str(X))
+  xx,yy = simulate_or_load(__file__, HMM_full, sd, CtrlVar+'='+str(X))
   prmzt = estimate_parameterization(xx)
 
   for iC,Config in enumerate(cfgs):
@@ -164,19 +164,19 @@ for iX,(X,iR) in enumerate(zip(xticks,iiRep)):
     
     # Case: DA should use full model
     if 'FULL' in getattr(Config,'name',''):
-      stat = Config.assimilate(setup_full,xx,yy)
+      stat = Config.assimilate(HMM_full,xx,yy)
       avrg = stat.average_subset(range(nU))
 
     # Case: DA should use trunc model but gets coupling from truth
     elif 'CHEAT' in getattr(Config,'name',''):
-      with set_tmp(LUV,'prmzt',true_coupling(xx)), set_tmp(setup_trunc,'t',tF):
-        stat = Config.assimilate(setup_trunc,xx[:,:nU],yy)
+      with set_tmp(LUV,'prmzt',true_coupling(xx)), set_tmp(HMM_trunc,'t',tF):
+        stat = Config.assimilate(HMM_trunc,xx[:,:nU],yy)
         avrg = stat.average_in_time()
 
     # Case: DA uses trunc model with parameterization
     else:
       LUV.prmzt = prmzt[Config.detp]
-      stat = Config.assimilate(setup_trunc,xx[::dk,:nU],yy)
+      stat = Config.assimilate(HMM_trunc,xx[::dk,:nU],yy)
       avrg = stat.average_in_time()
 
     stats[iX,0,iC] = stat

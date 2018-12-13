@@ -2,7 +2,7 @@
 # "Mitigating Observation Perturbation Sampling Errors in the Stochastic EnKF"
 # which introduces the ESOPS (2nd-O exact perturbation sampling) method.
 
-from mods.Lorenz95.sak08 import setup
+from mods.Lorenz95.sak08 import HMM
 
 # Experiments are repeated 10 times. 
 setup.t.T = 365

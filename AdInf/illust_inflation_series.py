@@ -10,13 +10,13 @@ from AdInf.filters import *
 
 sd0 = seed_init(14) # base random seed
 
-from mods.LorenzUV.lorenz95 import setup_full, setup_trunc, LUV
+from mods.LorenzUV.lorenz95 import HMM_full, HMM_trunc, LUV
 #(nU=36,J=10,F=10,h=1,b=10,c=10)
 
 T     = 500  # length (unitless time) of each experiment
 dtObs = 0.15 # DAW
-tF = setup_full .t; tF.T = T; tF.dkObs = round(dtObs/tF.dt)
-tT = setup_trunc.t; tT.T = T; tT.dkObs = round(dtObs/tT.dt)
+tF = HMM_full .t; tF.T = T; tF.dkObs = round(dtObs/tF.dt)
+tT = HMM_trunc.t; tT.T = T; tT.dkObs = round(dtObs/tT.dt)
 dk = validate_int(tT.dt / tF.dt)
 
 CtrlVar = 'F'
@@ -32,20 +32,20 @@ nU = LUV.nU # num of "U"-vars
 # Estimate linear (deterministic) parameterization of unresovled scales.
 # See mods/LorenzUV/illust_parameterizations.py for more details.
 # Yields "good enough" estimates for T>100.
-# There's little diff whether using dt of setup_trunc or setup_full.
+# There's little diff whether using dt of HMM_trunc or HMM_full.
 # Polynom order 2,3,4 only really work around c=10.
 def estimate_parameterization(xx):
     TC = xx[tF.mask_BI,:nU] # Truth cropped to: burn-in and "U"-vars 
     gg = np.zeros_like(TC)  # "Unresolved tendency"
-    if True: # Estimate based on dt of setup_full
+    if True: # Estimate based on dt of HMM_full
       dt_ = tF.dt
-    else:    # Estimate based on dt of setup_trunc
+    else:    # Estimate based on dt of HMM_trunc
       TC  = TC[::dk]                 
       dt_ = tT.dt
       
     with set_tmp(LUV,'prmzt',lambda t,x: 0): # No parameterization
       for k,x in enumerate(progbar(TC[:-1],desc='Paramzt')):
-        Mod   = setup_trunc.f(x,np.nan,dt_)
+        Mod   = HMM_trunc.f(x,np.nan,dt_)
         Diff  = Mod - TC[k+1]
         gg[k] = Diff/dt_
 
@@ -113,14 +113,14 @@ avrgs = np.empty(len(cfgs),dict)
 stats = np.empty_like(avrgs)
 
 setattr(LUV,CtrlVar,S)
-xx,yy = simulate_or_load('AdInf/bench_LUV.py', setup_full, sd0, CtrlVar+'='+str(S))
+xx,yy = simulate_or_load('AdInf/bench_LUV.py', HMM_full, sd0, CtrlVar+'='+str(S))
 prmzt = estimate_parameterization(xx)
 
 for iC,Config in enumerate(cfgs):
   seed(sd0)
   
   LUV.prmzt = prmzt[Config.detp]
-  stat = Config.assimilate(setup_trunc,xx[::dk,:nU],yy)
+  stat = Config.assimilate(HMM_trunc,xx[::dk,:nU],yy)
   avrg = stat.average_in_time()
 
   stats[iC] = stat

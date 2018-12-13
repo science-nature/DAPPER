@@ -3,7 +3,7 @@
 # Here we increase dkObs to make the DA problem more difficult.
 
 from common import *
-from mods.Lorenz84.pajonk2012 import setup
+from mods.Lorenz84.pajonk2012 import HMM
 
 setup.t  = Chronology(0.05,dkObs=10,T=4**5,BurnIn=20)
 

@@ -77,7 +77,7 @@ def DA_Config(da_method):
       if assimilator.__name__ != 'assimilator':
         raise Exception("DAPPER convention requires that "
         + da_method.__name__ + " return a function named 'assimilator'.")
-      run_args = ('stats','twin','xx','yy')
+      run_args = ('stats','HMM','xx','yy')
       if assimilator.__code__.co_varnames[:len(run_args)] != run_args:
         raise Exception("DAPPER convention requires that "+
         "the arguments of 'assimilator' be " + str(run_args))

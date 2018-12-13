@@ -11,7 +11,7 @@ sd0 = seed(9)
 ############################
 cfgs  = List_of_Configs()
 
-# from mods.Lorenz63.sak12 import setup
+# from mods.Lorenz63.sak12 import HMM
 # cfgs += EnKF('Sqrt',N=6,infl=1.08,rot=False)
 # cfgs += EnKF('Sqrt',N=6,infl=1.08,rot=True)
 # cfgs += EnKF('Sqrt',N=20,infl=1.01,rot=True)
@@ -23,7 +23,7 @@ cfgs  = List_of_Configs()
 # cfgs += EnKF_N(N=20,rot=True)
 
 
-from mods.Lorenz95.sak08 import setup
+from mods.Lorenz95.sak08 import HMM
 setup.t.dkObs = 3
 cfgs += EnKF('Sqrt',N=30 ,infl=1.08,rot=False)
 cfgs += EnKF('Sqrt',N=30 ,infl=1.10,rot=True)

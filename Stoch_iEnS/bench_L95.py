@@ -5,7 +5,7 @@ sd0 = seed(3)
 ##############################
 # DA Configurations
 ##############################
-from mods.Lorenz95.sak08 import setup
+from mods.Lorenz95.sak08 import HMM
 setup.t.T = 120
 setup.t.dkObs = 8 # 4, 8.
 LAG = round(0.4 / setup.t.dtObs)

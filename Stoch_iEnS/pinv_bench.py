@@ -24,7 +24,7 @@ from common import *
 
 sd0 = seed_init(4)
 
-from mods.Lorenz95.sak08 import setup
+from mods.Lorenz95.sak08 import HMM
 setup.t = Chronology(dt=0.05, dkObs=1, T=20, BurnIn=5)
 
 ##############################

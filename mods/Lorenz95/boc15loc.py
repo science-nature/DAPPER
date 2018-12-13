@@ -1,6 +1,6 @@
 # From Bocquet (2015): "Localization and the iterative ensemble Kalman smoother"
 
-from mods.Lorenz95.sak08 import setup
+from mods.Lorenz95.sak08 import HMM
 import numpy as np
 
 # Shift localization indices to adjust for time (i.e. in smoothing)

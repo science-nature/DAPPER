@@ -15,7 +15,7 @@ cfgs += Climatology()
 # cfgs += Var3D()
 
 dk_range = arange(1,6)
-from mods.Lorenz95.sak08 import setup
+from mods.Lorenz95.sak08 import HMM
 cfgs += EnKF_N(N=20,nX=1.0)
 cfgs += EnKF_N(N=20,nX=2)
 cfgs += EnKF_N(N=20,nX=1,g=1)

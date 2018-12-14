@@ -4,7 +4,7 @@
 
 from common import *
 
-from tools.admin import _print_averages
+from da_methods.admin import _print_averages
 def pa(cfgs,avrgs): return _print_averages(cfgs,avrgs,statkeys=['rmse_a','rmse_f','rmse_u'])
 
 

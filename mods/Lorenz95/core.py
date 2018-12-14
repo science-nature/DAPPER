@@ -4,7 +4,6 @@
 # Note: implementation is ndim-agnostic.
 
 import numpy as np
-from scipy.linalg import circulant
 from tools.math import rk4, integrate_TLM, is1d
 
 Force = 8.0

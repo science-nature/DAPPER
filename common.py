@@ -131,9 +131,9 @@ from tools.viz import *
 from tools.localization import *
 from tools.convenience import *
 from tools.data_management import *
-from stats import *
-from admin import *
-from da_methods import *
+from da_methods.stats import *
+from da_methods.admin import *
+from da_methods.da_methods import *
 
 
 print("Done") # ... initializing DAPPER

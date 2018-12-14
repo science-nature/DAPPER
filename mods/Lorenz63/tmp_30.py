@@ -11,7 +11,7 @@ f['noise'] = 2
 X0.C = CovMat(0.5*ones(m))
 
 other = {'name': os.path.relpath(__file__,'mods/')}
-setup = TwinSetup(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(f,h,t,X0,**other)
 
 
 ####################

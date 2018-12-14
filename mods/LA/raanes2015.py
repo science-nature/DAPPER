@@ -34,7 +34,7 @@ except FileNotFoundError:
   print('Generating a sample from which to initialize experiments.')
   NQ        = 20000 # Must have NQ > (2*wnumQ+1)
   A         = sinusoidal_sample(m,wnumQ,NQ)
-  A         = 1/10 * anom(A)[0] / sqrt(NQ)
+  A         = 1/10 * center(A)[0] / sqrt(NQ)
   Q         = A.T @ A
   U,s,_     = tsvd(Q)
   L         = U*sqrt(s)
@@ -57,7 +57,7 @@ f = {
     }
 
 ################### Gather ###################
-setup = TwinSetup(f,h,tseq,X0,
+HMM = HiddenMarkovModel(f,h,tseq,X0,
     name = os.path.relpath(__file__,'mods/'),
     LP   = LP_setup(jj),
     )

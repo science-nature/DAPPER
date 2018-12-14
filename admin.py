@@ -1,9 +1,9 @@
 from common import *
 
-class TwinSetup(MLR_Print):
+class HiddenMarkovModel(MLR_Print):
   """
-  Container for Twin experiment (OSSE) settings.
-  OSSE: "observing system simulation experiment"
+  Container for attributes of a Hidden Markov Model (HMM), to run a
+  "twin experiment", i.e. an "OSSE (observing system simulation experiment)".
   """
   def __init__(self,f,h,t,X0,**kwargs):
     self.f  = f  if isinstance(f,  Operator)   else Operator  (**f)
@@ -17,6 +17,12 @@ class TwinSetup(MLR_Print):
     # Validation
     if self.h.noise.C==0 or self.h.noise.C.rk!=self.h.noise.C.m:
         raise ValueError("Rank-deficient R not supported.")
+  
+  # ndim (.m) shortcuts
+  @property
+  def M(self): return self.f.m
+  @property
+  def P(self): return self.h.m
 
 class Operator(MLR_Print):
   """
@@ -77,7 +83,7 @@ def DA_Config(da_method):
       if assimilator.__name__ != 'assimilator':
         raise Exception("DAPPER convention requires that "
         + da_method.__name__ + " return a function named 'assimilator'.")
-      run_args = ('stats','twin','xx','yy')
+      run_args = ('stats','HMM','xx','yy')
       if assimilator.__code__.co_varnames[:len(run_args)] != run_args:
         raise Exception("DAPPER convention requires that "+
         "the arguments of 'assimilator' be " + str(run_args))
@@ -85,11 +91,11 @@ def DA_Config(da_method):
       ############################
       # Make assimilation caller
       #---------------------------
-      def assim_caller(setup,xx,yy):
+      def assim_caller(HMM,xx,yy):
         name_hook = da_method.__name__ # for pdesc of progbar
 
         # Init stats
-        stats = Stats(cfg,setup,xx,yy)
+        stats = Stats(cfg,HMM,xx,yy)
 
         def crop_traceback(ERR,lvl):
             msg = []
@@ -111,7 +117,7 @@ def DA_Config(da_method):
         # Put assimilator inside try/catch to allow gentle failure
         try:
           try:
-              assimilator(stats,setup,xx,yy)
+              assimilator(stats,HMM,xx,yy)
           except (AssimFailedError,ValueError,np.linalg.LinAlgError) as ERR:
               if getattr(cfg,'fail_gently',True):
                 msg  = ["\n\nCaught exception during assimilation. Printing traceback:"]
@@ -255,8 +261,12 @@ class List_of_Configs(list):
   """
   List of DA configs.
 
-  Purpose: presentation (facilitate printing tables of attributes, results, etc).
-  Also implement += operator for easy use.
+  This class is quite hackey. But convenience is king for its purposes:
+   - pretty printing (using common/distinct attrs)
+   - make += accept (a single) item
+   - unique kw.
+   - indexing with lists.
+   - searching for indices by attributes [inds()].
   """
 
   # Print settings
@@ -286,77 +296,22 @@ class List_of_Configs(list):
     return self
 
   def append(self,cfg):
+    "Implemented in order to support 'unique'"
     if self.unique and cfg in self:
       return
     else:
       super().append(cfg)
 
-  def sublist(self,inds):
-    """
-    List only supports slice indexing.
-    This enables accessing (i.e. getitem) by list of inds
-    """
-    return List_of_Configs([self[i] for i in inds])
+  def __getitem__(self, keys):
+    """Implement indexing by a list"""
+    try:              B=List_of_Configs([self[k] for k in keys]) # list
+    except TypeError: B=list.__getitem__(self, keys)             # int, slice
+    return B
 
-  @property
-  def da_names(self):
-    return [config.da_method.__name__ for config in self]
 
-  # HUGE WASTE OF TIME.
-  # Better to rely on manual (but brief) filter_out(xcld) to use gen_names().
-  # def distinct_attrs(self,grouped=0):
-  #   """
-  #   Yields list of the attributes that are distinct (not all the same or absent/None).
-
-  #   grouped:
-  #     Does (various levels of) group-wise comparisons (grouping by da_name)
-  #     to eliminate some attrs from the list.
-  #     NB: Setting grouped>0 can be quite useful, but "comes with no guarantees".
-  #         I.e. the behaviour is only strictly predictable for grouped=0.
-  #     NB: If grouped>0, then some attributes may be eliminated,
-  #         in which case: {common UNION distinct} < {all attributes}.
-  #   """
-  #   attrs = self.separate_distinct_common()[0]
-
-  #   if grouped>=1: # Eliminate single-appearance attrs that belong to single-appearance names.
-  #       names = self.da_names
-  #       for key in list(attrs):
-  #         nn_inds = [i for i,x in enumerate(attrs[key]) if x is not None]        # not-None indices
-  #         if len(nn_inds)==1:                                                    # if  ∃! not-None val
-  #           if names.count(names[nn_inds[0]])==1:                                # and ∃! of the corresponding name 
-  #             del attrs[key]
-
-  #   if grouped>=2: # Elim if constant within all non-singleton groups.
-  #       groups  = list(keep_order_unique(array(names)))                          # groups: unique names
-  #       g_inds  = [ [i for i,n in enumerate(names) if n==g] for g in groups ]    # get indices per group 
-  #       g_attrs = [self.sublist(inds).distinct_attrs() for inds in g_inds ]      # distinct_attrs per group
-
-  #       # Here be dragons!
-  #       for key in list(attrs):
-  #         nn_inds  = [i for i,x in enumerate(attrs[key]) if x is not None]       # not-None indices
-  #         is_const = []                                                          # list where duplicates were found
-  #         for gi,inds in enumerate(g_inds):                                      # Loop over groups
-  #           if len(inds)>1:                                                      #   ensure non-singleton group
-  #             if all([i in nn_inds for i in inds]):                              #   ensure vals are not all None (globally)
-  #               is_const.append( key not in g_attrs[gi] )                        #   check if constant
-  #         if len(is_const)>0:                                                    # if non-singleton/None groups were found
-  #           if all(is_const):                                                    # if all were constant 
-  #             del attrs[key]                                                     # eliminate attribute
-
-  #   if grouped>=3: # Eliminate those that are not distinct in any group.
-  #       # Get distinct_attrs per group.
-  #       g_keys  = [list(attrs.keys()) for attrs in g_attrs ]                     # use keys only
-  #       g_keys  = keep_order_unique(array([a for keys in g_keys for a in keys])) # Merge (flatten, unique)
-
-  #       # Eliminate, but retain ordering.
-  #       for key in list(attrs): 
-  #         if key not in g_keys: del attrs[key]
-
-  #   return attrs
-
-  def distinct_attrs(self): return self.separate_distinct_common()[0]
-  def   common_attrs(self): return self.separate_distinct_common()[1]
-
+  # NB: In principle, it is possible to list fewer attributes as distinct,
+  #     by using groupings. However, doing so intelligently is difficult,
+  #     and I wasted a lot of time trying. So don't go there...
   def separate_distinct_common(self):
     """
     Compile the attributes of the DAC's in the List_of_Confgs,
@@ -395,6 +350,10 @@ class List_of_Configs(list):
 
     return dist, comn
 
+  def distinct_attrs(self): return self.separate_distinct_common()[0]
+  def   common_attrs(self): return self.separate_distinct_common()[1]
+
+
   def __repr__(self):
     if len(self):
       # Prepare
@@ -412,7 +371,11 @@ class List_of_Configs(list):
       s = "List_of_Configs([])"
     return s
 
-  def gen_names(self,abbrev=4,trim=False,do_tab=False,xcld=[]):
+  @property
+  def da_names(self):
+    return [config.da_method.__name__ for config in self]
+
+  def gen_names(self,abbrev=4,trim=False,tab=False,xcld=[]):
 
     # 1st column: da_method's names
     columns = self.da_names
@@ -440,23 +403,23 @@ class List_of_Configs(list):
         lbls = [x[:-1] for x in lbls] # Remove colon
         vals = [''     for x in lbls] # Make empty val
       else: # Format data
-        vals = typeset(vals,do_tab=True)
+        vals = typeset(vals,tab=True)
 
       # Form column: join columns, lbls and vals.
       columns = [''.join(x) for x in zip(columns,lbls,vals)]           
 
     # Undo all tabulation inside column all at once:
-    if not do_tab: columns = [" ".join(n.split()) for n in columns]
+    if not tab: columns = [" ".join(n.split()) for n in columns]
 
     return columns
 
-  def assign_names(self,ow=False,do_tab=False):
+  def assign_names(self,ow=False,tab=False):
     """
     Assign distinct_names to the individual DAC's.
     If ow: do_overwrite.
     """
     # Process attributes into strings 
-    names = self.gen_names(do_tab)
+    names = self.gen_names(tab)
     
     # Assign strings to configs
     for name,config in zip(names,self):
@@ -468,22 +431,40 @@ class List_of_Configs(list):
       elif ow == 'prepend':
         if t: s = s+' '+t
       config.name = s
+
+
+  def inds(self,strict=True,da=None,**kw):
+    """Find indices of configs with attributes matching the kw dict.
+     - strict: If True, then configs lacking a requested attribute will match.
+     - da: the da_method.
+     """
+
+    def fill(fillval):
+      return 'empties_dont_match' if strict else fillval
+
+    def matches(C, kw):
+      kw_match = all( getattr(C,k,fill(v))==v for k,v in kw.items())
+      da_match = True if da is None else C._is(da)
+      return (kw_match and da_match)
+
+    return [i for i,C in enumerate(self) if matches(C,kw)]
+
+
     
 
-def print_averages(cfgs,Avrgs,attrkeys=(),statkeys=()):
+def _print_averages(cfgs,avrgs,attrkeys=(),statkeys=()):
   """
   For c in cfgs:
-    Print c[attrkeys], Avrgs[c][statkeys]
+    Print c[attrkeys], avrgs[c][statkeys]
   - attrkeys: list of attributes to include.
       - if -1: only print da_method.
       - if  0: print distinct_attrs
   - statkeys: list of statistics to include.
   """
-
   # Convert single cfg to list
   if isinstance(cfgs,DAC):
     cfgs     = List_of_Configs(cfgs)
-    Avrgs    = [Avrgs]
+    avrgs    = [avrgs]
 
   # Set excluded attributes
   excluded = list(cfgs.excluded)
@@ -517,8 +498,8 @@ def print_averages(cfgs,Avrgs,attrkeys=(),statkeys=()):
     for i in range(len(cfgs)):
       # Format entry
       try:
-        val  = Avrgs[i][key].val
-        conf = Avrgs[i][key].conf
+        val  = avrgs[i][key].val
+        conf = avrgs[i][key].conf
         col.append('{0:@>9.4g} {1: <6g} '.format(val,round2sigfig(conf)))
       except KeyError:
         col.append(' ') # gets filled by tabulate
@@ -531,7 +512,11 @@ def print_averages(cfgs,Avrgs,attrkeys=(),statkeys=()):
 
   # Used @'s to avoid auto-cropping by tabulate().
   table = tabulate(mattr, headr).replace('@',' ')
-  print(table)
+  return table
+
+@functools.wraps(_print_averages)
+def print_averages(*args,**kwargs):
+  print(_print_averages(*args,**kwargs))
 
 
 def formatr(x):
@@ -542,29 +527,15 @@ def formatr(x):
   if x is None: return ''
   return str(x)
 
-def typeset(lst,do_tab):
+def typeset(lst,tab):
   """
   Convert lst elements to string.
-  If do_tab: pad to min fixed width.
+  If tab: pad to min fixed width.
   """
   ss = list(map(formatr, lst))
-  if do_tab:
+  if tab:
     width = max([len(s)     for s in ss])
     ss    = [s.ljust(width) for s in ss]
   return ss
-
-def trim_table(list_of_strings):
-  """Make (narrow) columns with only whitespace to width 1."""
-  # Definitely not an efficient implementation.
-  table = list_of_strings
-  j = 0
-  while True:
-    if j==min(len(row) for row in table):
-      break
-    if all(row[j-1:j+1]=="  " for row in table):    # check if col has 2 spaces
-      table = [row[:j]+row[j+1:] for row in table]  # remove column j
-    else:
-      j += 1
-  return table
 
 

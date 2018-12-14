@@ -79,7 +79,7 @@ h['loc_shift'] = lambda ii, dt: ii # no movement (suboptimal, but easy)
 ############################
 # Other
 ############################
-setup = TwinSetup(f,h,t,X0, LP=LP_setup(obs_inds) )
+HMM = HiddenMarkovModel(f,h,t,X0, LP=LP_setup(obs_inds) )
 
 
 ####################
@@ -99,7 +99,7 @@ setup = TwinSetup(f,h,t,X0, LP=LP_setup(obs_inds) )
 #   but are included in the state vector (amounting to 3% of the its length),
 #   and thus in RMSE calculations (which is not quite fair/optimal).
 
-#from mods.QG.sak08 import setup                                 # Expected RMSE_a:
+# from mods.QG.sak08 import HMM                                  # Expected RMSE_a:
 # N = 25
 # cfgs += LETKF(mp=True, N=N,infl=1.04       ,loc_rad=10)        # 0.64
 # cfgs += LETKF(mp=True, N=N,infl='-N',xN=2.0,loc_rad=10)        # 0.66

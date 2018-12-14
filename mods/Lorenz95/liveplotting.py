@@ -17,7 +17,7 @@ def LP_setup(
     # Extract data arrays
     xx, yy, mu = stats.xx, stats.yy, stats.mu
     k = key[0]
-    tt = stats.setup.t.tt
+    tt = stats.HMM.t.tt
 
     K, m = xx.shape
     ii,wrap = setup_wrapping(m,periodic)

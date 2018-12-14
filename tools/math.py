@@ -57,31 +57,30 @@ def ens_compatible(func):
     return func(x.T,*kargs,**kwargs).T
   return wrapr
 
-def anom(E,axis=0):
-  mu = mean(E,axis=axis, keepdims=True)
-  A  = E - mu
-  # TODO: Why squeeze? I don't think this is very np "canonical",
-  #       and can yield some broadcasting issues.
-  return A, mu.squeeze()
+def center(E,axis=0,rescale=False):
+  """Center ensemble.
 
-def center(E,rescale=True):
-  """
-  Center sample,
-  but rescale to maintain the (expected) variance.
+  Makes use of np features: keepdims and broadcasting.
 
-  Note: similarly, one could correct a sample's 2nd moment,
-        (on the diagonal, or other some other subset),
-        however this is typically not worth it.
-  """
-  A = E - mean(E,0)
+  - rescale: Inflate to compensate for reduction in the expected variance."""
+  x = mean(E, axis=axis, keepdims=True)
+  X = E - x
+
   if rescale:
-    N  = E.shape[0]
-    A *= sqrt(N/(N-1))
-  return A
+    N  = E.shape[axis]
+    X *= sqrt(N/(N-1))
+
+  x = x.squeeze()
+
+  return X, x
+
+def mean0(E,axis=0,rescale=True):
+  "Same as: center(E,rescale=True)[0]"
+  return center(E,axis=axis,rescale=rescale)[0]
 
 def inflate_ens(E,factor):
-  A, mu = anom(E)
-  return mu + A*factor
+  X, x = center(E)
+  return x + X*factor
 
 def weight_degeneracy(w,prec=1e-10):
   return (1-w.max()) < prec

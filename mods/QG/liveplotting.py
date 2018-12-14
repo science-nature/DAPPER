@@ -40,7 +40,7 @@ def LP_setup(
     # Extract data arrays
     xx, yy, mu, var, err = stats.xx, stats.yy, stats.mu, stats.var, stats.err
     k = key[0]
-    tt = stats.setup.t.tt
+    tt = stats.HMM.t.tt
 
     # Plot
     # - origin='lower' might get overturned by set_ylim() below.

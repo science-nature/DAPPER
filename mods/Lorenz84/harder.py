@@ -3,13 +3,13 @@
 # Here we increase dkObs to make the DA problem more difficult.
 
 from common import *
-from mods.Lorenz84.pajonk2012 import setup
+from mods.Lorenz84.pajonk2012 import HMM
 
-setup.t  = Chronology(0.05,dkObs=10,T=4**5,BurnIn=20)
+HMM.t  = Chronology(0.05,dkObs=10,T=4**5,BurnIn=20)
 
-setup.X0 = GaussRV(C=0.01, mu=array([0.9, 0.44, 0.3]))
+HMM.X0 = GaussRV(C=0.01, mu=array([0.9, 0.44, 0.3]))
 
-setup.name = os.path.relpath(__file__,'mods/')
+HMM.name = os.path.relpath(__file__,'mods/')
 
 
 ####################

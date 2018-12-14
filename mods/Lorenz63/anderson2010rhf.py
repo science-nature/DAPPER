@@ -27,7 +27,7 @@ h['localizer'] = no_localization([m],arange(m))
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-setup = TwinSetup(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(f,h,t,X0,**other)
 
 
 ####################
@@ -35,7 +35,7 @@ setup = TwinSetup(f,h,t,X0,**other)
 ####################
 # Compare with Anderson's figure 10.
 # Benchmarks are fairly reliable (KObs=2000): 
-# from mods.Lorenz63.anderson2010rhf import setup         # rmse_a
+# from mods.Lorenz63.anderson2010rhf import HMM           # rmse_a
 # cfgs += SL_EAKF(N=20,infl=1.01,rot=True,loc_rad=np.nan) # 0.87
 # cfgs += EnKF_N (N=20,rot=True)                          # 0.87
 # cfgs += RHF    (N=50,infl=1.10)                         # 1.28

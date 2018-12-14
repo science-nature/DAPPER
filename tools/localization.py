@@ -9,18 +9,18 @@ CUTOFF   = 1e-3
 TAG      = 'GC'
 
 
-def distance_nd(centr, pts, shape, periodic=True):
+def distance_nd(centre, pts, shape, periodic=True):
   """
-  Euclidian distance between centr and pts,
+  Euclidian distance between centre and pts,
   where pts is an ndim-by-npts array.
   Supports periodicity.
   """
 
   # Make col vectors, to enable (ensure) broadcasting...
-  centr = np.reshape(centr,(-1,1))
-  shape = np.reshape(shape,(-1,1))
+  centre = np.reshape(centre,(-1,1))
+  shape  = np.reshape(shape ,(-1,1))
   # ... in this subtraction
-  d = abs(centr - pts)
+  d = abs(centre - pts)
 
   if periodic:
     d = np.minimum(d, shape-d)
@@ -85,7 +85,7 @@ def dist2coeff(dists, radius, tag=None):
 def inds_and_coeffs(dists, radius, cutoff=None, tag=None):
   """
   Returns
-  inds   : the indices of pts that are "close to" centr.
+  inds   : the indices of pts that are "close to" centre.
   coeffs : the corresponding tapering coefficients.
   """
   if cutoff is None:

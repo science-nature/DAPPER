@@ -9,11 +9,11 @@ class Stats(MLR_Print):
   comp_threshold_3 = 51
 
   # Used by MLR_Print
-  excluded  = MLR_Print.excluded + ['setup','config','xx','yy']
+  excluded  = MLR_Print.excluded + ['HMM','config','xx','yy']
   precision = 3
   ordr_by_linenum = -1
  
-  def __init__(self,config,setup,xx,yy):
+  def __init__(self,config,HMM,xx,yy):
     """
     Init the default statistics.
     Note: you may well allocate & compute individual stats elsewhere,
@@ -21,26 +21,27 @@ class Stats(MLR_Print):
     """
 
     self.config = config
-    self.setup  = setup
+    self.HMM    = HMM
     self.xx     = xx
     self.yy     = yy
 
-    m    = setup.f.m    ; assert m   ==xx.shape[1]
-    K    = setup.t.K    ; assert K   ==xx.shape[0]-1
-    p    = setup.h.m    ; assert p   ==yy.shape[1]
-    KObs = setup.t.KObs ; assert KObs==yy.shape[0]-1
+    m    = HMM.f.m    ; assert m   ==xx.shape[1]
+    K    = HMM.t.K    ; assert K   ==xx.shape[0]-1
+    p    = HMM.h.m    ; assert p   ==yy.shape[1]
+    KObs = HMM.t.KObs ; assert KObs==yy.shape[0]-1
 
     # time-series constructor alias
-    fs = self.new_FAU_series
-    self.mu     = fs(m) # Mean
-    self.var    = fs(m) # Variances
-    self.mad    = fs(m) # Mean abs deviations
-    self.err    = fs(m) # Error (mu-truth)
-    self.logp_m = fs(1) # Marginal, Gaussian Log score
-    self.skew   = fs(1) # Skewness
-    self.kurt   = fs(1) # Kurtosis
-    self.rmv    = fs(1) # Root-mean variance
-    self.rmse   = fs(1) # Root-mean square error
+    new_series = self.new_FAU_series
+
+    self.mu     = new_series(m) # Mean
+    self.var    = new_series(m) # Variances
+    self.mad    = new_series(m) # Mean abs deviations
+    self.err    = new_series(m) # Error (mu-truth)
+    self.logp_m = new_series(1) # Marginal, Gaussian Log score
+    self.skew   = new_series(1) # Skewness
+    self.kurt   = new_series(1) # Kurtosis
+    self.rmv    = new_series(1) # Root-mean variance
+    self.rmse   = new_series(1) # Root-mean square error
 
     if hasattr(config,'N'):
       # Ensemble-only init
@@ -48,16 +49,16 @@ class Stats(MLR_Print):
       self._is_ens = True
       N            = config.N
       m_Nm         = min(m,N)
-      self.w       = fs(N)           # Importance weights
-      self.rh      = fs(m,dtype=int) # Rank histogram
+      self.w       = new_series(N)           # Importance weights
+      self.rh      = new_series(m,dtype=int) # Rank histogram
       #self.N      = N               # Use w.shape[1] instead
     else:
       # Linear-Gaussian assessment
       self._is_ens = False
       m_Nm         = m
 
-    self.svals = fs(m_Nm) # Principal component (SVD) scores
-    self.umisf = fs(m_Nm) # Error in component directions
+    self.svals = new_series(m_Nm) # Principal component (SVD) scores
+    self.umisf = new_series(m_Nm) # Error in component directions
 
     # Other
     self.trHK  = np.full(KObs+1, nan)
@@ -265,7 +266,7 @@ class Stats(MLR_Print):
         elif isinstance(series,np.ndarray):
           if series.ndim > 1:
             raise NotImplementedError
-          t = self.setup.t
+          t = self.HMM.t
           if len(series) == len(t.kkObs):
             inds = t.maskObs_BI
           elif len(series) == len(t.kk):
@@ -297,7 +298,7 @@ class Stats(MLR_Print):
       avrg['rmv_' +fa] = sqrt(mean(getattr(self.var,fa)[:,ii]   ,1))
     # Average in time:
     for key,series in avrg.items():
-      avrg[key] = series_mean_with_conf(series[self.setup.t.maskObs_BI])
+      avrg[key] = series_mean_with_conf(series[self.HMM.t.maskObs_BI])
     return avrg
 
 
@@ -305,14 +306,14 @@ class Stats(MLR_Print):
   def new_FAU_series(self,m,**kwargs):
     "Convenience FAU_series constructor."
     store_u = self.config.store_u
-    return FAU_series(self.setup.t, m, store_u=store_u, **kwargs)
+    return FAU_series(self.HMM.t, m, store_u=store_u, **kwargs)
 
   # TODO: Provide frontend initializer 
 
   # Better to initialize manually (np.full...)
   # def new_array(self,f_a_u,m,**kwargs):
   #   "Convenience array constructor."
-  #   t = self.setup.t
+  #   t = self.HMM.t
   #   # Convert int-len to shape-tuple
   #   if is_int(m):
   #     if m==1: m = ()

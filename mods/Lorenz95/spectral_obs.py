@@ -4,7 +4,7 @@
 # the members might "blow up" during the forecast,
 # because the assimilation created large gradients.
 # (Of course, this will depend on R and dtObs).
-# Therefore, the setup below instead uses "global obs",
+# Therefore, the HMM below instead uses "global obs",
 # where each observation captures information about the entire state vector.
 # The idea is that we can then remove observations, (rows of H)
 # one-by-one, to a much larger degree than for H = Identity.
@@ -122,7 +122,7 @@ h = {
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-setup = TwinSetup(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(f,h,t,X0,**other)
 
 
 ####################

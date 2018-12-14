@@ -416,7 +416,7 @@ $$ \text{RMSE}_k = \| \text{Error}_k \|\_2 / \sqrt{m} \leq \| \text{Error}_k \|\
 
 answers['Twin Climatology'] = ['MD',r'''
     config = Climatology(**defaults)
-    avergs = config.assimilate(setup,xx,yy).average_in_time()
+    avergs = config.assimilate(HMM,xx,yy).average_in_time()
     print_averages(config,avergs,[],['rmse_a','rmv_a'])
 ''']
 

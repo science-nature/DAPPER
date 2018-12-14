@@ -10,7 +10,7 @@ sd0 = seed(9)
 ##############################
 cfgs  = List_of_Configs()
 
-from mods.Lorenz63.sak12 import setup ##################### Expected RMSE_a:
+from mods.Lorenz63.sak12 import HMM   ##################### Expected RMSE_a:
 cfgs += Climatology()   # no tuning!                      # 7.6
 cfgs += OptInterp()     # no tuning!                      # 1.25
 cfgs += Var3D(infl=0.9) # tuning not strictly required    # 1.03 
@@ -25,7 +25,7 @@ cfgs += PartFilt(       N=800 ,reg=0.9  ,NER=0.2)         # 0.28
 # cfgs += PartFilt(      N=4000,reg=0.7  ,NER=0.05)       # 0.27
 # cfgs += PFxN(xN=1000,  N=30  ,Qs=2     ,NER=0.2)        # 0.56
 
-# from mods.Lorenz95.sak08 import setup ##################### Expected RMSE_a:
+# from mods.Lorenz95.sak08 import HMM   ##################### Expected RMSE_a:
 # cfgs += Climatology()                                     # 3.6
 # cfgs += OptInterp()                                       # 0.95
 # cfgs += Var3D(infl=1.05)                                  # 0.41 
@@ -40,22 +40,21 @@ cfgs += PartFilt(       N=800 ,reg=0.9  ,NER=0.2)         # 0.28
 # cfgs += LETKF(         N=7,rot=True,infl=1.04,loc_rad=4)  # 0.22
 # cfgs += SL_EAKF(       N=7,rot=True,infl=1.07,loc_rad=6)  # 0.23
 
-
-# from mods.Lorenz84.harder       import setup
-# from mods.Lorenz95.sak08        import setup
-# from mods.LA.raanes2015         import setup
-# from mods.Lorenz95.raanes2016   import setup
-# from mods.LorenzUV.wilks05_full import setup
-# -- Get suggested tuning from setup files --
+# Other models (suitable cfgs listed in HMM files):
+# from mods.Lorenz84.harder       import HMM
+# from mods.Lorenz95.sak08        import HMM
+# from mods.LA.raanes2015         import HMM
+# from mods.Lorenz95.raanes2016   import HMM
+# from mods.LorenzUV.wilks05_full import HMM
 
 
 ##############################
 # Generate synthetic truth/obs
 ##############################
 # Adjust experiment duration
-setup.t.T = 100
+HMM.t.T = 100
 
-xx,yy = simulate(setup)
+xx,yy = simulate(HMM)
 
 
 ##############################
@@ -69,7 +68,7 @@ for ic,config in enumerate(cfgs):
   # config.liveplotting = True
   seed(sd0+2)
 
-  stats += [ config.assimilate(setup,xx,yy) ]
+  stats += [ config.assimilate(HMM,xx,yy) ]
   avrgs += [ stats[ic].average_in_time() ]
   # print_averages(config, avrgs[-1])
 print_averages(cfgs,avrgs)
@@ -82,7 +81,7 @@ print_averages(cfgs,avrgs)
 # plot_3D_trajectory (stats[-1])
 # plot_err_components(stats[-1])
 # plot_rank_histogram(stats[-1])
-# plot_hovmoller     (xx,setup.t)
+# plot_hovmoller     (xx,HMM.t)
 
 
 

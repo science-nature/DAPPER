@@ -1,8 +1,8 @@
 from common import *
 
-def simulate(setup,desc='Truth & Obs'):
+def simulate(HMM,desc='Truth & Obs'):
   """Generate synthetic truth and observations."""
-  f,h,chrono,X0 = setup.f, setup.h, setup.t, setup.X0
+  f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
 
   # Init
   xx    = zeros((chrono.K+1,f.m))
@@ -19,13 +19,13 @@ def simulate(setup,desc='Truth & Obs'):
 
 
 
-def simulate_or_load(script,setup, sd, more): 
-  t = setup.t
+def simulate_or_load(script,HMM, sd, more): 
+  t = HMM.t
 
   path = save_dir(rel_path(script)+'/sims/',pre=os.environ.get('SIM_STORAGE',''))
 
-  path += 'setup={:s} dt={:.3g} T={:.3g} dkObs={:d} {:s} h={:s} sd={:d}'.format(
-      os.path.splitext(os.path.basename(setup.name))[0],
+  path += 'HMM={:s} dt={:.3g} T={:.3g} dkObs={:d} {:s} h={:s} sd={:d}'.format(
+      os.path.splitext(os.path.basename(HMM.name))[0],
       t.dt, t.T, t.dkObs,
       more,
       socket.gethostname(), sd)
@@ -36,7 +36,7 @@ def simulate_or_load(script,setup, sd, more):
     xx,yy = data['xx'], data['yy']
   except FileNotFoundError:
     msg   = 'saved to'
-    xx,yy = simulate(setup)
+    xx,yy = simulate(HMM)
     np.savez(path,xx=xx,yy=yy)
   print('Truth and obs',msg,'\n',path)
   return xx,yy

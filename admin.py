@@ -17,6 +17,12 @@ class HiddenMarkovModel(MLR_Print):
     # Validation
     if self.h.noise.C==0 or self.h.noise.C.rk!=self.h.noise.C.m:
         raise ValueError("Rank-deficient R not supported.")
+  
+  # ndim (.m) shortcuts
+  @property
+  def M(self): return self.f.m
+  @property
+  def P(self): return self.h.m
 
 class Operator(MLR_Print):
   """

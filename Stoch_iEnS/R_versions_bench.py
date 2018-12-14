@@ -73,8 +73,8 @@ sd0 = seed_init(4)
 CtrlVar = sys.argv[1] # command-line argument #1
 
 assert CtrlVar == 'N' # Ensemble size.
-xticks = [16, 20, 25, 30, 40, 70, 100, 300, 1000]
-xticks = array(xticks).repeat(2)
+xticks = [18, 20, 25, 30, 40, 70, 100, 300, 1000]
+xticks = array(xticks).repeat(8)
 
 xticks, save_path, rep_inds = distribute(__file__,sys.argv,xticks,CtrlVar,xCost=0.01)
 
@@ -97,7 +97,7 @@ HMM.h.noise.C = CovMat(R)
 cfgs  = List_of_Configs()
 cfgs += OptInterp()
 
-for UPD_A in ['PertObs'+s for s in ['',' Re aug',' Re pinv',' Re sum',' Re cross0',' Re cross1',' Re proj',' R proj']]:
+for UPD_A in ['PertObs'+s for s in [' Re aug',' Re pinv',' Re sum',' Re cross0',' Re cross1',' Re proj','',' R proj']]:
   for INFL in [1.00, 1.02, 1.05, 1.10, 1.20, 1.30, 1.50, 1.70, 3.0]:
     cfgs += EnKF(UPD_A,N='?',infl=INFL)
 
@@ -144,7 +144,7 @@ R = ResultsTable(save_path)
 
 ##
 # R = ResultsTable('data/Stoch_iEnS/R_versions_bench/P2720L/N_run[2-4]') # R==eye
-R = ResultsTable('data/Stoch_iEnS/R_versions_bench/P2720L/N_runX') # R==non-eye
+R = ResultsTable('data/Stoch_iEnS/R_versions_bench/P2720L/N_run5') # R==non-eye
 
 # Print averages of a given field.
 # The "subcolumns" show the number of repetitions, crashes and the 1-sigma conf.

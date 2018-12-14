@@ -1,5 +1,6 @@
-# One-cycle EnKF PertObs update with/without projecting (full) R.
-# Conclusion: Only if R is a*eye(P) will projecting R be equivalent to classic EnKF.
+# One-cycle EnKF PertObs update with/without projecting (full) R onto col(Y),
+# coz Geir has been considering using the projected version.
+# Conclusion: Only if R is a*eye will projecting R be equivalent to classic EnKF.
 # Conversely: Projecting is quite unnecessary, also with nonlinearity.
 #             Does this hold also for (iterative) EnRML?
 #
@@ -29,7 +30,7 @@ P = Y @ tinv(Y)
 y = 4*ones((M,1))
 Innov = y - hE - sqrtm(R) @ randn((M,N))
 
-# These become equal when R is a*eye(P):
+# These become equal when R is a*eye:
 V1 = Y.T @ ( Y@Y.T + N1*    R    )
 V2 = Y.T @ ( Y@Y.T + N1* P@ R @P )
 # The (non-)equality of these is then just a corollary:

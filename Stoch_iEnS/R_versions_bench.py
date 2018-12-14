@@ -1,6 +1,7 @@
-# Benchmark EnKF PertObs where the "denomiator" uses the true R,
-# or an estimate made from the observation perturbations.
+# Benchmark EnKF PertObs where the "denomiator" uses either
+# the true obs err cov (R), or an estimate made from the obs perturbations (Re).
 # Conclusion: true R method is far superior for L95.
+# Also test with/without various projections and cross-covariances.
 #
 # To run script, first insert this snippet in da_methods.py:EnKF_analysis():
 #     if 'PertObs' in upd_a:
@@ -46,6 +47,13 @@
 #         C  = Y.T @ Y + P@Re@P
 #         YC = Y @ tinv(C)
 #         KG = A.T @ YC
+#       elif 'R proj' in upd_a:
+#         # here K = AY'/[YY'+ P nR P], where P is Proj mat onto col(Y))
+#         D  = mean0(hnoise.sample(N))
+#         P  = Y.T @ tinv(Y.T)
+#         C  = Y.T @ Y + P@R.full*N1@P
+#         YC = Y @ tinv(C)
+#         KG = A.T @ YC
 #       else: # i.e. just use the true R
 #         # here K = AY'/[YY' + nR]
 #         C  = Y.T @ Y + R.full*N1
@@ -62,16 +70,25 @@ from common import *
 
 sd0 = seed_init(4)
 
-from mods.Lorenz95.sak08 import HMM
-HMM.t = Chronology(dt=0.05, dkObs=1, T=100, BurnIn=5)
-
 CtrlVar = sys.argv[1] # command-line argument #1
 
 assert CtrlVar == 'N' # Ensemble size.
 xticks = [16, 20, 25, 30, 40, 70, 100, 300, 1000]
-xticks = array(xticks).repeat(8)
+xticks = array(xticks).repeat(2)
 
-xticks, save_path, rep_inds = distribute(__file__,sys.argv,xticks,CtrlVar)
+xticks, save_path, rep_inds = distribute(__file__,sys.argv,xticks,CtrlVar,xCost=0.01)
+
+
+##############################
+# HMM
+##############################
+from mods.Lorenz95.sak08 import HMM
+HMM.t.T = 4**3.5
+
+# Make R non-eye
+row0 = distance_nd(0,arange(HMM.M),(HMM.M,))
+R = sla.circulant(exp(-row0/20))
+HMM.h.noise.C = CovMat(R)
 
 
 ##############################
@@ -80,7 +97,7 @@ xticks, save_path, rep_inds = distribute(__file__,sys.argv,xticks,CtrlVar)
 cfgs  = List_of_Configs()
 cfgs += OptInterp()
 
-for UPD_A in ['PertObs'+s for s in ['',' Re aug',' Re pinv',' Re sum',' Re cross0',' Re cross1',' Re proj']]:
+for UPD_A in ['PertObs'+s for s in ['',' Re aug',' Re pinv',' Re sum',' Re cross0',' Re cross1',' Re proj',' R proj']]:
   for INFL in [1.00, 1.02, 1.05, 1.10, 1.20, 1.30, 1.50, 1.70, 3.0]:
     cfgs += EnKF(UPD_A,N='?',infl=INFL)
 
@@ -126,8 +143,8 @@ if 'WORKER' in sys.argv: sys.exit(0) # quit if script is running as worker.
 R = ResultsTable(save_path)
 
 ##
-R = ResultsTable('data/Stoch_iEnS/bench_R_ens/P2720L/N_run2') # Contains the methods I first tested
-R          .load('data/Stoch_iEnS/bench_R_ens/P2720L/N_run3') # Added methods: [' Re cross1',' Re proj']
+# R = ResultsTable('data/Stoch_iEnS/R_versions_bench/P2720L/N_run[2-4]') # R==eye
+R = ResultsTable('data/Stoch_iEnS/R_versions_bench/P2720L/N_runX') # R==non-eye
 
 # Print averages of a given field.
 # The "subcolumns" show the number of repetitions, crashes and the 1-sigma conf.
@@ -139,7 +156,7 @@ BaseLineMethods = R.split(lambda x: x in ['Climatology', 'OptInterp', 'Var3D','E
 
 # Plot
 fig, ax = plt.subplots()
-ax, ax_, lhs = R.plot_1d_minz('rmse_a',)
+ax, ax_, lhs, lhs_ = R.plot_1d_minz('rmse_a',)
 
 # Baseline plot
 plt.sca(ax)
@@ -155,6 +172,7 @@ if R.xlabel=='N':
   ax_.set_xticks(xt); ax.set_xticklabels(xt)
   ax .set_xticks(xt); ax.set_xticklabels(xt)
   ax .set_yticks(yt); ax.set_yticklabels(yt)
+  ax.set_title("")
 
 
 ##

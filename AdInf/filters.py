@@ -9,8 +9,8 @@ def EnKF_pre(upd_a,N,infl=1.0,rot=False,**kwargs):
   """
   As EnKF(), except with inflation pre-analysis instead of post-.
   """
-  def assimilator(stats,twin,xx,yy):
-    f,h,chrono,X0 = twin.f, twin.h, twin.t, twin.X0
+  def assimilator(stats,HMM,xx,yy):
+    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
 
     # Init
     E = X0.sample(N)
@@ -44,8 +44,8 @@ def EAKF_A07(N,var_f=None,damp=0.9,CLIP=0.9,ordr='rand',
             with fixed/tuned infl.
   """
 
-  def assimilator(stats,twin,xx,yy):
-    f,h,chrono,X0 = twin.f, twin.h, twin.t, twin.X0
+  def assimilator(stats,HMM,xx,yy):
+    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
     N1   = N-1
     R    = h.noise
     Rm12 = h.noise.C.sym_sqrt_inv
@@ -161,8 +161,8 @@ def ETKF_M11(N,var_f,var_o=None,CLIP=0.9,damp=1.0,
   and not just the anomalies. Thus this here implementation is OBSOLETE.
   """
     
-  def assimilator(stats,twin,xx,yy):
-    f,h,chrono,X0,R  = twin.f, twin.h, twin.t, twin.X0, twin.h.noise.C
+  def assimilator(stats,HMM,xx,yy):
+    f,h,chrono,X0,R  = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C
 
     # Init
     E = X0.sample(N)
@@ -231,8 +231,8 @@ def EnKF_N_mod(N,L=np.inf,nu_f=None,nu_o=1,nu0=100,Cond=True,
   """
   """
     
-  def assimilator(stats,twin,xx,yy):
-    f,h,chrono,X0,R  = twin.f, twin.h, twin.t, twin.X0, twin.h.noise.C
+  def assimilator(stats,HMM,xx,yy):
+    f,h,chrono,X0,R  = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C
 
     if deb: debias = lambda b2: b2*(N*h.m - 2)/(N*h.m) - 1/N
     else:   debias = lambda b2: b2
@@ -327,8 +327,8 @@ def ETKF_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,deb=False,damp=1.0,
   """
   """
     
-  def assimilator(stats,twin,xx,yy):
-    f,h,chrono,X0,R  = twin.f, twin.h, twin.t, twin.X0, twin.h.noise.C
+  def assimilator(stats,HMM,xx,yy):
+    f,h,chrono,X0,R  = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C
     N1 = N-1
     if deb: debias = lambda b2: b2*(N*h.m - 2)/(N*h.m) - 1/N
     else:   debias = lambda b2: b2
@@ -410,8 +410,8 @@ def ETKF_InvCS(N,Uni=True,Var=False,pt='mean',L=np.inf,nu0=1000,deb=False,damp=1
   """
   """
     
-  def assimilator(stats,twin,xx,yy):
-    f,h,chrono,X0,R  = twin.f, twin.h, twin.t, twin.X0, twin.h.noise.C
+  def assimilator(stats,HMM,xx,yy):
+    f,h,chrono,X0,R  = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C
     N1 = N-1
     if deb: debias = lambda b2: 1 + 1/N/b2
     else:   debias = lambda b2: 1
@@ -503,8 +503,8 @@ def EnKF_N_InvCS(N,g2=0,joint=False,pt='mean',
   """
   """
     
-  def assimilator(stats,twin,xx,yy):
-    f,h,chrono,X0,R  = twin.f, twin.h, twin.t, twin.X0, twin.h.noise.C
+  def assimilator(stats,HMM,xx,yy):
+    f,h,chrono,X0,R  = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C
 
     N1         = N-1      # Abbrev
     eN_        = (N+1)/N  # Effect of unknown mean
@@ -622,8 +622,8 @@ def EnKF_N_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,Cond=True,
   """
   """
     
-  def assimilator(stats,twin,xx,yy):
-    f,h,chrono,X0,R  = twin.f, twin.h, twin.t, twin.X0, twin.h.noise.C
+  def assimilator(stats,HMM,xx,yy):
+    f,h,chrono,X0,R  = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C
 
     if deb: debias = lambda b2: b2*(N*h.m - 2)/(N*h.m) - 1/N
     else:   debias = lambda b2: b2

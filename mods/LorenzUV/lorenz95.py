@@ -30,11 +30,11 @@ f = {
 X0 = GaussRV(C=0.01*eye(LUV.m))
 
 R = 1.0
-h = partial_direct_obs_setup(LUV.m,arange(LUV.nU))
-h['noise'] = R
+Obs = partial_direct_obs_setup(LUV.m,arange(LUV.nU))
+Obs['noise'] = R
 
 other = {'name': rel_path(__file__,'mods/')+'_full'}
-HMM_full = HiddenMarkovModel(f,h,t,X0,**other)
+HMM_full = HiddenMarkovModel(f,Obs,t,X0,**other)
 
 
 ################
@@ -52,11 +52,11 @@ f = {
 
 X0 = GaussRV(C=0.01*eye(nU))
 
-h = partial_direct_obs_setup(nU,arange(nU))
-h['noise'] = R
+Obs = partial_direct_obs_setup(nU,arange(nU))
+Obs['noise'] = R
  
 other = {'name': rel_path(__file__,'mods/')+'_trunc'}
-HMM_trunc = HiddenMarkovModel(f,h,t,X0,**other)
+HMM_trunc = HiddenMarkovModel(f,Obs,t,X0,**other)
 
 ####################
 # Suggested tuning

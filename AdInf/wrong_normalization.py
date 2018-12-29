@@ -21,8 +21,8 @@ m = 5;
 p = m;
 
 jj = equi_spaced_integers(m,p)
-h = partial_direct_obs_setup(m,jj)
-h['noise'] = 1.0
+Obs = partial_direct_obs_setup(m,jj)
+Obs['noise'] = 1.0
 
 X0 = GaussRV(C=1.0,m=m)
 
@@ -30,8 +30,8 @@ f = linear_model_setup(1.2*eye(m))
 f['noise'] = 0.0
 
 #other = {'name': os.path.relpath(__file__,'mods/')}
-HMM = HiddenMarkovModel(f,h,t,X0)
-f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+HMM = HiddenMarkovModel(f,Obs,t,X0)
+f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
 
 ##############################
@@ -48,8 +48,8 @@ def EnKF_wrong(N,**kwargs):
   which I have not bothered to do.
   Therefore the results are only relevant with NO MODEL ERROR.
   """
-  def assimilator(stats,twin,xx,yy):
-    f,h,chrono,X0 = twin.f, twin.h, twin.t, twin.X0
+  def assimilator(stats,HMM,xx,yy):
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
     # Normalization
     #NRM= N-1 # Usual
@@ -71,15 +71,15 @@ def EnKF_wrong(N,**kwargs):
         mu = mean(E,0)
         A  = E - mu
 
-        hE = h(E,t)
+        hE = Obs(E,t)
         hx = mean(hE,0)
         Y  = hE-hx
         dy = yy[kObs] - hx
 
-        d,V= eigh(Y @ h.noise.C.inv @ Y.T + NRM*eye(N))
+        d,V= eigh(Y @ Obs.noise.C.inv @ Y.T + NRM*eye(N))
         T  = V@diag(d**(-0.5))@V.T * sqrt(NRM)
         Pw = V@diag(d**(-1.0))@V.T
-        w  = dy @ h.noise.C.inv @ Y.T @ Pw
+        w  = dy @ Obs.noise.C.inv @ Y.T @ Pw
         E  = mu + w@A + T@A
 
       stats.assess(k,kObs,E=E)
@@ -99,13 +99,13 @@ cfgs += EnKF_wrong(    10,fnoise_treatm='Sqrt-Core')
 
 # Truth/Obs
 xx = zeros((chrono.K+1,f.m))
-yy = zeros((chrono.KObs+1,h.m))
+yy = zeros((chrono.KObs+1,Obs.m))
 for k,kObs,t,dt in chrono.forecast_range:
   # DONT USE MODEL. Use  (below), or comment out entirely.
   pass # xx := 0.
   #xx[k] = xx[k-1] + sqrt(dt)*f.noise.sample(1)  # random walk
   if kObs is not None:
-    yy[kObs] = h(xx[k],t) + h.noise.sample(1)
+    yy[kObs] = Obs(xx[k],t) + Obs.noise.sample(1)
 
 stats = []
 avrgs = []

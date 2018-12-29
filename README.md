@@ -204,7 +204,7 @@ DAPPER is aimed at research and teaching (see discussion on top).
 Example of limitations:
  * It is not suited for very big models (>60k unknowns).
  * Time-dependent error covariances and changes in lengths of state/obs
-     (although models f and h may otherwise be time-dependent).
+     (although models f and Obs may otherwise be time-dependent).
  * Non-uniform time sequences not fully supported.
 
 Also, DAPPER comes with no guarantees/support.
@@ -383,8 +383,6 @@ TODO
 
 * Review ens_compatible
 * Rm vectorize0 (too messy). See SO.com/questions/29318459 and more
-
-* rename f til dynamics og h til observation
 
 * Get rid of Tuple assignment of twin/setup items
 

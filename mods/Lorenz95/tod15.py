@@ -18,13 +18,13 @@ f = {
 X0 = GaussRV(m=m, C=0.001)
 
 jj = arange(0,m,2)
-h = partial_direct_obs_setup(m,jj)
-h['localizer'] = loc_setup( (m,), (1,), jj, periodic=True )
-# h['noise'] = LaplaceRV(C=1,m=len(jj))
-h['noise'] = LaplaceParallelRV(C=1,m=len(jj))
+Obs = partial_direct_obs_setup(m,jj)
+Obs['localizer'] = loc_setup( (m,), (1,), jj, periodic=True )
+# Obs['noise'] = LaplaceRV(C=1,m=len(jj))
+Obs['noise'] = LaplaceParallelRV(C=1,m=len(jj))
 
 other = {'name': os.path.relpath(__file__,'mods/')}
-HMM = HiddenMarkovModel(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(f,Obs,t,X0,**other)
 
 ####################
 # Suggested tuning

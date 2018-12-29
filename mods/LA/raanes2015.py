@@ -14,8 +14,8 @@ m = 1000;
 p = 40;
 
 jj = equi_spaced_integers(m,p)
-h = partial_direct_obs_setup(m,jj)
-h['noise'] = 0.01
+Obs = partial_direct_obs_setup(m,jj)
+Obs['noise'] = 0.01
 
 
 ################### Noise setup ###################
@@ -57,7 +57,7 @@ f = {
     }
 
 ################### Gather ###################
-HMM = HiddenMarkovModel(f,h,tseq,X0,
+HMM = HiddenMarkovModel(f,Obs,tseq,X0,
     name = os.path.relpath(__file__,'mods/'),
     LP   = LP_setup(jj),
     )

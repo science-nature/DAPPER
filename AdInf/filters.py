@@ -10,7 +10,7 @@ def EnKF_pre(upd_a,N,infl=1.0,rot=False,**kwargs):
   As EnKF(), except with inflation pre-analysis instead of post-.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
     # Init
     E = X0.sample(N)
@@ -25,7 +25,7 @@ def EnKF_pre(upd_a,N,infl=1.0,rot=False,**kwargs):
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
         E = post_process(E,infl,rot)
-        E = EnKF_analysis(E,h(E,t),h.noise,yy[kObs],upd_a,stats,kObs)
+        E = EnKF_analysis(E,Obs(E,t),Obs.noise,yy[kObs],upd_a,stats,kObs)
 
       stats.assess(k,kObs,E=E)
   return assimilator
@@ -45,10 +45,10 @@ def EAKF_A07(N,var_f=None,damp=0.9,CLIP=0.9,ordr='rand',
   """
 
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
     N1   = N-1
-    R    = h.noise
-    Rm12 = h.noise.C.sym_sqrt_inv
+    R    = Obs.noise
+    Rm12 = Obs.noise.C.sym_sqrt_inv
 
     nonlocal var_f
     if var_f:
@@ -86,7 +86,7 @@ def EAKF_A07(N,var_f=None,damp=0.9,CLIP=0.9,ordr='rand',
             stats.var_f[kObs] = var_f
 
           for i,j in enumerate(inds):
-            hE = h(E,t)
+            hE = Obs(E,t)
             hx = mean(hE,0)
             Y  = (hE - hx).T
             mu = mean(E ,0)
@@ -162,7 +162,7 @@ def ETKF_M11(N,var_f,var_o=None,CLIP=0.9,damp=1.0,
   """
     
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0,R  = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C
+    f,Obs,chrono,X0,R  = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
 
     # Init
     E = X0.sample(N)
@@ -185,7 +185,7 @@ def ETKF_M11(N,var_f,var_o=None,CLIP=0.9,damp=1.0,
         mu = mean(E,0)
         A  = E - mu
 
-        hE = h(E,t)
+        hE = Obs(E,t)
         y  = yy[kObs]
         hx = mean(hE,0)
         Y  = hE-hx
@@ -202,10 +202,10 @@ def ETKF_M11(N,var_f,var_o=None,CLIP=0.9,damp=1.0,
         YR = Y  @ R.sym_sqrt_inv.T
 
         trHPHR = trace(YR.T @ YR)/(N-1)
-        b2_o   = (dR@dR - h.m)/trHPHR
+        b2_o   = (dR@dR - Obs.m)/trHPHR
 
         if estimate_v_o:
-          var_o = 2/h.m * ( (b2*trHPHR + h.m)/trHPHR )**2
+          var_o = 2/Obs.m * ( (b2*trHPHR + Obs.m)/trHPHR )**2
           stats.var_o[kObs] = var_o
 
         b2 = (b2/var_f + b2_o/var_o)/(1/var_f + 1/var_o)
@@ -232,9 +232,9 @@ def EnKF_N_mod(N,L=np.inf,nu_f=None,nu_o=1,nu0=100,Cond=True,
   """
     
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0,R  = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C
+    f,Obs,chrono,X0,R  = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
 
-    if deb: debias = lambda b2: b2*(N*h.m - 2)/(N*h.m) - 1/N
+    if deb: debias = lambda b2: b2*(N*Obs.m - 2)/(N*Obs.m) - 1/N
     else:   debias = lambda b2: b2
 
     N1         = N-1      # Abbrev
@@ -265,7 +265,7 @@ def EnKF_N_mod(N,L=np.inf,nu_f=None,nu_o=1,nu0=100,Cond=True,
         mu = mean(E,0)
         A  = E - mu
 
-        hE = h(E,t)
+        hE = Obs(E,t)
         y  = yy[kObs]
         hx = mean(hE,0)
         Y  = hE-hx
@@ -286,7 +286,7 @@ def EnKF_N_mod(N,L=np.inf,nu_f=None,nu_o=1,nu0=100,Cond=True,
         cL  = cL_*xN_*mc
 
         # Make dual cost function (in terms of l1)
-        pad_rk = lambda arr: pad0( arr, min(N,h.m) )
+        pad_rk = lambda arr: pad0( arr, min(N,Obs.m) )
         dgn_rk = lambda l1: pad_rk((l1*s)**2) + N1
 
         J      = lambda b1: np.sum(du**2/dgn_rk(b1)) \
@@ -328,9 +328,9 @@ def ETKF_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,deb=False,damp=1.0,
   """
     
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0,R  = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C
+    f,Obs,chrono,X0,R  = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
     N1 = N-1
-    if deb: debias = lambda b2: b2*(N*h.m - 2)/(N*h.m) - 1/N
+    if deb: debias = lambda b2: b2*(N*Obs.m - 2)/(N*Obs.m) - 1/N
     else:   debias = lambda b2: b2
 
     # Init
@@ -358,7 +358,7 @@ def ETKF_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,deb=False,damp=1.0,
         mu = mean(E,0)
         A  = E - mu
 
-        hE = h(E,t)
+        hE = Obs(E,t)
         y  = yy[kObs]
         hx = mean(hE,0)
         Y  = hE-hx
@@ -371,13 +371,13 @@ def ETKF_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,deb=False,damp=1.0,
         # Infl estimation
         ##################
         trHPHR = trace(YR.T @ YR)/N1 # sum(s**2)/N1
-        b2_o   = (dR@dR - h.m)/trHPHR
+        b2_o   = (dR@dR - Obs.m)/trHPHR
         b2_o   = debias(b2_o)
 
         # Estimate obs certainty
         if not nu_o1:
-          PsiBe = b2*trHPHR/h.m
-          nu_o  = h.m * ( PsiBe/(PsiBe + 1) )**2
+          PsiBe = b2*trHPHR/Obs.m
+          nu_o  = Obs.m * ( PsiBe/(PsiBe + 1) )**2
           stats.nu_o[kObs] = nu_o
 
         # Bayes rule for inflation
@@ -411,7 +411,7 @@ def ETKF_InvCS(N,Uni=True,Var=False,pt='mean',L=np.inf,nu0=1000,deb=False,damp=1
   """
     
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0,R  = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C
+    f,Obs,chrono,X0,R  = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
     N1 = N-1
     if deb: debias = lambda b2: 1 + 1/N/b2
     else:   debias = lambda b2: 1
@@ -438,7 +438,7 @@ def ETKF_InvCS(N,Uni=True,Var=False,pt='mean',L=np.inf,nu0=1000,deb=False,damp=1
         mu = mean(E,0)
         A  = E - mu
 
-        hE = h(E,t)
+        hE = Obs(E,t)
         y  = yy[kObs]
         hx = mean(hE,0)
         Y  = hE-hx
@@ -454,9 +454,9 @@ def ETKF_InvCS(N,Uni=True,Var=False,pt='mean',L=np.inf,nu0=1000,deb=False,damp=1
         # Define likelihood
         if Uni:
           trHPHR    = debias(iC2.mean)*trace(YR.T @ YR)/N1 # sum(s**2)/N1
-          log_lklhd = lambda b2: Chi2_logp(h.m + trHPHR*b2, h.m, dR@dR)
+          log_lklhd = lambda b2: Chi2_logp(Obs.m + trHPHR*b2, Obs.m, dR@dR)
         else:
-          dgn_v     = diag_HBH_I(sqrt(debias(iC2.mean))*s/sqrt(N1),min(N,h.m))
+          dgn_v     = diag_HBH_I(sqrt(debias(iC2.mean))*s/sqrt(N1),min(N,Obs.m))
           log_lklhd = lambda b2: diag_Gauss_logp(0, dgn_v(b2), du).sum(axis=1)
         # BayesRule
         if Var: iC2.log_Var_update(log_lklhd)
@@ -504,7 +504,7 @@ def EnKF_N_InvCS(N,g2=0,joint=False,pt='mean',
   """
     
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0,R  = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C
+    f,Obs,chrono,X0,R  = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
 
     N1         = N-1      # Abbrev
     eN_        = (N+1)/N  # Effect of unknown mean
@@ -534,7 +534,7 @@ def EnKF_N_InvCS(N,g2=0,joint=False,pt='mean',
         mu = mean(E,0)
         A  = E - mu
 
-        hE = h(E,t)
+        hE = Obs(E,t)
         y  = yy[kObs]
         hx = mean(hE,0)
         Y  = hE-hx
@@ -555,7 +555,7 @@ def EnKF_N_InvCS(N,g2=0,joint=False,pt='mean',
         cL  = cL_*xN_*mc
 
         # Make dual cost function (in terms of l1)
-        pad_rk = lambda arr: pad0( arr, min(N,h.m) )
+        pad_rk = lambda arr: pad0( arr, min(N,Obs.m) )
         dgn_rk = lambda l1: pad_rk((l1*s)**2) + N1
 
         if joint:
@@ -578,9 +578,9 @@ def EnKF_N_InvCS(N,g2=0,joint=False,pt='mean',
         _a = a if Cond else 1.0
         if Uni:
           trHPHR    = _a**2*trace(YR.T @ YR)/N1 # sum(s**2)/N1
-          log_lklhd = lambda b2: Chi2_logp(h.m + trHPHR*b2, h.m, dR@dR)
+          log_lklhd = lambda b2: Chi2_logp(Obs.m + trHPHR*b2, Obs.m, dR@dR)
         else:
-          dgn_v     = diag_HBH_I(_a*s/sqrt(N1),min(N,h.m))
+          dgn_v     = diag_HBH_I(_a*s/sqrt(N1),min(N,Obs.m))
           log_lklhd = lambda b2: diag_Gauss_logp(0, dgn_v(b2), du).sum(axis=1)
         iC2.log_update(log_lklhd)
 
@@ -623,9 +623,9 @@ def EnKF_N_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,Cond=True,
   """
     
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0,R  = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C
+    f,Obs,chrono,X0,R  = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
 
-    if deb: debias = lambda b2: b2*(N*h.m - 2)/(N*h.m) - 1/N
+    if deb: debias = lambda b2: b2*(N*Obs.m - 2)/(N*Obs.m) - 1/N
     else:   debias = lambda b2: b2
 
     N1         = N-1      # Abbrev
@@ -662,7 +662,7 @@ def EnKF_N_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,Cond=True,
         mu = mean(E,0)
         A  = E - mu
 
-        hE = h(E,t)
+        hE = Obs(E,t)
         y  = yy[kObs]
         hx = mean(hE,0)
         Y  = hE-hx
@@ -683,7 +683,7 @@ def EnKF_N_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,Cond=True,
         cL  = cL_*xN_*mc
 
         # Make dual cost function (in terms of l1)
-        pad_rk = lambda arr: pad0( arr, min(N,h.m) )
+        pad_rk = lambda arr: pad0( arr, min(N,Obs.m) )
         dgn_rk = lambda l1: pad_rk((l1*s)**2) + N1
 
         J      = lambda a: np.sum(du**2/dgn_rk(a*sqrt(b2))) \
@@ -697,13 +697,13 @@ def EnKF_N_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,Cond=True,
         ##################
         _a = a if Cond else 1.0
         trHPHR = _a**2*trace(YR.T @ YR)/N1 # sum(s**2)/N1
-        b2_o   = (dR@dR - h.m)/trHPHR
+        b2_o   = (dR@dR - Obs.m)/trHPHR
         b2_o   = debias(b2_o)
 
         # Estimate obs certainty
         if not nu_o1:
-          PsiBe = b2*trHPHR/h.m
-          nu_o  = h.m * ( PsiBe/(PsiBe + 1) )**2
+          PsiBe = b2*trHPHR/Obs.m
+          nu_o  = Obs.m * ( PsiBe/(PsiBe + 1) )**2
           stats.nu_o[kObs] = nu_o
 
         # Bayes rule for inflation

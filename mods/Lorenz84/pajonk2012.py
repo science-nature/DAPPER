@@ -27,7 +27,7 @@ f = {
 
 X0  = GaussRV(C=0.01,m=m) # Decreased from Pajonk's C=1.
 
-h = {
+Obs = {
     'm'    : p,
     'model': Id_op(),
     'jacob': Id_mat(p),
@@ -36,7 +36,7 @@ h = {
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-HMM = HiddenMarkovModel(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(f,Obs,t,X0,**other)
 
 HMM.liveplotting = LP_setup(arange(m))
 

@@ -8,17 +8,17 @@ from common import *
 
 @DA_Config
 def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
-  def assimilator(stats,twin,xx,yy):
+  def assimilator(stats,HMM,xx,yy):
     # Unpack
-    f,h,chrono,X0  = twin.f, twin.h, twin.t, twin.X0
+    f,Obs,chrono,X0  = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
-    diagR = diag(h.noise.C.full)
+    diagR = diag(Obs.noise.C.full)
     Rm12  = diag(diagR**(-0.5))
     Ri    = diag(diagR**(-1.0))
 
     # EnKF-N constants
     g    = 1             # Nullity of Y (obs anom's).
-    #g   = max(1,N-h.m)  # TODO: No good
+    #g   = max(1,N-Obs.m)  # TODO: No good
     eN   = (N+1)/N       # Effect of unknown mean
     clog = (N+g)/(N-1)   # Coeff in front of log term
     mode = eN/clog       # Mode of prior for lambda
@@ -33,7 +33,7 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
-        hE = h(E,t)
+        hE = Obs(E,t)
         y  = yy[kObs]
 
         mu = mean(E,0)
@@ -46,7 +46,7 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
         V,s,U_T = svd0( Y @ Rm12.T )
 
         # Make dual cost function (in terms of lambda^1)
-        m_Nm = min(N,h.m)
+        m_Nm = min(N,Obs.m)
         du   = U_T @ (Rm12 @ dy)
         dgn  = lambda l: pad0( (l*s)**2, m_Nm ) + (N-1)
         PR   = (s**2).sum()/(N-1)
@@ -88,7 +88,7 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
         E = post_process(E,infl,rot)
 
         stats.infl[kObs] = l1
-        stats.trHK[kObs] = (((l1*s)**2 + (N-1))**(-1.0)*s**2).sum()/h.noise.m
+        stats.trHK[kObs] = (((l1*s)**2 + (N-1))**(-1.0)*s**2).sum()/Obs.noise.m
 
       stats.assess(k,kObs,E=E)
   return assimilator
@@ -98,10 +98,10 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
 
 @DA_Config
 def DEnKF_diagR(N,infl=1.0,rot=False,**kwargs):
-  def assimilator(stats,twin,xx,yy):
-    f,h,chrono,X0 = twin.f, twin.h, twin.t, twin.X0
+  def assimilator(stats,HMM,xx,yy):
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
-    R = diag(diag(h.noise.C.full))
+    R = diag(diag(Obs.noise.C.full))
 
     E = X0.sample(N)
     stats.assess(0,E=E)
@@ -113,7 +113,7 @@ def DEnKF_diagR(N,infl=1.0,rot=False,**kwargs):
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
 
-        hE = h.model(E,t)
+        hE = Obs.model(E,t)
         y  = yy[kObs]
 
         mu = mean(E,0)

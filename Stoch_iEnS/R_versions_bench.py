@@ -13,7 +13,7 @@
 #         YC = Y @ tinv(C)
 #         KG = A.T @ YC
 #       elif 'Re pinv' in upd_a:
-#         # here K = A pinv(Y+D) (lin-reg: x --> h(x)+e)
+#         # here K = A pinv(Y+D) (lin-reg: x --> Obs(x)+e)
 #         D  = mean0(hnoise.sample(N))
 #         YD = Y + D
 #         KG = A.T @ tinv(YD.T)
@@ -88,7 +88,7 @@ HMM.t.T = 4**3.5
 # Make R non-eye
 row0 = distance_nd(0,arange(HMM.M),(HMM.M,))
 R = sla.circulant(exp(-row0/20))
-HMM.h.noise.C = CovMat(R)
+HMM.Obs.noise.C = CovMat(R)
 
 
 ##############################

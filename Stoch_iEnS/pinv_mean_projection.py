@@ -18,12 +18,12 @@ seed(6)
 #B = randcov(M)             # yields non-diag Pi_infty. Why? 
 B = np.diag(1+np.arange(M)) # yields diagonal Pi_infty.
 H = np.round(10*rand((P,M)))
-h = lambda x: (H@x)**2 + 3*(H@x) + 4 # 2nd-D polynomial
+Obs = lambda x: (H@x)**2 + 3*(H@x) + 4 # 2nd-D polynomial
 seed()
 
 # "infty" is exaggerated. There's still noticeable sampling error here.
 E_infty = sqrtm(B)@randn((M,K))
-h_infty = cntr(h(E_infty)) @ tinv(cntr(E_infty))
+h_infty = cntr(Obs(E_infty)) @ tinv(cntr(E_infty))
 
 
 P_av = zeros((M,M))
@@ -35,7 +35,7 @@ for k in range(K):
 
   P_av +=   E  @ iE / K
   H_av += H@E  @ iE / K
-  h_av += h(E) @ iE / K
+  h_av += Obs(E) @ iE / K
 
 ##
 print("****trace(P_av)\n", trace(P_av))

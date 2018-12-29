@@ -356,7 +356,7 @@ answers['EnKF v1'] = ['MD',r'''
             if not k%dkObs:
                 # Analysis
                 y        = yy[k//dkObs-1] # current obs
-                hE       = h(E,t)
+                hE       = Obs(E,t)
                 PH       = estimate_cross_cov(E,hE)
                 HPH      = estimate_mean_and_cov(hE)[1]
                 Perturb  = R_chol @ randn((p,N))

@@ -40,10 +40,10 @@ f = {
 wnum  = 25
 X0 = RV(m=m, func = lambda N: sqrt(5)/10 * sinusoidal_sample(m,wnum,N))
 
-h = partial_direct_obs_setup(m,jj)
-h['noise'] = 0.01
+Obs = partial_direct_obs_setup(m,jj)
+Obs['noise'] = 0.01
 
-HMM = HiddenMarkovModel(f,h,tseq,X0,
+HMM = HiddenMarkovModel(f,Obs,tseq,X0,
     LP   = LP_setup(jj,conf_patch=True,conf_mult=1),
     name = os.path.relpath(__file__,'mods/'),
     )

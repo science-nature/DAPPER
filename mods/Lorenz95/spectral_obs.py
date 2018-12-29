@@ -113,7 +113,7 @@ def yplot(y):
   lh = plt.plot(ii,x,'g')[0]
   return lh
 
-h = {
+Obs = {
     'm': p,
     'model': lambda x,t: x @ H.T,
     'noise': GaussRV(C=0.01*eye(p)),
@@ -122,7 +122,7 @@ h = {
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-HMM = HiddenMarkovModel(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(f,Obs,t,X0,**other)
 
 
 ####################

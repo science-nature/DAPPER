@@ -8,7 +8,7 @@
 #     elif 'pinv' in upd_a:
 #         # Uses tinv(Bb) to compute Pb
 #         D  = mean0(hnoise.sample(N))
-#         H  = stats.HMM.h.jacob(np.nan, np.nan)
+#         H  = stats.HMM.Obs.jacob(np.nan, np.nan)
 #         Bb = A.T @ A / N1
 #         P  = inv( tinv(Bb) + R.inv )
 #         if   'KG' in upd_a:

@@ -2,7 +2,7 @@
 #   - explicit regression (to obtain H from state to obs space)
 #   - ensemble-estimation of HBH and BH, which, via Woodbury, can be shown to be
 #     direct regression to the ensemble.
-# Recall that these only differ in the case of nonlinear h() and N-1 > M.
+# Recall that these only differ in the case of nonlinear Obs() and N-1 > M.
 # Context: (single-cycle update of non-iterative) EnKF.
 
 from common import *
@@ -38,7 +38,7 @@ y = 40
 R = 16
 hcy = 1/sqrt(2*pi*R)
 # == Non-Lin H ==:
-def  h(x): return x**2
+def  Obs(x): return x**2
 def hp(x): return 2*x
 
 
@@ -50,7 +50,7 @@ plt.figure(1).clear()
 ax_s, ax_x, ax_y = axes_with_marginals(4, 1)
 ax_x.set_yticklabels([])
 ax_y.set_xticklabels([])
-ax_s.scatter(E, h(E), 14**2, color='b', label='E',zorder=4)
+ax_s.scatter(E, Obs(E), 14**2, color='b', label='E',zorder=4)
 
 xX = [-5, 5] # ax_s.get_xlim()
 yY = [-5, 10] # ax_s.get_ylim()
@@ -59,7 +59,7 @@ yY = [-5, 10] # ax_s.get_ylim()
 xx = linspace(*xX,2001)
 yy = linspace(*yY,2001)
 
-ax_s.plot(   xx, h(xx),       'k', label='h')
+ax_s.plot(   xx, Obs(xx),       'k', label='Obs')
 
 ax_s.set_xlim(xX)
 ax_s.set_ylim(yY)
@@ -75,7 +75,7 @@ ax_x.plot(xx,prior_xx, 'b' )
 ## Histograms ===================
 
 #ax_x.hist(  E ,bins=nbins, normed=True)
-#ax_y.hist(h(E),bins=nbins, normed=True, orientation="horizontal")
+#ax_y.hist(Obs(E),bins=nbins, normed=True, orientation="horizontal")
 
 
 ## Stem plotting ===================
@@ -96,7 +96,7 @@ pw_x, pw_y = stem_pieces(E)
 pw_y = 0.7 * hcx * pw_y
 ax_x.plot(pw_x, pw_y ,alpha=bw, lw=1)
 
-pw_x, pw_y = stem_pieces(h(E))
+pw_x, pw_y = stem_pieces(Obs(E))
 pw_y = 0.7 * hcy * pw_y
 ax_y.plot(pw_y, pw_x ,alpha=bw, lw=1)
 
@@ -113,7 +113,7 @@ def norm_with_AR(xy):
   return sqrt( xy[0]**2 + (xy[1]*AR)**2 )
 
 # Plot ensemble mean
-#ax_s.plot(E.mean(), h(E).mean(), 'r*',ms=12)
+#ax_s.plot(E.mean(), Obs(E).mean(), 'r*',ms=12)
 
 # Graphics length scales and aspect ratio
 wx = xX[1]-xX[0]
@@ -123,16 +123,16 @@ AR = wx/wy
 # Ensemble (average) gradient
 X   = E    @ PiAN
 b_e = E.mean()
-Y   = h(E) @ PiAN
-y_e = h(E).mean()
+Y   = Obs(E) @ PiAN
+y_e = Obs(E).mean()
 B_e = X@X / N1
 PiX = tinv(X[None,:]) @ X[None,:]
 H   = Y@X / (X@X) # Calc ensemble gradient
 x0  = fsolve(lambda x: hp(x) - H, E.mean())  # Find x0 such that hp(x0) == H
-arrow(x0 - 0.3*wx, h(x0) - 0.3*wx*H, x0 + 0.3*wx,h(x0) + 0.3*wx*H, lw=2) # Draw
+arrow(x0 - 0.3*wx, Obs(x0) - 0.3*wx*H, x0 + 0.3*wx,Obs(x0) + 0.3*wx*H, lw=2) # Draw
 
 for n in range(N):
-  xy0 = array([E[n] , h(E[n])])
+  xy0 = array([E[n] , Obs(E[n])])
   dxy = array([1    , hp(E[n])])
   dxy = dxy * 0.2*wx / norm_with_AR(dxy)
   xy1 = xy0 + dxy

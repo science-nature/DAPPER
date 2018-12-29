@@ -21,13 +21,13 @@ f = {
 
 X0 = GaussRV(C=1,mu=ones(m))
 
-h = partial_direct_obs_setup(m,arange(m))
-h['noise'] = 8.0
-h['localizer'] = no_localization([m],arange(m))
+Obs = partial_direct_obs_setup(m,arange(m))
+Obs['noise'] = 8.0
+Obs['localizer'] = no_localization([m],arange(m))
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-HMM = HiddenMarkovModel(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(f,Obs,t,X0,**other)
 
 
 ####################

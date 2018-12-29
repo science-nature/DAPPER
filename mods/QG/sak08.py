@@ -62,7 +62,7 @@ batch_shape = [3, 3] # width (in grid points) of each state batch.
 #     if inflation is applied locally, then rmse might actually improve.
 localizer = loc_setup(shape[::-1], batch_shape[::-1], obs_inds, periodic=False)
 
-h = {
+Obs = {
     'm'    : p,
     'model': hmod,
     'noise': GaussRV(C=4*eye(p)),
@@ -70,7 +70,7 @@ h = {
     }
 
 # Moving localization mask for smoothers:
-h['loc_shift'] = lambda ii, dt: ii # no movement (suboptimal, but easy)
+Obs['loc_shift'] = lambda ii, dt: ii # no movement (suboptimal, but easy)
 
 # Jacobian left unspecified coz it's (usually) employed by methods that
 # compute full cov, which in this case is too big.
@@ -79,7 +79,7 @@ h['loc_shift'] = lambda ii, dt: ii # no movement (suboptimal, but easy)
 ############################
 # Other
 ############################
-HMM = HiddenMarkovModel(f,h,t,X0, LP=LP_setup(obs_inds) )
+HMM = HiddenMarkovModel(f,Obs,t,X0, LP=LP_setup(obs_inds) )
 
 
 ####################

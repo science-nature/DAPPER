@@ -46,7 +46,7 @@ R  = 16*eye(P)
 if True:
   # == Non-Lin H == (as in CO13):
   def h1(x): return 7/12*x*x*x - 7/2*x*x + 8*x # A scalar fun...
-  def  h(x): return h1(x) [jj,:]               # ...duplicated to obs dims.
+  def  Obs(x): return h1(x) [jj,:]               # ...duplicated to obs dims.
   def hp(x):                                   # The tangent.
     H = zeros((P,M))
     for i,j in enumerate(jj):
@@ -55,7 +55,7 @@ if True:
 else:
   # == Linear H == (not in CO13):
   def h1(x): return 5*x
-  def  h(x): return h1(x) [jj,:]
+  def  Obs(x): return h1(x) [jj,:]
   def hp(x): return 5*ones((P,M))
 
 
@@ -138,7 +138,7 @@ FORM='iEnS-GN'               # Sqrt, stoch, iter EnS. Equals EnRML-GN ?
 nIter = 3
 for k in range(nIter):
   A  = E - mean1(E)
-  hE = h(E)
+  hE = Obs(E)
   Z  = hE - mean1(hE)
   H  = Z@tinv(A)
 

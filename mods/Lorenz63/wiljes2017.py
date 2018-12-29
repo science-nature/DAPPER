@@ -23,13 +23,13 @@ mu0 = array([1.509, -1.531, 25.46])
 X0 = GaussRV(C=2,mu=mu0)
 
 jj = array([0])
-h = partial_direct_obs_setup(m,jj)
-h['noise'] = 8
-h['localizer'] = no_localization([m],jj)
+Obs = partial_direct_obs_setup(m,jj)
+Obs['noise'] = 8
+Obs['localizer'] = no_localization([m],jj)
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-HMM = HiddenMarkovModel(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(f,Obs,t,X0,**other)
 
 ####################
 # Suggested tuning

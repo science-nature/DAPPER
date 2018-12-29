@@ -21,12 +21,12 @@ f = {
 X0 = GaussRV(m=m, C=0.001) 
 
 jj = arange(m) # obs_inds
-h = partial_direct_obs_setup(m, jj)
-h['noise'] = 1
-h['localizer'] = loc_setup( (m,), (2,), jj, periodic=True )
+Obs = partial_direct_obs_setup(m, jj)
+Obs['noise'] = 1
+Obs['localizer'] = loc_setup( (m,), (2,), jj, periodic=True )
 
 
-HMM = HiddenMarkovModel(f,h,t,X0, LP=LP_setup(jj))
+HMM = HiddenMarkovModel(f,Obs,t,X0, LP=LP_setup(jj))
 
 
 ####################

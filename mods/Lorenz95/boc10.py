@@ -16,12 +16,12 @@ f = {
 X0 = GaussRV(m=m, C=0.001)
 
 jj = arange(0,m,2)
-h = partial_direct_obs_setup(m,jj)
-h['noise'] = 1.5
+Obs = partial_direct_obs_setup(m,jj)
+Obs['noise'] = 1.5
  
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-HMM = HiddenMarkovModel(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(f,Obs,t,X0,**other)
 
 ####################
 # Suggested tuning

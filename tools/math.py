@@ -493,11 +493,11 @@ def partial_direct_obs_setup(m,obs_inds):
   @ens_compatible
   def model(x,t): return x[obs_inds]
   def jacob(x,t): return H
-  h = {
+  Obs = {
       'm'    : p,
       'model': model,
       'jacob': jacob,
       }
-  return h
+  return Obs
 
 

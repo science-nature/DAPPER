@@ -26,7 +26,7 @@ R = R * 0.6/R[0,0]
 #R = sla.block_diag(block_R, eye(10), block_R, eye(10))
 
 # Define true R.
-HMM.h.noise.C = CovMat(R)
+HMM.Obs.noise.C = CovMat(R)
 
 # Range of different experiments
 dkObs_range = range(1,10)

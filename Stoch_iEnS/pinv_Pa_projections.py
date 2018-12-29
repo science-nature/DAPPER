@@ -25,8 +25,8 @@ PiAN  = eye(N) - Pi1
 B = np.diag(1+np.arange(M))           # diagonal
 R = randcov(P)                        # non-diag
 H = np.round(10*rand((P,M)))
-#h = lambda x: (H@x)**2 + 3*(H@x) + 4  # 2nd-D polynomial
-h = lambda x: H@x                     # Linear
+#Obs = lambda x: (H@x)**2 + 3*(H@x) + 4  # 2nd-D polynomial
+Obs = lambda x: H@x                     # Linear
 
 seed(sd0)
 
@@ -34,7 +34,7 @@ seed(sd0)
 E   = randn((M,N))
 X   = E - mean1(E)
 B_e = X@X.T / N1
-hE  = h(E)
+hE  = Obs(E)
 Y   = hE - mean1(hE)
 
 PiXT = tinv(X) @ X; PiXTC = eye(N) - PiXT

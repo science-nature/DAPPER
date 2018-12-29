@@ -27,11 +27,11 @@ X0 = GaussRV(C=homogeneous_1D_cov(m,m/8,kind='Gauss'))
 
 p  = 4
 jj = equi_spaced_integers(m,p)
-h  = partial_direct_obs_setup(m,jj)
-h['noise'] = 0.01
+Obs  = partial_direct_obs_setup(m,jj)
+Obs['noise'] = 0.01
 
  
-HMM = HiddenMarkovModel(f,h,tseq,X0,
+HMM = HiddenMarkovModel(f,Obs,tseq,X0,
     name = os.path.relpath(__file__,'mods/'),
     LP   = LP_setup(jj),
     )

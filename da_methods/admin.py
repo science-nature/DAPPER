@@ -5,24 +5,24 @@ class HiddenMarkovModel(MLR_Print):
   Container for attributes of a Hidden Markov Model (HMM), to run a
   "twin experiment", i.e. an "OSSE (observing system simulation experiment)".
   """
-  def __init__(self,f,h,t,X0,**kwargs):
-    self.f  = f  if isinstance(f,  Operator)   else Operator  (**f)
-    self.h  = h  if isinstance(h,  Operator)   else Operator  (**h)
-    self.t  = t  if isinstance(t,  Chronology) else Chronology(**t)
-    self.X0 = X0 if isinstance(X0, RV)         else RV        (**X0)
+  def __init__(self,f,Obs,t,X0,**kwargs):
+    self.f  = f    if isinstance(f  , Operator)   else Operator  (**f)
+    self.Obs = Obs if isinstance(Obs, Operator)   else Operator  (**Obs)
+    self.t   = t   if isinstance(t  , Chronology) else Chronology(**t)
+    self.X0  = X0  if isinstance(X0 , RV)         else RV        (**X0)
     # Write the rest of parameters
     de_abbreviate(kwargs, [('LP','liveplotting')])
     for key, value in kwargs.items():
       setattr(self, key, value)
     # Validation
-    if self.h.noise.C==0 or self.h.noise.C.rk!=self.h.noise.C.m:
+    if self.Obs.noise.C==0 or self.Obs.noise.C.rk!=self.Obs.noise.C.m:
         raise ValueError("Rank-deficient R not supported.")
   
   # ndim (.m) shortcuts
   @property
   def M(self): return self.f.m
   @property
-  def P(self): return self.h.m
+  def P(self): return self.Obs.m
 
 class Operator(MLR_Print):
   """

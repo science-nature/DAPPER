@@ -12,7 +12,7 @@ def EnKF(upd_a,N,infl=1.0,rot=False,**kwargs):
   mods/Lorenz95/sak08.py
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
     # Init
     E = X0.sample(N)
@@ -26,7 +26,7 @@ def EnKF(upd_a,N,infl=1.0,rot=False,**kwargs):
       # Analysis update
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
-        E = EnKF_analysis(E,h(E,t),h.noise,yy[kObs],upd_a,stats,kObs)
+        E = EnKF_analysis(E,Obs(E,t),Obs.noise,yy[kObs],upd_a,stats,kObs)
         E = post_process(E,infl,rot)
 
       stats.assess(k,kObs,E=E)
@@ -331,7 +331,7 @@ def EnKS(upd_a,N,Lag,infl=1.0,rot=False,**kwargs):
   mods/Lorenz95/raanes2016.py
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
     E    = zeros((chrono.K+1,N,f.m))
     E[0] = X0.sample(N)
@@ -346,11 +346,11 @@ def EnKS(upd_a,N,Lag,infl=1.0,rot=False,**kwargs):
         kkLag    = range(k-Lag*chrono.dkObs, k+1)
         ELag     = E[kkLag]
 
-        hE       = h(E[k],t)
+        hE       = Obs(E[k],t)
         y        = yy[kObs]
 
         ELag     = reshape_to(ELag)
-        ELag     = EnKF_analysis(ELag,hE,h.noise,y,upd_a,stats,kObs)
+        ELag     = EnKF_analysis(ELag,hE,Obs.noise,y,upd_a,stats,kObs)
         E[kkLag] = reshape_fr(ELag,f.m)
         E[k]     = post_process(E[k],infl,rot)
         stats.assess(k,kObs,'a',E=E[k])
@@ -372,7 +372,7 @@ def EnRTS(upd_a,N,cntr,infl=1.0,rot=False,**kwargs):
   mods/Lorenz95/raanes2016.py
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
     E    = zeros((chrono.K+1,N,f.m))
     Ef   = E.copy()
@@ -386,9 +386,9 @@ def EnRTS(upd_a,N,cntr,infl=1.0,rot=False,**kwargs):
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E[k])
-        hE   = h(E[k],t)
+        hE   = Obs(E[k],t)
         y    = yy[kObs]
-        E[k] = EnKF_analysis(E[k],hE,h.noise,y,upd_a,stats,kObs)
+        E[k] = EnKF_analysis(E[k],hE,Obs.noise,y,upd_a,stats,kObs)
         E[k] = post_process(E[k],infl,rot)
         stats.assess(k,kObs,'a',E=E[k])
 
@@ -435,11 +435,11 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
   (full ensemble equality) to the EnKF 'Serial'.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
     N1   = N-1
-    R    = h.noise
-    Rm12 = h.noise.C.sym_sqrt_inv
+    R    = Obs.noise
+    Rm12 = Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     stats.assess(0,E=E)
@@ -453,11 +453,11 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
         y    = yy[kObs]
         inds = serial_inds(ordr, y, R, center(E)[0])
             
-        state_localizer = h.localizer(loc_rad, 'y2x', t, taper)
+        state_localizer = Obs.localizer(loc_rad, 'y2x', t, taper)
         for j in inds:
           # Prep:
           # ------------------------------------------------------
-          hE = h(E,t)
+          hE = Obs(E,t)
           hx = mean(hE,0)
           Y  = hE - hx
           mu = mean(E ,0)
@@ -543,7 +543,7 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
   "Efficient data assimilation for spatiotemporal chaos..."
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0,R,N1 = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C, N-1
+    f,Obs,chrono,X0,R,N1 = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, N-1
 
     _map = multiproc_map if mp else map
 
@@ -567,12 +567,12 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
         A  = E - mu
         # Obs space variables
         y    = yy[kObs]
-        Y,hx = center(h(E,t))
+        Y,hx = center(Obs(E,t))
         # Transform obs space
         Y  = Y        @ R.sym_sqrt_inv.T
         dy = (y - hx) @ R.sym_sqrt_inv.T
 
-        state_batches, obs_localizer = h.localizer(loc_rad, 'x2y', t, taper)
+        state_batches, obs_localizer = Obs.localizer(loc_rad, 'x2y', t, taper)
         # for ii in state_batches:
         def local_analysis(ii):
 
@@ -641,7 +641,7 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
 #  - Newton_m(dJ1,dJ2, 1.0) # Significantly faster. Also slightly better CV?
 # => Despite inconvienience of defining analytic derivatives,
 #    Newton_m seems like the best option.
-#  - In extreme (or just non-linear h) cases,
+#  - In extreme (or just non-linear Obs.mod) cases,
 #    the EnKF-N cost function may have multiple minima.
 #    Then: should use more robust optimizer!
 #
@@ -758,7 +758,7 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
   In consequence, the efficiency of the "primal" form suffers a bit.
   The primal form is there mainly to demonstrate equivalence
   (to the dual, provided the same minimum is found by the optimizers),
-  and to allow comparison with iEnKS(), which uses the full, non-lin h.
+  and to allow comparison with iEnKS(), which uses the full, non-lin Obs.mod.
 
   'infl' should be unnecessary (assuming no model error, or that Q is correct).
 
@@ -780,7 +780,7 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
   """
   def assimilator(stats,HMM,xx,yy):
     # Unpack
-    f,h,chrono,X0,R,N1 = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C, N-1
+    f,Obs,chrono,X0,R,N1 = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, N-1
 
     # Init
     E = X0.sample(N)
@@ -795,7 +795,7 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
       # Analysis
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
-        hE = h(E,t)
+        hE = Obs(E,t)
         y  = yy[kObs]
 
         mu = mean(E,0)
@@ -815,7 +815,7 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
 
         if dual:
             # Make dual cost function (in terms of l1)
-            pad_rk = lambda arr: pad0( arr, min(N,h.m) )
+            pad_rk = lambda arr: pad0( arr, min(N,Obs.m) )
             dgn_rk = lambda l: pad_rk((l*s)**2) + N1
             J      = lambda l:          np.sum(du**2/dgn_rk(l)) \
                      +    eN/l**2 \
@@ -872,7 +872,7 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
         E = post_process(E,infl,rot)
 
         stats.infl[kObs] = l1
-        stats.trHK[kObs] = (((l1*s)**2 + N1)**(-1.0)*s**2).sum()/h.noise.m
+        stats.trHK[kObs] = (((l1*s)**2 + N1)**(-1.0)*s**2).sum()/Obs.noise.m
 
       stats.assess(k,kObs,E=E)
   return assimilator
@@ -925,8 +925,8 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
   # - Modularize upd_a (and localization?)
 
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0,R,KObs, N1 = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C, HMM.t.KObs, N-1
-    Rm12 = h.noise.C.sym_sqrt_inv
+    f,Obs,chrono,X0,R,KObs, N1 = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, HMM.t.KObs, N-1
+    Rm12 = Obs.noise.C.sym_sqrt_inv
 
     assert f.noise.C is 0, "Q>0 not yet supported. TODO: implement Sakov et al 2017"
 
@@ -969,7 +969,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
                 if iteration==0: w2x_right = make_CVar(E,1/EPS) # CVar for x[DAW_right], used for f/a stats.
 
                 # Prepare analysis of current obs: yy[kObs], where kObs==DAW_right if len(DAW)>0
-                hE     = h(E,t)            # Observe ensemble.
+                hE     = Obs(E,t)            # Observe ensemble.
                 y      = yy[DAW_right]     # Select current obs/data.
                 Y,hx   = center(hE)        # Get obs {anomalies, mean}.
                 dy     = (y - hx) @ Rm12.T # Transform obs space.
@@ -1030,7 +1030,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
             stats.assess(k,DAW_right,'a', E = w2x_right(w+T) )
             stats.iters   [DAW_right]       = iteration+1
             stats.infl    [DAW_right]       = sqrt(N1/za)
-            stats.trHK    [DAW_right]       = trace(Y0.T @ Pw @ Y0)/h.noise.m # TODO mda
+            stats.trHK    [DAW_right]       = trace(Y0.T @ Pw @ Y0)/Obs.noise.m # TODO mda
 
             # Final estimate of E at [DAW_left-1]
             E = w2x_left(w+T)
@@ -1051,8 +1051,8 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
 @DA_Config
 def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,rot=False,**kwargs):
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0,R,KObs, N1 = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C, HMM.t.KObs, N-1
-    Rm12 = h.noise.C.sym_sqrt_inv
+    f,Obs,chrono,X0,R,KObs, N1 = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, HMM.t.KObs, N-1
+    Rm12 = Obs.noise.C.sym_sqrt_inv
 
     assert f.noise.C is 0, "Q>0 not yet supported. TODO: implement Sakov et al 2017"
 
@@ -1095,7 +1095,7 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
                 if iteration==0: w2x_right = make_CVar(E,1/EPS) # CVar for x[k], used for f/a stats.
 
                 # Prepare analysis of current obs: yy[DAW_right]
-                hE     = h(E,t)            # Observe ensemble.
+                hE     = Obs(E,t)            # Observe ensemble.
                 y      = yy[DAW_right]     # Select current obs/data.
                 Y,hx   = center(hE)          # Get obs {anomalies, mean}.
                 dy     = (y - hx) @ Rm12.T # Transform obs space.
@@ -1165,7 +1165,7 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
             stats.assess(k,DAW_right,'a', E = w2x_right(w+T) )
             stats.iters   [DAW_right]       = iteration+1
             stats.infl    [DAW_right]       = sqrt(N1/za)
-            stats.trHK    [DAW_right]       = trace(Y0.T @ Pw @ Y0)/h.noise.m # TODO mda
+            stats.trHK    [DAW_right]       = trace(Y0.T @ Pw @ Y0)/Obs.noise.m # TODO mda
 
             # Final estimate of E[DAW_left]
             E = w2x_left(w+T)
@@ -1203,7 +1203,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
   """
 
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0,R,KObs, N1 = HMM.f, HMM.h, HMM.t, HMM.X0, HMM.h.noise.C, HMM.t.KObs, N-1
+    f,Obs,chrono,X0,R,KObs, N1 = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, HMM.t.KObs, N-1
     assert f.noise.C is 0, "Q>0 not yet supported. See Sakov et al 2017: 'An iEnKF with mod. error'"
 
     # Init DA cycles
@@ -1218,7 +1218,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
         DAW_dt = chrono.ttObs[DAW[-1]] - chrono.ttObs[DAW[0]] + chrono.dtObs
 
         # Get localization setup (at time t)
-        state_batches, obs_localizer = h.localizer(loc_rad, 'x2y', chrono.ttObs[kObs], taper)
+        state_batches, obs_localizer = Obs.localizer(loc_rad, 'x2y', chrono.ttObs[kObs], taper)
         nBatch = len(state_batches)
 
         # Store 0th (iteration) estimate as (x0,A0)
@@ -1245,7 +1245,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
 
             # Analysis of y[kObs] (already assim'd [:kObs])
             y    = yy[kObs]
-            Y,hx = center(h(E,t))
+            Y,hx = center(Obs(E,t))
             # Transform obs space
             Y  = Y        @ R.sym_sqrt_inv.T
             dy = (y - hx) @ R.sym_sqrt_inv.T
@@ -1265,7 +1265,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
 
             for ib, ii in enumerate(state_batches):
               # Shift indices (to adjust for time difference)
-              ii_kObs = h.loc_shift(ii, DAW_dt)
+              ii_kObs = Obs.loc_shift(ii, DAW_dt)
               # Localize
               jj, tapering = obs_localizer(ii_kObs)
               if len(jj) == 0: continue
@@ -1273,7 +1273,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
               dy_jj  = dy[jj]  * sqrt(tapering)
 
               # "Uncondition" the observation anomalies
-              # (and yet this linearization of h improves with iterations)
+              # (and yet this linearization of Obs.mod improves with iterations)
               Y_jj     = Tinv[ib] @ Y_jj
               # Prepare analysis: do SVD
               V,s,UT   = svd0(Y_jj)
@@ -1293,7 +1293,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
 
         # Analysis 'a' stats for E[kObs].
         stats.assess(k,kObs,'a',E=E)
-        stats.trHK [kObs] = trace(Y.T @ Pw @ Y)/h.noise.m
+        stats.trHK [kObs] = trace(Y.T @ Pw @ Y)/Obs.noise.m
         stats.infl [kObs] = sqrt(N1/za)
         stats.iters[kObs] = iteration+1
 
@@ -1353,15 +1353,15 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
     #miN = N*miN
 
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
-    m, Rm12       = f.m, h.noise.C.sym_sqrt_inv
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    m, Rm12       = f.m, Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
 
     stats.N_eff  = np.full(chrono.KObs+1,nan)
     stats.resmpl = zeros(chrono.KObs+1,dtype=bool)
-    stats.innovs = np.full((chrono.KObs+1,N,h.m),nan)
+    stats.innovs = np.full((chrono.KObs+1,N,Obs.m),nan)
     stats.assess(0,E=E,w=1/N)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
@@ -1378,7 +1378,7 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E,w=w)
 
-        innovs = (yy[kObs] - h(E,t)) @ Rm12.T
+        innovs = (yy[kObs] - Obs(E,t)) @ Rm12.T
         w      = reweight(w,innovs=innovs)
 
         stats.assess(k,kObs,'a',E=E,w=w)
@@ -1414,8 +1414,8 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
   Other interesting settings include: mods/Lorenz63/sak12.py
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
-    m, R          = f.m, h.noise.C.full
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    m, R          = f.m, Obs.noise.C.full
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1433,7 +1433,7 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
         stats.assess(k,kObs,'f',E=E,w=w)
         y = yy[kObs]
 
-        hE = h(E,t)
+        hE = Obs(E,t)
         innovs = y - hE
 
         # EnKF-ish update
@@ -1443,8 +1443,8 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
         C   = Ys.T@Ys + R
         KG  = As.T@mrdiv(Ys,C)
         E  += sample_quickly_with(As)[0]
-        D   = h.noise.sample(N)
-        dE  = KG @ (y-h(E,t)-D).T
+        D   = Obs.noise.sample(N)
+        dE  = KG @ (y-Obs(E,t)-D).T
         E   = E + dE.T
 
         # Importance weighting
@@ -1483,8 +1483,8 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
   """
 
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
-    m, Rm12       = f.m, h.noise.C.sym_sqrt_inv
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    m, Rm12       = f.m, Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1492,7 +1492,7 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
     stats.N_eff  = np.full(chrono.KObs+1,nan)
     stats.resmpl = zeros(chrono.KObs+1,dtype=bool)
     stats.wroot  = np.full(chrono.KObs+1,nan)
-    stats.innovs = np.full((chrono.KObs+1,N,h.m),nan)
+    stats.innovs = np.full((chrono.KObs+1,N,Obs.m),nan)
     stats.assess(0,E=E,w=1/N)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
@@ -1509,7 +1509,7 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E,w=w)
 
-        innovs = (yy[kObs] - h(E,t)) @ Rm12.T
+        innovs = (yy[kObs] - Obs(E,t)) @ Rm12.T
         w      = reweight(w,innovs=innovs)
 
         stats.assess(k,kObs,'a',E=E,w=w)
@@ -1557,8 +1557,8 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
   Or maybe we should use x_a^n distributed according to a sqrt update?
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
-    m, Rm12, Ri   = f.m, h.noise.C.sym_sqrt_inv, h.noise.C.inv
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    m, Rm12, Ri   = f.m, Obs.noise.C.sym_sqrt_inv, Obs.noise.C.inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1578,7 +1578,7 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E,w=w)
         y  = yy[kObs]
-        hE = h(E,t)
+        hE = Obs(E,t)
         wD = w.copy()
 
         # Importance weighting
@@ -1594,7 +1594,7 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
 
           # EnKF-without-pertubations update
           if N>m:
-            C       = Yw.T @ Yw + h.noise.C.full
+            C       = Yw.T @ Yw + Obs.noise.C.full
             KG      = mrdiv(Aw.T@Yw,C)
             cntrs   = E + (y-hE)@KG.T
             Pa      = Aw.T@Aw - KG@Yw.T@Aw
@@ -1637,7 +1637,7 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
           log_pf    = -0.5 * np.sum(innovs_pf**2, axis=1)
 
           # log(likelihood(x))
-          innovs = (y - h(ED,t)) @ Rm12.T
+          innovs = (y - Obs(ED,t)) @ Rm12.T
           log_L  = -0.5 * np.sum(innovs**2, axis=1)
 
           # Update weights
@@ -1668,8 +1668,8 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
   Additional idea: employ w-adjustment to obtain N unique particles, without jittering.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
-    m, Rm12       = f.m, h.noise.C.sym_sqrt_inv
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    m, Rm12       = f.m, Obs.noise.C.sym_sqrt_inv
 
     DD = None
     E  = X0.sample(N)
@@ -1689,7 +1689,7 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
         y  = yy[kObs]
         wD = w.copy()
 
-        innovs = (y - h(E,t)) @ Rm12.T
+        innovs = (y - Obs(E,t)) @ Rm12.T
         w      = reweight(w,innovs=innovs)
 
         stats.assess(k,kObs,'a',E=E,w=w)
@@ -1708,7 +1708,7 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
           ED += DD[:,:len(cholR)]@cholR
 
           # Update weights
-          innovs = (y - h(ED,t)) @ Rm12.T
+          innovs = (y - Obs(ED,t)) @ Rm12.T
           wD     = reweight(wD,innovs=innovs)
 
           # Resample and reduce
@@ -1959,7 +1959,7 @@ def EnCheat(upd_a,N,infl=1.0,rot=False,**kwargs):
   NB: The forecasts (and their rmse) are given by the standard EnKF.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
     E = X0.sample(N)
     stats.assess(0,E=E)
@@ -1970,9 +1970,9 @@ def EnCheat(upd_a,N,infl=1.0,rot=False,**kwargs):
 
       if kObs is not None:
         # Standard EnKF analysis
-        hE = h(E,t)
+        hE = Obs(E,t)
         y  = yy[kObs]
-        E  = EnKF_analysis(E,hE,h.noise,y,upd_a,stats,kObs)
+        E  = EnKF_analysis(E,hE,Obs.noise,y,upd_a,stats,kObs)
         E  = post_process(E,infl,rot)
 
         # Cheating (only used for stats)
@@ -1997,7 +1997,7 @@ def Climatology(**kwargs):
   (unfairly) advantageous if the simulation is too short (vs mixing time).
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
     muC = mean(xx,0)
     AC  = xx - muC
@@ -2019,18 +2019,18 @@ def OptInterp(**kwargs):
   but with a prior from the Climatology.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
     # Get H.
     msg  = "For speed, only time-independent H is supported."
-    H    = h.jacob(np.nan, np.nan)
+    H    = Obs.jacob(np.nan, np.nan)
     if not np.all(np.isfinite(H)): raise AssimFailedError(msg)
 
     # Compute "climatological" Kalman gain
     muC = mean(xx,0)
     AC  = xx - muC
     PC  = (AC.T @ AC) / (xx.shape[0] - 1)
-    KG  = mrdiv(PC@H.T, H@PC@H.T + h.noise.C.full)
+    KG  = mrdiv(PC@H.T, H@PC@H.T + Obs.noise.C.full)
 
     # Setup scalar "time-series" covariance dynamics.
     # ONLY USED FOR DIAGNOSTICS, not to change the Kalman gain.
@@ -2048,7 +2048,7 @@ def OptInterp(**kwargs):
       if kObs is not None:
         stats.assess(k,kObs,'f',mu=muC,Cov=PC)
         # Analysis
-        mu = muC + KG@(yy[kObs] - h(muC,t))
+        mu = muC + KG@(yy[kObs] - Obs(muC,t))
       stats.assess(k,kObs,mu=mu,Cov=2*PC*WaveC(k,kObs))
   return assimilator
 
@@ -2064,7 +2064,7 @@ def Var3D(infl=1.0,**kwargs):
   """
   # TODO: The wave-crest yields good results for sak08, but not for boc10 
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
     # Compute "climatology"
     muC = mean(xx,0)
@@ -2089,10 +2089,10 @@ def Var3D(infl=1.0,**kwargs):
         stats.assess(k,kObs,'f',mu=mu,Cov=P)
         # Analysis
         P *= infl
-        H  = h.jacob(mu,t)
-        KG = mrdiv(P@H.T, H@P@H.T + h.noise.C.full)
+        H  = Obs.jacob(mu,t)
+        KG = mrdiv(P@H.T, H@P@H.T + Obs.noise.C.full)
         KH = KG@H
-        mu = mu + KG@(yy[kObs] - h(mu,t))
+        mu = mu + KG@(yy[kObs] - Obs(mu,t))
 
         # Re-calibrate wave_crest with new W0 = Pa/(2*PC).
         # Note: obs innovations are not used to estimate P!
@@ -2109,11 +2109,11 @@ def Var3D_Lag(infl=1.0,**kwargs):
   Background covariance based on lagged time series.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
     # Get H.
     msg  = "For speed, only time-independent H is supported."
-    H    = h.jacob(np.nan, np.nan)
+    H    = Obs.jacob(np.nan, np.nan)
     if not np.all(np.isfinite(H)): raise AssimFailedError(msg)
 
 
@@ -2122,7 +2122,7 @@ def Var3D_Lag(infl=1.0,**kwargs):
     L   = chrono.dkObs
     AC  = infl * (xx[L:] - xx[:-L])
     PC  = (AC.T @ AC) / (xx.shape[0] - 1)
-    KG  = mrdiv(PC@H.T, H@PC@H.T + h.noise.C.full)
+    KG  = mrdiv(PC@H.T, H@PC@H.T + Obs.noise.C.full)
 
     # Init
     mu = muC
@@ -2134,7 +2134,7 @@ def Var3D_Lag(infl=1.0,**kwargs):
       if kObs is not None:
         stats.assess(k,kObs,'f',mu=mu,Cov=PC)
         # Analysis
-        mu = mu + KG@(yy[kObs] - h(mu,t))
+        mu = mu + KG@(yy[kObs] - Obs(mu,t))
       stats.assess(k,kObs,mu=mu,Cov=PC)
   return assimilator
 
@@ -2194,9 +2194,9 @@ def ExtRTS(infl=1.0,**kwargs):
   """
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
-    R  = h.noise.C.full
+    R  = Obs.noise.C.full
     Q  = 0 if f.noise.C==0 else f.noise.C.full
 
     mu    = zeros((chrono.K+1,f.m))
@@ -2225,10 +2225,10 @@ def ExtRTS(infl=1.0,**kwargs):
 
       if kObs is not None:
         stats.assess(k,kObs,'f',mu=mu[k],Cov=P[k])
-        H     = h.jacob(mu[k],t)
+        H     = Obs.jacob(mu[k],t)
         KG    = mrdiv(P[k] @ H.T, H@P[k]@H.T + R)
         y     = yy[kObs]
-        mu[k] = mu[k] + KG@(y - h(mu[k],t))
+        mu[k] = mu[k] + KG@(y - Obs(mu[k],t))
         KH    = KG@H
         P[k]  = (eye(f.m) - KH) @ P[k]
         stats.assess(k,kObs,'a',mu=mu[k],Cov=P[k])
@@ -2260,9 +2260,9 @@ def ExtKF(infl=1.0,**kwargs):
     Specifying it this way (per unit time) means less tuning.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
-    R  = h.noise.C.full
+    R  = Obs.noise.C.full
     Q  = 0 if f.noise.C==0 else f.noise.C.full
 
     mu = X0.mu
@@ -2281,10 +2281,10 @@ def ExtKF(infl=1.0,**kwargs):
 
       if kObs is not None:
         stats.assess(k,kObs,'f',mu=mu,Cov=P)
-        H  = h.jacob(mu,t)
+        H  = Obs.jacob(mu,t)
         KG = mrdiv(P @ H.T, H@P@H.T + R)
         y  = yy[kObs]
-        mu = mu + KG@(y - h(mu,t))
+        mu = mu + KG@(y - Obs(mu,t))
         KH = KG@H
         P  = (eye(f.m) - KH) @ P
 
@@ -2309,14 +2309,14 @@ def RHF(N,ordr='rand',infl=1.0,rot=False,**kwargs):
   mods/Lorenz63/anderson2010non.py 
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
 
     N1         = N-1
     step       = 1/N
     cdf_grid   = linspace(step/2, 1-step/2, N)
 
-    R    = h.noise
-    Rm12 = h.noise.C.sym_sqrt_inv
+    R    = Obs.noise
+    Rm12 = Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     stats.assess(0,E=E)
@@ -2331,7 +2331,7 @@ def RHF(N,ordr='rand',infl=1.0,rot=False,**kwargs):
         inds = serial_inds(ordr, y, R, center(E)[0])
             
         for i,j in enumerate(inds):
-          hE = h(E,t)
+          hE = Obs(E,t)
           hx = mean(hE,0)
           Y  = hE - hx
           mu = mean(E ,0)
@@ -2379,8 +2379,8 @@ def LNETF(N,loc_rad,taper='GC',infl=1.0,Rs=1.0,rot=False,**kwargs):
   mods/Lorenz95/wiljes2017.py
   """
   def assimilator(stats,HMM,xx,yy):
-    f,h,chrono,X0 = HMM.f, HMM.h, HMM.t, HMM.X0
-    Rm12 = h.noise.C.sym_sqrt_inv
+    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Rm12 = Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     stats.assess(0,E=E)
@@ -2394,12 +2394,12 @@ def LNETF(N,loc_rad,taper='GC',infl=1.0,Rs=1.0,rot=False,**kwargs):
         mu = mean(E,0)
         A  = E - mu
 
-        hE = h(E,t)
+        hE = Obs(E,t)
         hx = mean(hE,0)
         YR = (hE-hx)  @ Rm12.T
         yR = (yy[kObs] - hx) @ Rm12.T
 
-        state_batches, obs_localizer = h.localizer(loc_rad, 'x2y', t, taper)
+        state_batches, obs_localizer = Obs.localizer(loc_rad, 'x2y', t, taper)
         for ii in state_batches:
           # Localize obs
           jj, tapering = obs_localizer(ii)
@@ -2411,7 +2411,7 @@ def LNETF(N,loc_rad,taper='GC',infl=1.0,Rs=1.0,rot=False,**kwargs):
           # NETF:
           # This "paragraph" is the only difference to the LETKF.
           innovs = (dy_jj-Y_jj)/Rs
-          if 'laplace' in str(type(h.noise)).lower():
+          if 'laplace' in str(type(Obs.noise)).lower():
             w    = laplace_lklhd(innovs)
           else: # assume Gaussian
             w    = reweight(ones(N),innovs=innovs)

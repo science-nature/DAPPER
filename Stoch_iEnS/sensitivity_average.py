@@ -1,6 +1,6 @@
 # Test if the *average* sensitivity is *exact* for
 # - Gaussian distributions                   # Yes [by Stein's identity]
-# - Non-Gaussian, with the nonlinear h being a polynomial of degree:
+# - Non-Gaussian, with the nonlinear Obs.mod being a polynomial of degree:
 #   - 2: Only if skew=0. But the sensitivity *at* the mean is the same anyways.
 #   - 3: No -- even with skew = 0
 
@@ -24,11 +24,11 @@ N1 = N-1
 
 ## h
 R  = 0
-#def  h(x): return -0.1*x + x**2
+#def  Obs(x): return -0.1*x + x**2
 #def hp(x): return -0.1 + 2*x
-def  h(x): return -0.1*x + x**2 - 0.2 *x**3
+def  Obs(x): return -0.1*x + x**2 - 0.2 *x**3
 def hp(x): return -0.1 + 2*x    - 0.6 *x**2
-#def  h(x): return 4*x
+#def  Obs(x): return 4*x
 #def hp(x): return 4
 
 ## Ens
@@ -40,7 +40,7 @@ if TriMod:
      3 + 0.5*randn((1,wN[1])),
     -4 + 0.5*randn((1,wN[2])),
     axis=1)
-yy = h(xx) + sqrt(R)*randn((1,N))
+yy = Obs(xx) + sqrt(R)*randn((1,N))
 
 prnt = lambda s,v: print('%13.13s: %.5f'%(s,v))
 prnt("mean(xx)", mean(xx) )

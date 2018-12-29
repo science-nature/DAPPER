@@ -33,15 +33,15 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
-        hE = Obs(E,t)
+        Eo = Obs(E,t)
         y  = yy[kObs]
 
         mu = mean(E,0)
         A  = E - mu
 
-        hx = mean(hE,0)
-        Y  = hE-hx
-        dy = y - hx
+        xo = mean(Eo,0)
+        Y  = Eo-xo
+        dy = y - xo
 
         V,s,U_T = svd0( Y @ Rm12.T )
 
@@ -113,15 +113,15 @@ def DEnKF_diagR(N,infl=1.0,rot=False,**kwargs):
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
 
-        hE = Obs.model(E,t)
+        Eo = Obs.model(E,t)
         y  = yy[kObs]
 
         mu = mean(E,0)
         A  = E - mu
 
-        hx = mean(hE,0)
-        Y  = hE-hx
-        dy = y - hx
+        xo = mean(Eo,0)
+        Y  = Eo-xo
+        dy = y - xo
 
         C  = Y.T @ Y + R*(N-1)
         YC = mrdiv(Y, C)

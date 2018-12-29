@@ -13,7 +13,7 @@
 #         P  = inv( tinv(Bb) + R.inv )
 #         if   'KG' in upd_a:
 #           KG = P @ H.T @ R.inv
-#           E  = E + (KG @ ( y + D - hE ).T).T
+#           E  = E + (KG @ ( y + D - Eo ).T).T
 #         elif 'Hess' in upd_a:
 #           E  = ( P @ ( tinv(Bb)@E.T + R.inv@(y + D).T ) ).T
 #     elif 'Sqrt' in upd_a:

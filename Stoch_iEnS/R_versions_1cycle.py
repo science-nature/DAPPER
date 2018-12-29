@@ -18,17 +18,17 @@ N1 = N-1
 E  = randn((M,N))
 
 # Nonlinerity makes no difference to conclusions.
-hE = E + 3 # Linear
-# hE = sin(E) + 3 # Non-Lin
+Eo = E + 3 # Linear
+# Eo = sin(E) + 3 # Non-Lin
 # fig, ax = plt.subplots()
-# lh = ax.plot(E, hE, 'o')
+# lh = ax.plot(E, Eo, 'o')
 
 X, xb = center(E ,1)
-Y, yb = center(hE,1)
+Y, yb = center(Eo,1)
 
 P = Y @ tinv(Y)
 y = 4*ones((M,1))
-Innov = y - hE - sqrtm(R) @ randn((M,N))
+Innov = y - Eo - sqrtm(R) @ randn((M,N))
 
 # These become equal when R is a*eye:
 V1 = Y.T @ ( Y@Y.T + N1*    R    )

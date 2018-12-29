@@ -71,10 +71,10 @@ def EnKF_wrong(N,**kwargs):
         mu = mean(E,0)
         A  = E - mu
 
-        hE = Obs(E,t)
-        hx = mean(hE,0)
-        Y  = hE-hx
-        dy = yy[kObs] - hx
+        Eo = Obs(E,t)
+        xo = mean(Eo,0)
+        Y  = Eo-xo
+        dy = yy[kObs] - xo
 
         d,V= eigh(Y @ Obs.noise.C.inv @ Y.T + NRM*eye(N))
         T  = V@diag(d**(-0.5))@V.T * sqrt(NRM)

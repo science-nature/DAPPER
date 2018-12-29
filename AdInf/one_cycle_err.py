@@ -58,12 +58,12 @@ steps = zeros((K,ITER))
 
 for k in progbar(range(K)):
   x  = b + randn(m)     @ B.Right
-  hE = b + randn((N,m)) @ B.Right / sqrt(s2)
+  Eo = b + randn((N,m)) @ B.Right / sqrt(s2)
   y  = x + randn(m)     @ R.Right
 
-  hx = mean(hE,0)
-  Y  = hE-hx
-  dy = y - hx
+  xo = mean(Eo,0)
+  Y  = Eo-xo
+  dy = y - xo
 
   dR    = dy @ R.sym_sqrt_inv.T
   YR    = Y  @ R.sym_sqrt_inv.T

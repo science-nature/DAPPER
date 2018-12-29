@@ -86,15 +86,15 @@ def EAKF_A07(N,var_f=None,damp=0.9,CLIP=0.9,ordr='rand',
             stats.var_f[kObs] = var_f
 
           for i,j in enumerate(inds):
-            hE = Obs(E,t)
-            hx = mean(hE,0)
-            Y  = (hE - hx).T
+            Eo = Obs(E,t)
+            xo = mean(Eo,0)
+            Y  = (Eo - xo).T
             mu = mean(E ,0)
             A  = E-mu
 
             # Update j-th component of observed ensemble
             Yj    = Rm12[j,:] @ Y
-            dyj   = Rm12[j,:] @ (y - hx)
+            dyj   = Rm12[j,:] @ (y - xo)
             #
             skk   = Yj@Yj
             su    = 1/( 1/skk + 1/N1 )
@@ -185,11 +185,11 @@ def ETKF_M11(N,var_f,var_o=None,CLIP=0.9,damp=1.0,
         mu = mean(E,0)
         A  = E - mu
 
-        hE = Obs(E,t)
+        Eo = Obs(E,t)
         y  = yy[kObs]
-        hx = mean(hE,0)
-        Y  = hE-hx
-        dy = y - hx
+        xo = mean(Eo,0)
+        Y  = Eo-xo
+        dy = y - xo
 
         V,s,_ = svd0(Y @ R.sym_sqrt_inv.T)
         d     = pad0(s**2,N) + (N-1)
@@ -265,11 +265,11 @@ def EnKF_N_mod(N,L=np.inf,nu_f=None,nu_o=1,nu0=100,Cond=True,
         mu = mean(E,0)
         A  = E - mu
 
-        hE = Obs(E,t)
+        Eo = Obs(E,t)
         y  = yy[kObs]
-        hx = mean(hE,0)
-        Y  = hE-hx
-        dy = y - hx
+        xo = mean(Eo,0)
+        Y  = Eo-xo
+        dy = y - xo
 
         dR = dy @ R.sym_sqrt_inv.T
         YR = Y  @ R.sym_sqrt_inv.T
@@ -358,11 +358,11 @@ def ETKF_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,deb=False,damp=1.0,
         mu = mean(E,0)
         A  = E - mu
 
-        hE = Obs(E,t)
+        Eo = Obs(E,t)
         y  = yy[kObs]
-        hx = mean(hE,0)
-        Y  = hE-hx
-        dy = y - hx
+        xo = mean(Eo,0)
+        Y  = Eo-xo
+        dy = y - xo
 
         dR = dy @ R.sym_sqrt_inv.T
         YR = Y  @ R.sym_sqrt_inv.T
@@ -438,11 +438,11 @@ def ETKF_InvCS(N,Uni=True,Var=False,pt='mean',L=np.inf,nu0=1000,deb=False,damp=1
         mu = mean(E,0)
         A  = E - mu
 
-        hE = Obs(E,t)
+        Eo = Obs(E,t)
         y  = yy[kObs]
-        hx = mean(hE,0)
-        Y  = hE-hx
-        dy = y - hx
+        xo = mean(Eo,0)
+        Y  = Eo-xo
+        dy = y - xo
 
         dR = dy @ R.sym_sqrt_inv.T
         YR = Y  @ R.sym_sqrt_inv.T
@@ -534,11 +534,11 @@ def EnKF_N_InvCS(N,g2=0,joint=False,pt='mean',
         mu = mean(E,0)
         A  = E - mu
 
-        hE = Obs(E,t)
+        Eo = Obs(E,t)
         y  = yy[kObs]
-        hx = mean(hE,0)
-        Y  = hE-hx
-        dy = y - hx
+        xo = mean(Eo,0)
+        Y  = Eo-xo
+        dy = y - xo
 
         dR = dy @ R.sym_sqrt_inv.T
         YR = Y  @ R.sym_sqrt_inv.T
@@ -662,11 +662,11 @@ def EnKF_N_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,Cond=True,
         mu = mean(E,0)
         A  = E - mu
 
-        hE = Obs(E,t)
+        Eo = Obs(E,t)
         y  = yy[kObs]
-        hx = mean(hE,0)
-        Y  = hE-hx
-        dy = y - hx
+        xo = mean(Eo,0)
+        Y  = Eo-xo
+        dy = y - xo
 
         dR = dy @ R.sym_sqrt_inv.T
         YR = Y  @ R.sym_sqrt_inv.T

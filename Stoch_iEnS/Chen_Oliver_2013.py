@@ -138,8 +138,8 @@ FORM='iEnS-GN'               # Sqrt, stoch, iter EnS. Equals EnRML-GN ?
 nIter = 3
 for k in range(nIter):
   A  = E - mean1(E)
-  hE = Obs(E)
-  Z  = hE - mean1(hE)
+  Eo = Obs(E)
+  Z  = Eo - mean1(Eo)
   H  = Z@tinv(A)
 
   if FORM=='RML-GN':
@@ -148,7 +148,7 @@ for k in range(nIter):
     for n in range(N): 
       Hn        = hp(tp(E[:,n]))
       Pn        = inv( inv(B0) + Hn.T@inv(R)@Hn )
-      dLkl[:,n] = Pn@Hn.T@inv(R)@(y.ravel()-D[:,n]-hE[:,n])
+      dLkl[:,n] = Pn@Hn.T@inv(R)@(y.ravel()-D[:,n]-Eo[:,n])
       dPri[:,n] = Pn@inv(B0)@(E0[:,n]-E[:,n])
 
   elif FORM=='MDA':
@@ -156,7 +156,7 @@ for k in range(nIter):
     D    -= mean1(D)
     D    *= sqrt(N/N1)
     K     = A@Z.T@inv(Z@Z.T + nIter*N1*R)
-    dLkl  = K@(y-sqrt(nIter)*D-hE)
+    dLkl  = K@(y-sqrt(nIter)*D-Eo)
     dPri  = 0
 
   elif FORM=='iEnS-Det-GN':
@@ -164,7 +164,7 @@ for k in range(nIter):
     Y     = Z @ inv(T)
     # Mean update
     Pw    = inv(Y.T@inv(R)@Y + N1*eye(N))
-    dLkl  = Pw@Y.T@inv(R)@(y-mean1(hE))
+    dLkl  = Pw@Y.T@inv(R)@(y-mean1(Eo))
     dPri  = Pw@           (0-w)*N1
     w    += dLkl + dPri
     # CVar to ensemble space
@@ -179,18 +179,18 @@ for k in range(nIter):
     Y     = H@A0
     C     = Y@Y.T + N1*R
     K     = A0@Y.T@inv(C)
-    dLkl  = K@(y-D-hE)
+    dLkl  = K@(y-D-Eo)
     dPri  = (eye(M) - K@H)@(E0-E)
   elif FORM=='EnRML-GN-ens':
     Y     = H@A0
     Pw    = inv(Y.T@inv(R)@Y + N1*eye(N))
     K     = A0@Pw@Y.T@inv(R)
-    dLkl  = K@(y-D-hE)
+    dLkl  = K@(y-D-Eo)
     dPri  = (eye(M) - K@H)@(E0-E)
   elif FORM=='EnRML-GN-state':
     assert nla.matrix_rank(B0) == M # Not well-done by inv()
     P     = inv( inv(B0) + H.T@inv(R)@H )
-    dLkl  = P@H.T@inv(R)@(y-D-hE)
+    dLkl  = P@H.T@inv(R)@(y-D-Eo)
     dPri  = P@inv(B0)@(E0-E)
 
   elif FORM=='iEnS-GN':
@@ -207,18 +207,18 @@ for k in range(nIter):
     # Regression_W: Y = Z tinv(T)   -- is it better?
     # Y     = Z  @ tinv( AN  @ W @ AN )       # 
     # Y     = Z  @ tinv( W @ AN )             # 
-    # Y     = hE @ tinv( W @ AN )             # 
-    # Y     = hE @ AN @ tinv( W ) @ AN        # 
+    # Y     = Eo @ tinv( W @ AN )             # 
+    # Y     = Eo @ AN @ tinv( W ) @ AN        # 
     # Y     = Z  @ tinv( W ) @ AN             # 
 
     # Geir-Evensen forms -- equivalent to Regression_W forms
     # Y     = Z @ tinv( A ) @ A @ inv(Om)     # 
     # Y     = Z @ inv(Om)                     # 
-    # Y     = hE @ AN @ inv(Om)               # 
+    # Y     = Eo @ AN @ inv(Om)               # 
 
     # The rest of the algo
     Pw    = inv(Y.T@inv(R)@Y + N1*eye(N))
-    dLkl  = Pw@Y.T@inv(R)@(y-D-hE)
+    dLkl  = Pw@Y.T@inv(R)@(y-D-Eo)
     dPri  = Pw@(eye(N)-W)*N1
     W    += dLkl + dPri
     We    = W - eye(N)

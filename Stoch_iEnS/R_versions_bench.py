@@ -61,7 +61,7 @@
 #         YC = Y @ tinv(C)
 #         KG = A.T @ YC
 #         HK = Y.T @ YC
-#       dE = (KG @ ( y + D - hE ).T).T
+#       dE = (KG @ ( y + D - Eo ).T).T
 #       E  = E + dE
 #     elif 'Sqrt' in upd_a:
 #       [...]

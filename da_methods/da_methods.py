@@ -33,7 +33,7 @@ def EnKF(upd_a,N,infl=1.0,rot=False,**kwargs):
   return assimilator
 
 
-def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
+def EnKF_analysis(E,Eo,hnoise,y,upd_a,stats,kObs):
     """
     The EnKF analysis update, in many flavours and forms,
     specified via 'upd_a'.
@@ -49,9 +49,9 @@ def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
     mu = mean(E,0)  # Ens mean
     A  = E - mu     # Ens anomalies
 
-    hx = mean(hE,0) # Obs ens mean 
-    Y  = hE-hx      # Obs ens anomalies
-    dy = y - hx     # Mean "innovation"
+    xo = mean(Eo,0) # Obs ens mean 
+    Y  = Eo-xo      # Obs ens anomalies
+    dy = y - xo     # Mean "innovation"
 
     if 'PertObs' in upd_a:
         # Uses classic, perturbed observations (Burgers'98)
@@ -60,7 +60,7 @@ def EnKF_analysis(E,hE,hnoise,y,upd_a,stats,kObs):
         YC = mrdiv(Y, C)
         KG = A.T @ YC
         HK = Y.T @ YC
-        dE = (KG @ ( y - D - hE ).T).T
+        dE = (KG @ ( y - D - Eo ).T).T
         E  = E + dE
 
     elif 'Sqrt' in upd_a:
@@ -346,11 +346,11 @@ def EnKS(upd_a,N,Lag,infl=1.0,rot=False,**kwargs):
         kkLag    = range(k-Lag*chrono.dkObs, k+1)
         ELag     = E[kkLag]
 
-        hE       = Obs(E[k],t)
+        Eo       = Obs(E[k],t)
         y        = yy[kObs]
 
         ELag     = reshape_to(ELag)
-        ELag     = EnKF_analysis(ELag,hE,Obs.noise,y,upd_a,stats,kObs)
+        ELag     = EnKF_analysis(ELag,Eo,Obs.noise,y,upd_a,stats,kObs)
         E[kkLag] = reshape_fr(ELag,f.m)
         E[k]     = post_process(E[k],infl,rot)
         stats.assess(k,kObs,'a',E=E[k])
@@ -386,9 +386,9 @@ def EnRTS(upd_a,N,cntr,infl=1.0,rot=False,**kwargs):
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E[k])
-        hE   = Obs(E[k],t)
+        Eo   = Obs(E[k],t)
         y    = yy[kObs]
-        E[k] = EnKF_analysis(E[k],hE,Obs.noise,y,upd_a,stats,kObs)
+        E[k] = EnKF_analysis(E[k],Eo,Obs.noise,y,upd_a,stats,kObs)
         E[k] = post_process(E[k],infl,rot)
         stats.assess(k,kObs,'a',E=E[k])
 
@@ -457,15 +457,15 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
         for j in inds:
           # Prep:
           # ------------------------------------------------------
-          hE = Obs(E,t)
-          hx = mean(hE,0)
-          Y  = hE - hx
+          Eo = Obs(E,t)
+          xo = mean(Eo,0)
+          Y  = Eo - xo
           mu = mean(E ,0)
           A  = E-mu
           # Update j-th component of observed ensemble:
           # ------------------------------------------------------
           Y_j    = Rm12[j,:] @ Y.T
-          dy_j   = Rm12[j,:] @ (y - hx)
+          dy_j   = Rm12[j,:] @ (y - xo)
           # Prior var * N1:
           sig2_j = Y_j@Y_j                
           if sig2_j<1e-9: continue
@@ -567,10 +567,10 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
         A  = E - mu
         # Obs space variables
         y    = yy[kObs]
-        Y,hx = center(Obs(E,t))
+        Y,xo = center(Obs(E,t))
         # Transform obs space
         Y  = Y        @ R.sym_sqrt_inv.T
-        dy = (y - hx) @ R.sym_sqrt_inv.T
+        dy = (y - xo) @ R.sym_sqrt_inv.T
 
         state_batches, obs_localizer = Obs.localizer(loc_rad, 'x2y', t, taper)
         # for ii in state_batches:
@@ -795,15 +795,15 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
       # Analysis
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
-        hE = Obs(E,t)
+        Eo = Obs(E,t)
         y  = yy[kObs]
 
         mu = mean(E,0)
         A  = E - mu
 
-        hx = mean(hE,0)
-        Y  = hE-hx
-        dy = y - hx
+        xo = mean(Eo,0)
+        Y  = Eo-xo
+        dy = y - xo
 
         V,s,UT = svd0  (Y @ R.sym_sqrt_inv.T)
         du     = UT @ (dy @ R.sym_sqrt_inv.T)
@@ -969,10 +969,10 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
                 if iteration==0: w2x_right = make_CVar(E,1/EPS) # CVar for x[DAW_right], used for f/a stats.
 
                 # Prepare analysis of current obs: yy[kObs], where kObs==DAW_right if len(DAW)>0
-                hE     = Obs(E,t)            # Observe ensemble.
+                Eo     = Obs(E,t)            # Observe ensemble.
                 y      = yy[DAW_right]     # Select current obs/data.
-                Y,hx   = center(hE)        # Get obs {anomalies, mean}.
-                dy     = (y - hx) @ Rm12.T # Transform obs space.
+                Y,xo   = center(Eo)        # Get obs {anomalies, mean}.
+                dy     = (y - xo) @ Rm12.T # Transform obs space.
                 Y      = Y        @ Rm12.T # Transform obs space.
                 Y0     = (Tinv/EPS) @ Y    # "De-condition" the obs anomalies.
                 V,s,UT = svd0(Y0)          # Decompose Y0.
@@ -1095,10 +1095,10 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
                 if iteration==0: w2x_right = make_CVar(E,1/EPS) # CVar for x[k], used for f/a stats.
 
                 # Prepare analysis of current obs: yy[DAW_right]
-                hE     = Obs(E,t)            # Observe ensemble.
+                Eo     = Obs(E,t)            # Observe ensemble.
                 y      = yy[DAW_right]     # Select current obs/data.
-                Y,hx   = center(hE)          # Get obs {anomalies, mean}.
-                dy     = (y - hx) @ Rm12.T # Transform obs space.
+                Y,xo   = center(Eo)          # Get obs {anomalies, mean}.
+                dy     = (y - xo) @ Rm12.T # Transform obs space.
                 Y      = Y        @ Rm12.T # Transform obs space.
                 Y0     = (Tinv/EPS) @ Y    # "De-condition" the obs anomalies.
                 V,s,UT = svd0(Y0)          # Decompose Y0.
@@ -1139,7 +1139,7 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
                       w     = w + grad @Pw
                       T     = T + gradT@Pw
                       # It's prettier with W=w+T, i.e. T,w=center(W):
-                      # dY    = (y - hE) @ Rm12.T
+                      # dY    = (y - Eo) @ Rm12.T
                       # grad  = (dY - D)@Y0.T + N1*(eye(N) - W)
                       # W     = W + grad@Pw
                       Tinv  = tinv(T)
@@ -1245,10 +1245,10 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
 
             # Analysis of y[kObs] (already assim'd [:kObs])
             y    = yy[kObs]
-            Y,hx = center(Obs(E,t))
+            Y,xo = center(Obs(E,t))
             # Transform obs space
             Y  = Y        @ R.sym_sqrt_inv.T
-            dy = (y - hx) @ R.sym_sqrt_inv.T
+            dy = (y - xo) @ R.sym_sqrt_inv.T
 
             # Inflation estimation.
             # Set "effective ensemble size", za = (N-1)/pre-inflation^2.
@@ -1433,13 +1433,13 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
         stats.assess(k,kObs,'f',E=E,w=w)
         y = yy[kObs]
 
-        hE = Obs(E,t)
-        innovs = y - hE
+        Eo = Obs(E,t)
+        innovs = y - Eo
 
         # EnKF-ish update
         s   = Qs*bandw(N,m)
         As  = s*raw_C12(E,w)
-        Ys  = s*raw_C12(hE,w)
+        Ys  = s*raw_C12(Eo,w)
         C   = Ys.T@Ys + R
         KG  = As.T@mrdiv(Ys,C)
         E  += sample_quickly_with(As)[0]
@@ -1578,11 +1578,11 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E,w=w)
         y  = yy[kObs]
-        hE = Obs(E,t)
+        Eo = Obs(E,t)
         wD = w.copy()
 
         # Importance weighting
-        innovs = (y - hE) @ Rm12.T
+        innovs = (y - Eo) @ Rm12.T
         w      = reweight(w,innovs=innovs)
         
         # Resampling
@@ -1590,13 +1590,13 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
         if trigger_resampling(w,NER,stats,kObs):
           # Weighted covariance factors
           Aw = raw_C12(E,wD)
-          Yw = raw_C12(hE,wD)
+          Yw = raw_C12(Eo,wD)
 
           # EnKF-without-pertubations update
           if N>m:
             C       = Yw.T @ Yw + Obs.noise.C.full
             KG      = mrdiv(Aw.T@Yw,C)
-            cntrs   = E + (y-hE)@KG.T
+            cntrs   = E + (y-Eo)@KG.T
             Pa      = Aw.T@Aw - KG@Yw.T@Aw
             P_cholU = funm_psd(Pa, sqrt)
             if DD is None or not re_use:
@@ -1607,7 +1607,7 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
             V,sig,UT = svd0( Yw @ Rm12.T )
             dgn      = pad0( sig**2, N ) + 1
             Pw       = (V * dgn**(-1.0)) @ V.T
-            cntrs    = E + (y-hE)@Ri@Yw.T@Pw@Aw
+            cntrs    = E + (y-Eo)@Ri@Yw.T@Pw@Aw
             P_cholU  = (V*dgn**(-0.5)).T @ Aw
             # Generate N·xN random numbers from NormDist(0,1), and compute
             # log(q(x))
@@ -1970,9 +1970,9 @@ def EnCheat(upd_a,N,infl=1.0,rot=False,**kwargs):
 
       if kObs is not None:
         # Standard EnKF analysis
-        hE = Obs(E,t)
+        Eo = Obs(E,t)
         y  = yy[kObs]
-        E  = EnKF_analysis(E,hE,Obs.noise,y,upd_a,stats,kObs)
+        E  = EnKF_analysis(E,Eo,Obs.noise,y,upd_a,stats,kObs)
         E  = post_process(E,infl,rot)
 
         # Cheating (only used for stats)
@@ -2331,14 +2331,14 @@ def RHF(N,ordr='rand',infl=1.0,rot=False,**kwargs):
         inds = serial_inds(ordr, y, R, center(E)[0])
             
         for i,j in enumerate(inds):
-          hE = Obs(E,t)
-          hx = mean(hE,0)
-          Y  = hE - hx
+          Eo = Obs(E,t)
+          xo = mean(Eo,0)
+          Y  = Eo - xo
           mu = mean(E ,0)
           A  = E-mu
 
           # Update j-th component of observed ensemble
-          dYf    = Rm12[j,:] @ (y - hE).T # NB: does Rm12 make sense?
+          dYf    = Rm12[j,:] @ (y - Eo).T # NB: does Rm12 make sense?
           Yj     = Rm12[j,:] @ Y.T
           Regr   = A.T@Yj/np.sum(Yj**2)
 
@@ -2394,10 +2394,10 @@ def LNETF(N,loc_rad,taper='GC',infl=1.0,Rs=1.0,rot=False,**kwargs):
         mu = mean(E,0)
         A  = E - mu
 
-        hE = Obs(E,t)
-        hx = mean(hE,0)
-        YR = (hE-hx)  @ Rm12.T
-        yR = (yy[kObs] - hx) @ Rm12.T
+        Eo = Obs(E,t)
+        xo = mean(Eo,0)
+        YR = (Eo-xo)  @ Rm12.T
+        yR = (yy[kObs] - xo) @ Rm12.T
 
         state_batches, obs_localizer = Obs.localizer(loc_rad, 'x2y', t, taper)
         for ii in state_batches:

@@ -34,8 +34,8 @@ seed(sd0)
 E   = randn((M,N))
 X   = E - mean1(E)
 B_e = X@X.T / N1
-hE  = Obs(E)
-Y   = hE - mean1(hE)
+Eo  = Obs(E)
+Y   = Eo - mean1(Eo)
 
 PiXT = tinv(X) @ X; PiXTC = eye(N) - PiXT
 PiX  = X @ tinv(X); PiXC  = eye(M) - PiX

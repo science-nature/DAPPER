@@ -18,8 +18,8 @@ CtrlVar = sys.argv[1]
 
 # Set range of experimental settings
 if CtrlVar == 'Q': # Var of stoch error
-  set_true  = lambda X: setattr(HMM.f.noise,'C',CovMat(X*ones(HMM.f.m)))
-  set_false = lambda X: setattr(HMM.f.noise,'C',0)
+  set_true  = lambda X: setattr(HMM.Dyn.noise,'C',CovMat(X*ones(HMM.Dyn.m)))
+  set_false = lambda X: setattr(HMM.Dyn.noise,'C',0)
   xticks    = round2sigfig(LogSp(1e-6,1e2,40),nfig=2)
   #xtics    = [1e-6, 1e-3, 0.1, 1]
   #xtics    = [min(xticks, key=lambda x:abs(x-0.01))]

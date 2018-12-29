@@ -49,7 +49,7 @@ def step(x,t,dt):
   assert dt == tseq.dt
   return x @ Fm.T
 
-f = {
+Dyn = {
     'm'    : m,
     'model': lambda x,t,dt: damp * step(x,t,dt),
     'jacob': lambda x,t,dt: damp * Fm,
@@ -57,7 +57,7 @@ f = {
     }
 
 ################### Gather ###################
-HMM = HiddenMarkovModel(f,Obs,tseq,X0,
+HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,
     name = os.path.relpath(__file__,'mods/'),
     LP   = LP_setup(jj),
     )

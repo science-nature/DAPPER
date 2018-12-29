@@ -8,8 +8,8 @@ def loc_shift(ii,dt):
   shift = int(np.round(6.0*dt)) # Taken from Fig 4 of bocquet2015localization
   # NB: don't use builtin round; it returns integers -- except for round(0.0) !!!
   ii_new = ii + shift
-  ii_new = np.remainder(ii_new, HMM.f.m) # periodicity
-  assert HMM.f.m == HMM.Obs.m, "This func assumes the obs operator is identity."
+  ii_new = np.remainder(ii_new, HMM.Dyn.m) # periodicity
+  assert HMM.Dyn.m == HMM.Obs.m, "This func assumes the obs operator is identity."
   return ii_new
 
 HMM.Obs.loc_shift = loc_shift

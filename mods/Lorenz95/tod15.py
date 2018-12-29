@@ -9,7 +9,7 @@ from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 t = Chronology(0.05,dkObs=2,T=4**5,BurnIn=20)
 
 m = 80
-f = {
+Dyn = {
     'm'    : m,
     'model': core.step,
     'noise': 0
@@ -24,7 +24,7 @@ Obs['localizer'] = loc_setup( (m,), (1,), jj, periodic=True )
 Obs['noise'] = LaplaceParallelRV(C=1,m=len(jj))
 
 other = {'name': os.path.relpath(__file__,'mods/')}
-HMM = HiddenMarkovModel(f,Obs,t,X0,**other)
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
 ####################
 # Suggested tuning

@@ -5,8 +5,8 @@ class HiddenMarkovModel(MLR_Print):
   Container for attributes of a Hidden Markov Model (HMM), to run a
   "twin experiment", i.e. an "OSSE (observing system simulation experiment)".
   """
-  def __init__(self,f,Obs,t,X0,**kwargs):
-    self.f  = f    if isinstance(f  , Operator)   else Operator  (**f)
+  def __init__(self,Dyn,Obs,t,X0,**kwargs):
+    self.Dyn = Dyn if isinstance(Dyn, Operator)   else Operator  (**Dyn)
     self.Obs = Obs if isinstance(Obs, Operator)   else Operator  (**Obs)
     self.t   = t   if isinstance(t  , Chronology) else Chronology(**t)
     self.X0  = X0  if isinstance(X0 , RV)         else RV        (**X0)
@@ -23,7 +23,7 @@ class HiddenMarkovModel(MLR_Print):
   
   # ndim (.m) shortcuts
   @property
-  def M(self): return self.f.m
+  def M(self): return self.Dyn.m
   @property
   def P(self): return self.Obs.m
 

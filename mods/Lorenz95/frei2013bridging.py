@@ -22,7 +22,7 @@ from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 t = Chronology(0.05,dtObs=0.4,T=4**5,BurnIn=20)
 
 m = 40
-f = {
+Dyn = {
     'm'    : m,
     'model': step,
     'jacob': dfdx,
@@ -37,7 +37,7 @@ Obs['noise'] = 0.5
 Obs['localizer'] = loc_setup( (m,), (2,), jj, periodic=True )
 
 other = {'name': os.path.relpath(__file__,'mods/')}
-HMM = HiddenMarkovModel(f,Obs,t,X0,**other)
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
 
 

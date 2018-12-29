@@ -25,7 +25,7 @@ class Stats(MLR_Print):
     self.xx     = xx
     self.yy     = yy
 
-    m    = HMM.f.m    ; assert m   ==xx.shape[1]
+    m    = HMM.Dyn.m    ; assert m   ==xx.shape[1]
     K    = HMM.t.K    ; assert K   ==xx.shape[0]-1
     p    = HMM.Obs.m    ; assert p   ==yy.shape[1]
     KObs = HMM.t.KObs ; assert KObs==yy.shape[0]-1

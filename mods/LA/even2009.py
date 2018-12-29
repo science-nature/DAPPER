@@ -26,7 +26,7 @@ def step(x,t,dt):
 # WITHOUT explicit matrix (assumes dt == dx/c):
 # step = lambda x,t,dt: np.roll(x,1,axis=x.ndim-1)
 
-f = {
+Dyn = {
     'm'    : m,
     'model': step,
     'jacob': Fm,
@@ -43,7 +43,7 @@ X0 = RV(m=m, func = lambda N: sqrt(5)/10 * sinusoidal_sample(m,wnum,N))
 Obs = partial_direct_obs_setup(m,jj)
 Obs['noise'] = 0.01
 
-HMM = HiddenMarkovModel(f,Obs,tseq,X0,
+HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,
     LP   = LP_setup(jj,conf_patch=True,conf_mult=1),
     name = os.path.relpath(__file__,'mods/'),
     )

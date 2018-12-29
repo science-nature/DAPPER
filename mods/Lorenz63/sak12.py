@@ -12,7 +12,7 @@ p = m
 
 t = Chronology(0.01,dkObs=25,T=4**5,BurnIn=4)
 
-f = {
+Dyn = {
     'm'    : m,
     'model': step,
     'jacob': dfdx,
@@ -26,7 +26,7 @@ jj = arange(m) # obs_inds
 Obs = partial_direct_obs_setup(m, jj)
 Obs['noise'] = 2 # GaussRV(C=CovMat(2*eye(p)))
 
-HMM = HiddenMarkovModel(f,Obs,t,X0,liveplotting=LP_setup(jj))
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0,liveplotting=LP_setup(jj))
 
 
 ####################

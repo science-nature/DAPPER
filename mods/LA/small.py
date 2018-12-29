@@ -17,7 +17,7 @@ def step(x,t,dt):
   assert dt == tseq.dt
   return x @ Fm.T
 
-f = {
+Dyn = {
     'm': m,
     'model': step,
     'noise': 0
@@ -31,7 +31,7 @@ Obs  = partial_direct_obs_setup(m,jj)
 Obs['noise'] = 0.01
 
  
-HMM = HiddenMarkovModel(f,Obs,tseq,X0,
+HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,
     name = os.path.relpath(__file__,'mods/'),
     LP   = LP_setup(jj),
     )

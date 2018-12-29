@@ -18,7 +18,7 @@ day = 0.05/6 * 24 # coz dt=0.05 <--> 6h in "model time scale"
 t = Chronology(0.05,dkObs=1,T=200*day,BurnIn=10*day)
 
 m = 3
-f = {
+Dyn = {
     'm'    : m,
     'model': step,
     'jacob': dfdx,
@@ -36,7 +36,7 @@ Obs = {
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-HMM = HiddenMarkovModel(f,Obs,t,X0,**other)
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
 HMM.liveplotting = LP_setup(arange(m))
 

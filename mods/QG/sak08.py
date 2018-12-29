@@ -11,7 +11,7 @@ from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 ############################
 
 model = model_config("sak08",{})
-f = {
+Dyn = {
     'm'    : np.prod(shape),
     'model': model.step,
     'noise': 0,
@@ -24,7 +24,7 @@ t = Chronology(dt=model.prms['dtout'],dkObs=1,T=1500,BurnIn=250)
 # In my opinion the burn in should be 400.
 # Sakov also used 10 repetitions.
 
-X0 = RV(m=f['m'],file=sample_filename)
+X0 = RV(m=Dyn['m'],file=sample_filename)
 
 
 ############################
@@ -33,7 +33,7 @@ X0 = RV(m=f['m'],file=sample_filename)
 
 # This will look like satellite tracks when plotted in 2D
 p  = 300
-jj = equi_spaced_integers(f['m'],p)
+jj = equi_spaced_integers(Dyn['m'],p)
 jj = jj-jj[0]
 
 # Want: random_offset(t1)==random_offset(t2) if t1==t2.
@@ -79,7 +79,7 @@ Obs['loc_shift'] = lambda ii, dt: ii # no movement (suboptimal, but easy)
 ############################
 # Other
 ############################
-HMM = HiddenMarkovModel(f,Obs,t,X0, LP=LP_setup(obs_inds) )
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0, LP=LP_setup(obs_inds) )
 
 
 ####################

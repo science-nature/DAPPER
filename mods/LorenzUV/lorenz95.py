@@ -19,7 +19,7 @@ nU = LUV.nU
 t = Chronology(dt=0.005,dtObs=0.05,T=4**3,BurnIn=6)
 
 
-f = {
+Dyn = {
     'm'    : LUV.m,
     'model': with_rk4(LUV.dxdt,autonom=True),
     'noise': 0,
@@ -34,7 +34,7 @@ Obs = partial_direct_obs_setup(LUV.m,arange(LUV.nU))
 Obs['noise'] = R
 
 other = {'name': rel_path(__file__,'mods/')+'_full'}
-HMM_full = HiddenMarkovModel(f,Obs,t,X0,**other)
+HMM_full = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
 
 ################
@@ -44,7 +44,7 @@ HMM_full = HiddenMarkovModel(f,Obs,t,X0,**other)
 # Just change dt from 005 to 05
 t = Chronology(dt=0.05, dtObs=0.05,T=4**3,BurnIn=6)
 
-f = {
+Dyn = {
     'm'    : nU,
     'model': with_rk4(LUV.dxdt_parameterized),
     'noise': 0,
@@ -56,7 +56,7 @@ Obs = partial_direct_obs_setup(nU,arange(nU))
 Obs['noise'] = R
  
 other = {'name': rel_path(__file__,'mods/')+'_trunc'}
-HMM_trunc = HiddenMarkovModel(f,Obs,t,X0,**other)
+HMM_trunc = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
 ####################
 # Suggested tuning

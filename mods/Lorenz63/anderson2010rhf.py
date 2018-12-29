@@ -12,7 +12,7 @@ p = m
 
 t = Chronology(0.01,dkObs=12,T=4**5,BurnIn=4)
 
-f = {
+Dyn = {
     'm'    : m,
     'model': step,
     'jacob': dfdx,
@@ -27,7 +27,7 @@ Obs['localizer'] = no_localization([m],arange(m))
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-HMM = HiddenMarkovModel(f,Obs,t,X0,**other)
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
 
 ####################

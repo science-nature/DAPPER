@@ -10,7 +10,7 @@ from common import *
 def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
   def assimilator(stats,HMM,xx,yy):
     # Unpack
-    f,Obs,chrono,X0  = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0  = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     diagR = diag(Obs.noise.C.full)
     Rm12  = diag(diagR**(-0.5))
@@ -28,8 +28,8 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
     stats.assess(0,E=E)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
@@ -99,7 +99,7 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
 @DA_Config
 def DEnKF_diagR(N,infl=1.0,rot=False,**kwargs):
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     R = diag(diag(Obs.noise.C.full))
 
@@ -107,8 +107,8 @@ def DEnKF_diagR(N,infl=1.0,rot=False,**kwargs):
     stats.assess(0,E=E)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E  = f.model(E,t-dt,dt)
-      E += sqrt(dt)*f.noise.sample(N)
+      E  = Dyn.model(E,t-dt,dt)
+      E += sqrt(dt)*Dyn.noise.sample(N)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)

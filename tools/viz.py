@@ -27,7 +27,7 @@ class LivePlot:
 
     HMM    = stats.HMM
     config = stats.config
-    m      = HMM.f.m
+    m      = HMM.Dyn.m
     dt     = HMM.t.dt
 
     # Store

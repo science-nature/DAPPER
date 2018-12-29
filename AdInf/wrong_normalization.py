@@ -27,11 +27,11 @@ Obs['noise'] = 1.0
 X0 = GaussRV(C=1.0,m=m)
 
 f = linear_model_setup(1.2*eye(m))
-f['noise'] = 0.0
+Dyn['noise'] = 0.0
 
 #other = {'name': os.path.relpath(__file__,'mods/')}
-HMM = HiddenMarkovModel(f,Obs,t,X0)
-f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0)
+Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
 
 ##############################
@@ -49,7 +49,7 @@ def EnKF_wrong(N,**kwargs):
   Therefore the results are only relevant with NO MODEL ERROR.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     # Normalization
     #NRM= N-1 # Usual
@@ -61,8 +61,8 @@ def EnKF_wrong(N,**kwargs):
 
     # Loop
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       # Analysis update
       if kObs is not None:
@@ -98,12 +98,12 @@ cfgs += EnKF_wrong(    10,fnoise_treatm='Sqrt-Core')
 ##############################
 
 # Truth/Obs
-xx = zeros((chrono.K+1,f.m))
+xx = zeros((chrono.K+1,Dyn.m))
 yy = zeros((chrono.KObs+1,Obs.m))
 for k,kObs,t,dt in chrono.forecast_range:
   # DONT USE MODEL. Use  (below), or comment out entirely.
   pass # xx := 0.
-  #xx[k] = xx[k-1] + sqrt(dt)*f.noise.sample(1)  # random walk
+  #xx[k] = xx[k-1] + sqrt(dt)*Dyn.noise.sample(1)  # random walk
   if kObs is not None:
     yy[kObs] = Obs(xx[k],t) + Obs.noise.sample(1)
 

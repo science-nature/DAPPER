@@ -467,7 +467,7 @@ def linear_model_setup(M):
   @ens_compatible
   def model(x,t,dt): return dt*(M@x)
   def jacob(x,t,dt): return dt*M
-  f = {
+  Dyn = {
       'm'    : m,
       'model': model,
       'jacob': jacob,

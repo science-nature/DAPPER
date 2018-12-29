@@ -11,7 +11,7 @@ from mods.Lorenz95.liveplotting import LP_setup
 t = Chronology(0.05,dkObs=1,T=4**5,BurnIn=20)
 
 m = 40
-f = {
+Dyn = {
     'm'    : m,
     'model': step,
     'jacob': dfdx,
@@ -26,7 +26,7 @@ Obs['noise'] = 1
 Obs['localizer'] = loc_setup( (m,), (2,), jj, periodic=True )
 
 
-HMM = HiddenMarkovModel(f,Obs,t,X0, LP=LP_setup(jj))
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0, LP=LP_setup(jj))
 
 
 ####################

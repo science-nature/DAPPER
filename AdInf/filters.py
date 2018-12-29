@@ -10,7 +10,7 @@ def EnKF_pre(upd_a,N,infl=1.0,rot=False,**kwargs):
   As EnKF(), except with inflation pre-analysis instead of post-.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     # Init
     E = X0.sample(N)
@@ -18,8 +18,8 @@ def EnKF_pre(upd_a,N,infl=1.0,rot=False,**kwargs):
 
     # Loop
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       # Analysis update
       if kObs is not None:
@@ -45,7 +45,7 @@ def EAKF_A07(N,var_f=None,damp=0.9,CLIP=0.9,ordr='rand',
   """
 
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
     N1   = N-1
     R    = Obs.noise
     Rm12 = Obs.noise.C.sym_sqrt_inv
@@ -64,8 +64,8 @@ def EAKF_A07(N,var_f=None,damp=0.9,CLIP=0.9,ordr='rand',
     stats.var_f = zeros(chrono.KObs+1)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
@@ -162,7 +162,7 @@ def ETKF_M11(N,var_f,var_o=None,CLIP=0.9,damp=1.0,
   """
     
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0,R  = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
+    Dyn,Obs,chrono,X0,R  = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
 
     # Init
     E = X0.sample(N)
@@ -175,8 +175,8 @@ def ETKF_M11(N,var_f,var_o=None,CLIP=0.9,damp=1.0,
 
     # Loop
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       # Analysis update
       if kObs is not None:
@@ -232,7 +232,7 @@ def EnKF_N_mod(N,L=np.inf,nu_f=None,nu_o=1,nu0=100,Cond=True,
   """
     
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0,R  = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
+    Dyn,Obs,chrono,X0,R  = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
 
     if deb: debias = lambda b2: b2*(N*Obs.m - 2)/(N*Obs.m) - 1/N
     else:   debias = lambda b2: b2
@@ -255,8 +255,8 @@ def EnKF_N_mod(N,L=np.inf,nu_f=None,nu_o=1,nu0=100,Cond=True,
 
     # Loop
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       # Analysis update
       if kObs is not None:
@@ -328,7 +328,7 @@ def ETKF_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,deb=False,damp=1.0,
   """
     
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0,R  = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
+    Dyn,Obs,chrono,X0,R  = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
     N1 = N-1
     if deb: debias = lambda b2: b2*(N*Obs.m - 2)/(N*Obs.m) - 1/N
     else:   debias = lambda b2: b2
@@ -348,8 +348,8 @@ def ETKF_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,deb=False,damp=1.0,
 
     # Loop
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       # Analysis update
       if kObs is not None:
@@ -411,7 +411,7 @@ def ETKF_InvCS(N,Uni=True,Var=False,pt='mean',L=np.inf,nu0=1000,deb=False,damp=1
   """
     
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0,R  = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
+    Dyn,Obs,chrono,X0,R  = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
     N1 = N-1
     if deb: debias = lambda b2: 1 + 1/N/b2
     else:   debias = lambda b2: 1
@@ -426,8 +426,8 @@ def ETKF_InvCS(N,Uni=True,Var=False,pt='mean',L=np.inf,nu0=1000,deb=False,damp=1
 
     # Loop
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       iC2.forecast()
 
@@ -488,7 +488,7 @@ def ETKF_InvCS(N,Uni=True,Var=False,pt='mean',L=np.inf,nu0=1000,deb=False,damp=1
 def mode_adjust(prior_mode,dgn_N,N1):
   # As a func of I-KH ("prior's weight"), adjust l1's mode towards 1.
   # Note: I-HK = mean( dgn_N(1.0)**(-1) )/N ≈ 1/(1 + HBH/R).
-  I_KH  = mean( dgn_N(1.0)**(-1) )*N1 # Normalize by f.m ?
+  I_KH  = mean( dgn_N(1.0)**(-1) )*N1 # Normalize by Dyn.m ?
   #I_KH = 1/(1 + (s**2).sum()/N1)     # Alternative: use tr(HBH/R).
   mc    = sqrt(prior_mode**I_KH)      # "mode correction".
   return mc
@@ -504,7 +504,7 @@ def EnKF_N_InvCS(N,g2=0,joint=False,pt='mean',
   """
     
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0,R  = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
+    Dyn,Obs,chrono,X0,R  = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
 
     N1         = N-1      # Abbrev
     eN_        = (N+1)/N  # Effect of unknown mean
@@ -522,8 +522,8 @@ def EnKF_N_InvCS(N,g2=0,joint=False,pt='mean',
 
     # Loop
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       iC2.forecast()
 
@@ -623,7 +623,7 @@ def EnKF_N_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,Cond=True,
   """
     
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0,R  = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
+    Dyn,Obs,chrono,X0,R  = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C
 
     if deb: debias = lambda b2: b2*(N*Obs.m - 2)/(N*Obs.m) - 1/N
     else:   debias = lambda b2: b2
@@ -652,8 +652,8 @@ def EnKF_N_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,Cond=True,
 
     # Loop
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       # Analysis update
       if kObs is not None:

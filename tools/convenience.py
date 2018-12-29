@@ -2,16 +2,16 @@ from common import *
 
 def simulate(HMM,desc='Truth & Obs'):
   """Generate synthetic truth and observations."""
-  f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+  Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
   # Init
-  xx    = zeros((chrono.K+1,f.m))
+  xx    = zeros((chrono.K+1,Dyn.m))
   xx[0] = X0.sample(1)
   yy    = zeros((chrono.KObs+1,Obs.m))
 
   # Loop
   for k,kObs,t,dt in progbar(chrono.forecast_range,desc):
-    xx[k] = f(xx[k-1],t-dt,dt) + sqrt(dt)*f.noise.sample(1)
+    xx[k] = Dyn(xx[k-1],t-dt,dt) + sqrt(dt)*Dyn.noise.sample(1)
     if kObs is not None:
       yy[kObs] = Obs(xx[k],t) + Obs.noise.sample(1)
 

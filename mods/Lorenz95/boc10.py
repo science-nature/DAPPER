@@ -7,7 +7,7 @@ from mods.Lorenz95 import core
 t = Chronology(0.05,dkObs=1,T=4**3,BurnIn=20)
 
 m = 10
-f = {
+Dyn = {
     'm'    : m,
     'model': core.step,
     'noise': 0
@@ -21,7 +21,7 @@ Obs['noise'] = 1.5
  
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-HMM = HiddenMarkovModel(f,Obs,t,X0,**other)
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
 ####################
 # Suggested tuning

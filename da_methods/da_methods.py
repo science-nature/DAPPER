@@ -12,7 +12,7 @@ def EnKF(upd_a,N,infl=1.0,rot=False,**kwargs):
   mods/Lorenz95/sak08.py
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     # Init
     E = X0.sample(N)
@@ -20,8 +20,8 @@ def EnKF(upd_a,N,infl=1.0,rot=False,**kwargs):
 
     # Loop
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       # Analysis update
       if kObs is not None:
@@ -331,14 +331,14 @@ def EnKS(upd_a,N,Lag,infl=1.0,rot=False,**kwargs):
   mods/Lorenz95/raanes2016.py
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
-    E    = zeros((chrono.K+1,N,f.m))
+    E    = zeros((chrono.K+1,N,Dyn.m))
     E[0] = X0.sample(N)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E[k] = f(E[k-1],t-dt,dt)
-      E[k] = add_noise(E[k], dt, f.noise, kwargs)
+      E[k] = Dyn(E[k-1],t-dt,dt)
+      E[k] = add_noise(E[k], dt, Dyn.noise, kwargs)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E[k])
@@ -351,7 +351,7 @@ def EnKS(upd_a,N,Lag,infl=1.0,rot=False,**kwargs):
 
         ELag     = reshape_to(ELag)
         ELag     = EnKF_analysis(ELag,Eo,Obs.noise,y,upd_a,stats,kObs)
-        E[kkLag] = reshape_fr(ELag,f.m)
+        E[kkLag] = reshape_fr(ELag,Dyn.m)
         E[k]     = post_process(E[k],infl,rot)
         stats.assess(k,kObs,'a',E=E[k])
 
@@ -372,16 +372,16 @@ def EnRTS(upd_a,N,cntr,infl=1.0,rot=False,**kwargs):
   mods/Lorenz95/raanes2016.py
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
-    E    = zeros((chrono.K+1,N,f.m))
+    E    = zeros((chrono.K+1,N,Dyn.m))
     Ef   = E.copy()
     E[0] = X0.sample(N)
 
     # Forward pass
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E[k]  = f(E[k-1],t-dt,dt)
-      E[k]  = add_noise(E[k], dt, f.noise, kwargs)
+      E[k]  = Dyn(E[k-1],t-dt,dt)
+      E[k]  = add_noise(E[k], dt, Dyn.noise, kwargs)
       Ef[k] = E[k]
 
       if kObs is not None:
@@ -435,7 +435,7 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
   (full ensemble equality) to the EnKF 'Serial'.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     N1   = N-1
     R    = Obs.noise
@@ -445,8 +445,8 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
     stats.assess(0,E=E)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
@@ -543,7 +543,7 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
   "Efficient data assimilation for spatiotemporal chaos..."
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0,R,N1 = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, N-1
+    Dyn,Obs,chrono,X0,R,N1 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, N-1
 
     _map = multiproc_map if mp else map
 
@@ -556,8 +556,8 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
       # Forecast
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
@@ -780,7 +780,7 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
   """
   def assimilator(stats,HMM,xx,yy):
     # Unpack
-    f,Obs,chrono,X0,R,N1 = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, N-1
+    Dyn,Obs,chrono,X0,R,N1 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, N-1
 
     # Init
     E = X0.sample(N)
@@ -789,8 +789,8 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
     # Loop
     for k,kObs,t,dt in progbar(chrono.forecast_range):
       # Forecast
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       # Analysis
       if kObs is not None:
@@ -925,10 +925,10 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
   # - Modularize upd_a (and localization?)
 
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0,R,KObs, N1 = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, HMM.t.KObs, N-1
+    Dyn,Obs,chrono,X0,R,KObs, N1 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, HMM.t.KObs, N-1
     Rm12 = Obs.noise.C.sym_sqrt_inv
 
-    assert f.noise.C is 0, "Q>0 not yet supported. TODO: implement Sakov et al 2017"
+    assert Dyn.noise.C is 0, "Q>0 not yet supported. TODO: implement Sakov et al 2017"
 
     # Makes the iEnKS very much alike the iExtKS. 
     if bundle: EPS = 1e-4 # Sakov/Boc use T=1e-4*eye(N), but I prefer using T*=1e-4,
@@ -965,7 +965,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
                 E = w2x_left(w + T*EPS)                         # Reconstruct smoothed ensemble.
                 for kObs in DAW:                                # Loop len(DAW) cycles.
                   for k,t,dt in chrono.cycle_to_obs(kObs):      # Loop dkObs steps
-                    E = f(E,t-dt,dt)                            # Forecast 1 dt step
+                    E = Dyn(E,t-dt,dt)                            # Forecast 1 dt step
                 if iteration==0: w2x_right = make_CVar(E,1/EPS) # CVar for x[DAW_right], used for f/a stats.
 
                 # Prepare analysis of current obs: yy[kObs], where kObs==DAW_right if len(DAW)>0
@@ -1041,7 +1041,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
         if 0 <= DAW_left <= KObs:
           for k,t,dt in chrono.cycle_to_obs(DAW_left):
             stats.assess(k-1,None,'u',E=E)
-            E = f(E,t-dt,dt)
+            E = Dyn(E,t-dt,dt)
     # END loop DAW_right
   return assimilator
 
@@ -1051,10 +1051,10 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
 @DA_Config
 def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,rot=False,**kwargs):
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0,R,KObs, N1 = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, HMM.t.KObs, N-1
+    Dyn,Obs,chrono,X0,R,KObs, N1 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, HMM.t.KObs, N-1
     Rm12 = Obs.noise.C.sym_sqrt_inv
 
-    assert f.noise.C is 0, "Q>0 not yet supported. TODO: implement Sakov et al 2017"
+    assert Dyn.noise.C is 0, "Q>0 not yet supported. TODO: implement Sakov et al 2017"
 
     # Makes the iEnKS very much alike the iExtKS. 
     if bundle: EPS = 1e-4 # Sakov/Boc use T=1e-4*eye(N), but I prefer using T*=1e-4,
@@ -1091,7 +1091,7 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
                 E = w2x_left(w + T*EPS)                         # Reconstruct smoothed ensemble.
                 for kObs in DAW:                                # Loop Lag cycles.
                   for k,t,dt in chrono.cycle_to_obs(kObs):      # Loop dkObs steps (1 cycle).
-                    E = f(E,t-dt,dt)                            # Forecast 1 dt step (1 dkObs).
+                    E = Dyn(E,t-dt,dt)                            # Forecast 1 dt step (1 dkObs).
                 if iteration==0: w2x_right = make_CVar(E,1/EPS) # CVar for x[k], used for f/a stats.
 
                 # Prepare analysis of current obs: yy[DAW_right]
@@ -1176,7 +1176,7 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
         if 0 <= DAW_left <= KObs:
           for k,t,dt in chrono.cycle_to_obs(DAW_left):
             stats.assess(k-1,None,'u',E=E)
-            E = f(E,t-dt,dt)
+            E = Dyn(E,t-dt,dt)
     # END loop DAW_right
   return assimilator
 
@@ -1203,8 +1203,8 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
   """
 
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0,R,KObs, N1 = HMM.f, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, HMM.t.KObs, N-1
-    assert f.noise.C is 0, "Q>0 not yet supported. See Sakov et al 2017: 'An iEnKF with mod. error'"
+    Dyn,Obs,chrono,X0,R,KObs, N1 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0, HMM.Obs.noise.C, HMM.t.KObs, N-1
+    assert Dyn.noise.C is 0, "Q>0 not yet supported. See Sakov et al 2017: 'An iEnKF with mod. error'"
 
     # Init DA cycles
     E = X0.sample(N)
@@ -1238,7 +1238,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
             # Forecast
             for kDAW in DAW:                           # Loop Lag cycles
               for k,t,dt in chrono.cycle_to_obs(kDAW): # Loop dkObs steps (1 cycle)
-                E = f(E,t-dt,dt)                       # Forecast 1 dt step (1 dkObs)
+                E = Dyn(E,t-dt,dt)                       # Forecast 1 dt step (1 dkObs)
 
             if iteration==0:
               stats.assess(k,kObs,'f',E=E)
@@ -1307,13 +1307,13 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
         if DAW_0 >= 0:
           for k,t,dt in chrono.cycle_to_obs(DAW_0):
             stats.assess(k-1,None,'u',E=E)
-            E = f(E,t-dt,dt)
+            E = Dyn(E,t-dt,dt)
 
     # Assess the last (Lag-1) obs ranges
     for kDAW in arange(DAW[0]+1,KObs+1):
       for k,t,dt in chrono.cycle_to_obs(kDAW):
         stats.assess(k-1,None,'u',E=E)
-        E = f(E,t-dt,dt)
+        E = Dyn(E,t-dt,dt)
     stats.assess(chrono.K,None,'u',E=E)
 
   return assimilator
@@ -1353,8 +1353,8 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
     #miN = N*miN
 
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12       = f.m, Obs.noise.C.sym_sqrt_inv
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
+    m, Rm12       = Dyn.m, Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1365,10 +1365,10 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
     stats.assess(0,E=E,w=1/N)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      if f.noise.C is not 0:
+      E = Dyn(E,t-dt,dt)
+      if Dyn.noise.C is not 0:
         D  = randn((N,m))
-        E += sqrt(dt*qroot)*(D@f.noise.C.Right)
+        E += sqrt(dt*qroot)*(D@Dyn.noise.C.Right)
 
         if qroot != 1.0:
           # Evaluate p/q (for each col of D) when q:=p**(1/qroot).
@@ -1414,8 +1414,8 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
   Other interesting settings include: mods/Lorenz63/sak12.py
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
-    m, R          = f.m, Obs.noise.C.full
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
+    m, R          = Dyn.m, Obs.noise.C.full
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1425,9 +1425,9 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
     stats.assess(0,E=E,w=1/N)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      if f.noise.C is not 0:
-        E += sqrt(dt)*(randn((N,m))@f.noise.C.Right)
+      E = Dyn(E,t-dt,dt)
+      if Dyn.noise.C is not 0:
+        E += sqrt(dt)*(randn((N,m))@Dyn.noise.C.Right)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E,w=w)
@@ -1483,8 +1483,8 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
   """
 
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12       = f.m, Obs.noise.C.sym_sqrt_inv
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
+    m, Rm12       = Dyn.m, Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1496,10 +1496,10 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
     stats.assess(0,E=E,w=1/N)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      if f.noise.C is not 0:
+      E = Dyn(E,t-dt,dt)
+      if Dyn.noise.C is not 0:
         D  = randn((N,m))
-        E += sqrt(dt*qroot)*(D@f.noise.C.Right)
+        E += sqrt(dt*qroot)*(D@Dyn.noise.C.Right)
 
         if qroot != 1.0:
           # Evaluate p/q (for each col of D) when q:=p**(1/qroot).
@@ -1557,8 +1557,8 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
   Or maybe we should use x_a^n distributed according to a sqrt update?
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12, Ri   = f.m, Obs.noise.C.sym_sqrt_inv, Obs.noise.C.inv
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
+    m, Rm12, Ri   = Dyn.m, Obs.noise.C.sym_sqrt_inv, Obs.noise.C.inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1571,9 +1571,9 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
     stats.assess(0,E=E,w=1/N)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      if f.noise.C is not 0:
-        E += sqrt(dt)*(randn((N,m))@f.noise.C.Right)
+      E = Dyn(E,t-dt,dt)
+      if Dyn.noise.C is not 0:
+        E += sqrt(dt)*(randn((N,m))@Dyn.noise.C.Right)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E,w=w)
@@ -1668,8 +1668,8 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
   Additional idea: employ w-adjustment to obtain N unique particles, without jittering.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12       = f.m, Obs.noise.C.sym_sqrt_inv
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
+    m, Rm12       = Dyn.m, Obs.noise.C.sym_sqrt_inv
 
     DD = None
     E  = X0.sample(N)
@@ -1680,9 +1680,9 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
     stats.assess(0,E=E,w=1/N)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      if f.noise.C is not 0:
-        E += sqrt(dt)*(randn((N,m))@f.noise.C.Right)
+      E = Dyn(E,t-dt,dt)
+      if Dyn.noise.C is not 0:
+        E += sqrt(dt)*(randn((N,m))@Dyn.noise.C.Right)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E,w=w)
@@ -1959,14 +1959,14 @@ def EnCheat(upd_a,N,infl=1.0,rot=False,**kwargs):
   NB: The forecasts (and their rmse) are given by the standard EnKF.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     E = X0.sample(N)
     stats.assess(0,E=E)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       if kObs is not None:
         # Standard EnKF analysis
@@ -1979,7 +1979,7 @@ def EnCheat(upd_a,N,infl=1.0,rot=False,**kwargs):
         w,res,_,_ = sla.lstsq(E.T, xx[k])
         if not res.size:
           res = 0
-        res = diag((res/HMM.f.m) * ones(HMM.f.m))
+        res = diag((res/HMM.Dyn.m) * ones(HMM.Dyn.m))
         opt = w @ E
         # NB: Center on the optimal solution?
         #E += opt - mean(E,0)
@@ -1997,7 +1997,7 @@ def Climatology(**kwargs):
   (unfairly) advantageous if the simulation is too short (vs mixing time).
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     muC = mean(xx,0)
     AC  = xx - muC
@@ -2019,7 +2019,7 @@ def OptInterp(**kwargs):
   but with a prior from the Climatology.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     # Get H.
     msg  = "For speed, only time-independent H is supported."
@@ -2034,7 +2034,7 @@ def OptInterp(**kwargs):
 
     # Setup scalar "time-series" covariance dynamics.
     # ONLY USED FOR DIAGNOSTICS, not to change the Kalman gain.
-    Pa    = (eye(f.m) - KG@H) @ PC
+    Pa    = (eye(Dyn.m) - KG@H) @ PC
     CorrL = estimate_corr_length(AC.ravel(order='F'))
     WaveC = wave_crest(trace(Pa)/trace(2*PC),CorrL)
 
@@ -2044,7 +2044,7 @@ def OptInterp(**kwargs):
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
       # Forecast
-      mu = f(mu,t-dt,dt)
+      mu = Dyn(mu,t-dt,dt)
       if kObs is not None:
         stats.assess(k,kObs,'f',mu=muC,Cov=PC)
         # Analysis
@@ -2064,7 +2064,7 @@ def Var3D(infl=1.0,**kwargs):
   """
   # TODO: The wave-crest yields good results for sak08, but not for boc10 
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     # Compute "climatology"
     muC = mean(xx,0)
@@ -2082,7 +2082,7 @@ def Var3D(infl=1.0,**kwargs):
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
       # Forecast
-      mu = f(mu,t-dt,dt)
+      mu = Dyn(mu,t-dt,dt)
       P  = 2*PC*WaveC(k)
 
       if kObs is not None:
@@ -2096,7 +2096,7 @@ def Var3D(infl=1.0,**kwargs):
 
         # Re-calibrate wave_crest with new W0 = Pa/(2*PC).
         # Note: obs innovations are not used to estimate P!
-        Pa    = (eye(f.m) - KH) @ P
+        Pa    = (eye(Dyn.m) - KH) @ P
         WaveC = wave_crest(trace(Pa)/trace(2*PC),CorrL)
 
       stats.assess(k,kObs,mu=mu,Cov=2*PC*WaveC(k,kObs))
@@ -2109,7 +2109,7 @@ def Var3D_Lag(infl=1.0,**kwargs):
   Background covariance based on lagged time series.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     # Get H.
     msg  = "For speed, only time-independent H is supported."
@@ -2130,7 +2130,7 @@ def Var3D_Lag(infl=1.0,**kwargs):
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
       # Forecast
-      mu = f(mu,t-dt,dt)
+      mu = Dyn(mu,t-dt,dt)
       if kObs is not None:
         stats.assess(k,kObs,'f',mu=mu,Cov=PC)
         # Analysis
@@ -2194,18 +2194,18 @@ def ExtRTS(infl=1.0,**kwargs):
   """
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     R  = Obs.noise.C.full
-    Q  = 0 if f.noise.C==0 else f.noise.C.full
+    Q  = 0 if Dyn.noise.C==0 else Dyn.noise.C.full
 
-    mu    = zeros((chrono.K+1,f.m))
-    P     = zeros((chrono.K+1,f.m,f.m))
+    mu    = zeros((chrono.K+1,Dyn.m))
+    P     = zeros((chrono.K+1,Dyn.m,Dyn.m))
 
     # Forecasted values
-    muf   = zeros((chrono.K+1,f.m))
-    Pf    = zeros((chrono.K+1,f.m,f.m))
-    Ff    = zeros((chrono.K+1,f.m,f.m))
+    muf   = zeros((chrono.K+1,Dyn.m))
+    Pf    = zeros((chrono.K+1,Dyn.m,Dyn.m))
+    Ff    = zeros((chrono.K+1,Dyn.m,Dyn.m))
 
     mu[0] = X0.mu
     P [0] = X0.C.full
@@ -2214,8 +2214,8 @@ def ExtRTS(infl=1.0,**kwargs):
 
     # Forward pass
     for k,kObs,t,dt in progbar(chrono.forecast_range, 'ExtRTS->'):
-      mu[k]  = f(mu[k-1],t-dt,dt)
-      F      = f.jacob(mu[k-1],t-dt,dt) 
+      mu[k]  = Dyn(mu[k-1],t-dt,dt)
+      F      = Dyn.jacob(mu[k-1],t-dt,dt) 
       P [k]  = infl**(dt)*(F@P[k-1]@F.T) + dt*Q
 
       # Store forecast and Jacobian
@@ -2230,7 +2230,7 @@ def ExtRTS(infl=1.0,**kwargs):
         y     = yy[kObs]
         mu[k] = mu[k] + KG@(y - Obs(mu[k],t))
         KH    = KG@H
-        P[k]  = (eye(f.m) - KH) @ P[k]
+        P[k]  = (eye(Dyn.m) - KH) @ P[k]
         stats.assess(k,kObs,'a',mu=mu[k],Cov=P[k])
 
     # Backward pass
@@ -2260,10 +2260,10 @@ def ExtKF(infl=1.0,**kwargs):
     Specifying it this way (per unit time) means less tuning.
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     R  = Obs.noise.C.full
-    Q  = 0 if f.noise.C==0 else f.noise.C.full
+    Q  = 0 if Dyn.noise.C==0 else Dyn.noise.C.full
 
     mu = X0.mu
     P  = X0.C.full
@@ -2272,8 +2272,8 @@ def ExtKF(infl=1.0,**kwargs):
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
       
-      mu = f(mu,t-dt,dt)
-      F  = f.jacob(mu,t-dt,dt) 
+      mu = Dyn(mu,t-dt,dt)
+      F  = Dyn.jacob(mu,t-dt,dt) 
       P  = infl**(dt)*(F@P@F.T) + dt*Q
 
       # Of academic interest? Higher-order linearization:
@@ -2286,9 +2286,9 @@ def ExtKF(infl=1.0,**kwargs):
         y  = yy[kObs]
         mu = mu + KG@(y - Obs(mu,t))
         KH = KG@H
-        P  = (eye(f.m) - KH) @ P
+        P  = (eye(Dyn.m) - KH) @ P
 
-        stats.trHK[kObs] = trace(KH)/f.m
+        stats.trHK[kObs] = trace(KH)/Dyn.m
 
       stats.assess(k,kObs,mu=mu,Cov=P)
   return assimilator
@@ -2309,7 +2309,7 @@ def RHF(N,ordr='rand',infl=1.0,rot=False,**kwargs):
   mods/Lorenz63/anderson2010non.py 
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     N1         = N-1
     step       = 1/N
@@ -2322,8 +2322,8 @@ def RHF(N,ordr='rand',infl=1.0,rot=False,**kwargs):
     stats.assess(0,E=E)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)
@@ -2379,15 +2379,15 @@ def LNETF(N,loc_rad,taper='GC',infl=1.0,Rs=1.0,rot=False,**kwargs):
   mods/Lorenz95/wiljes2017.py
   """
   def assimilator(stats,HMM,xx,yy):
-    f,Obs,chrono,X0 = HMM.f, HMM.Obs, HMM.t, HMM.X0
+    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
     Rm12 = Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     stats.assess(0,E=E)
 
     for k,kObs,t,dt in progbar(chrono.forecast_range):
-      E = f(E,t-dt,dt)
-      E = add_noise(E, dt, f.noise, kwargs)
+      E = Dyn(E,t-dt,dt)
+      E = add_noise(E, dt, Dyn.noise, kwargs)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E)

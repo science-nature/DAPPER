@@ -58,7 +58,7 @@ for k in range(K):
   # Alternative 2: don't normalize. Should have no bias.
   #w /= N
 
-  f_estim = w @ f(E)
+  f_estim = w @ Dyn(E)
   bias += [f_estim - f_expect]
 
 print("Average err:",np.mean(bias))

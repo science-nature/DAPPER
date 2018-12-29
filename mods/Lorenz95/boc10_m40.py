@@ -2,7 +2,7 @@
 from mods.Lorenz95.boc10 import *
 
 m = 40
-f['m'] = m
+Dyn['m'] = m
 
 X0 = GaussRV(m=m, C=0.001)
 
@@ -11,7 +11,7 @@ Obs = partial_direct_obs_setup(m,jj)
 Obs['noise'] = 1.5
  
 other = {'name': os.path.relpath(__file__,'mods/')}
-HMM = HiddenMarkovModel(f,Obs,t,X0,**other)
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
 ####################
 # Suggested tuning

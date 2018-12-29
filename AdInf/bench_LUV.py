@@ -59,7 +59,7 @@ def estimate_parameterization(xx):
       
     with set_tmp(LUV,'prmzt',lambda t,x: 0): # No parameterization
       for k,x in enumerate(progbar(TC[:-1],desc='Paramzt')):
-        Mod   = HMM_trunc.f(x,np.nan,dt_)
+        Mod   = HMM_trunc.Dyn(x,np.nan,dt_)
         Diff  = Mod - TC[k+1]
         gg[k] = Diff/dt_
 

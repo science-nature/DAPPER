@@ -70,7 +70,7 @@ fig, (ax1, ax2) = plt.subplots(2,1,sharex=True,num=1, gridspec_kw = {'height_rat
 
 xx = linspace(*xX,1001)
 ax1.plot(xx,f(xx), label=f.__name__)
-ax1.plot(E0[0,:],f(E0)[0,:], 'o')
+ax1.plot(E0[0,:],Dyn(E0)[0,:], 'o')
 ax1.legend()
 ax1.set_title('Dim 0')
 ax2.hist(E0[0,:],bins=linspace(*xX,40),normed=True)

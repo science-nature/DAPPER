@@ -10,6 +10,9 @@ class HiddenMarkovModel(MLR_Print):
     self.Obs = Obs if isinstance(Obs, Operator)   else Operator  (**Obs)
     self.t   = t   if isinstance(t  , Chronology) else Chronology(**t)
     self.X0  = X0  if isinstance(X0 , RV)         else RV        (**X0)
+    # Assign name by file (using inspect magic)
+    name = inspect.getfile(inspect.stack()[1][0])
+    self.name = os.path.relpath(name,'mods/')
     # Write the rest of parameters
     de_abbreviate(kwargs, [('LP','liveplotting')])
     for key, value in kwargs.items():

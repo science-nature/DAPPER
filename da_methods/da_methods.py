@@ -1354,7 +1354,7 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
 
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12       = Dyn.m, Obs.noise.C.sym_sqrt_inv
+    m, Rm12 = Dyn.m, Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1415,7 +1415,7 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
   """
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, R          = Dyn.m, Obs.noise.C.full
+    m, R = Dyn.m, Obs.noise.C.full
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1484,7 +1484,7 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
 
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12       = Dyn.m, Obs.noise.C.sym_sqrt_inv
+    m, Rm12 = Dyn.m, Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1558,7 +1558,7 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
   """
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12, Ri   = Dyn.m, Obs.noise.C.sym_sqrt_inv, Obs.noise.C.inv
+    m, Rm12, Ri = Dyn.m, Obs.noise.C.sym_sqrt_inv, Obs.noise.C.inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1669,7 +1669,7 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
   """
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12       = Dyn.m, Obs.noise.C.sym_sqrt_inv
+    m, Rm12 = Dyn.m, Obs.noise.C.sym_sqrt_inv
 
     DD = None
     E  = X0.sample(N)

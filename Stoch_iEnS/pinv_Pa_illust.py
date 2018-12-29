@@ -5,7 +5,7 @@ from common import *
 
 sd0 = seed_init()
 
-GUI = False # else make animation
+GUI = True # else make animation
 
 # N=2 gives the interesting tinv case.
 # Use N>2 for validation purposes.

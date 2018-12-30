@@ -965,7 +965,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
                 E = w2x_left(w + T*EPS)                         # Reconstruct smoothed ensemble.
                 for kObs in DAW:                                # Loop len(DAW) cycles.
                   for k,t,dt in chrono.cycle_to_obs(kObs):      # Loop dkObs steps
-                    E = Dyn(E,t-dt,dt)                            # Forecast 1 dt step
+                    E = Dyn(E,t-dt,dt)                          # Forecast 1 dt step
                 if iteration==0: w2x_right = make_CVar(E,1/EPS) # CVar for x[DAW_right], used for f/a stats.
 
                 # Prepare analysis of current obs: yy[kObs], where kObs==DAW_right if len(DAW)>0
@@ -1091,7 +1091,7 @@ def iWorking(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1
                 E = w2x_left(w + T*EPS)                         # Reconstruct smoothed ensemble.
                 for kObs in DAW:                                # Loop Lag cycles.
                   for k,t,dt in chrono.cycle_to_obs(kObs):      # Loop dkObs steps (1 cycle).
-                    E = Dyn(E,t-dt,dt)                            # Forecast 1 dt step (1 dkObs).
+                    E = Dyn(E,t-dt,dt)                          # Forecast 1 dt step (1 dkObs).
                 if iteration==0: w2x_right = make_CVar(E,1/EPS) # CVar for x[k], used for f/a stats.
 
                 # Prepare analysis of current obs: yy[DAW_right]
@@ -1238,7 +1238,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
             # Forecast
             for kDAW in DAW:                           # Loop Lag cycles
               for k,t,dt in chrono.cycle_to_obs(kDAW): # Loop dkObs steps (1 cycle)
-                E = Dyn(E,t-dt,dt)                       # Forecast 1 dt step (1 dkObs)
+                E = Dyn(E,t-dt,dt)                     # Forecast 1 dt step (1 dkObs)
 
             if iteration==0:
               stats.assess(k,kObs,'f',E=E)

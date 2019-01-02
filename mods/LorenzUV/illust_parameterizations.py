@@ -32,7 +32,7 @@ x0 = randn(LUV.M)
 
 true_step  = with_rk4(LUV.dxdt      ,autonom=True)
 model_step = with_rk4(LUV.dxdt_trunc,autonom=True)
-true_K     = with_recursion(true_step,with_prog=1)
+true_K     = with_recursion(true_step,prog=1)
 
 ###########################
 # Compute truth trajectory

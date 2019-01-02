@@ -39,10 +39,10 @@ ax = fg.gca()
 L = 20 # Num of lines to plot
 start = int(3e5*dt)
 step  = 3
-for i,p in enumerate(range(L)):
-  k = start + p*step
-  c = cm.viridis(1-p/L)
-  a = 0.8-0.2*p/L
+for i,P in enumerate(range(L)):
+  k = start + P*step
+  c = cm.viridis(1-P/L)
+  a = 0.8-0.2*P/L
   plt.plot(iU  ,Ui(xx[k][:nU]),color=c,lw=2  ,alpha=a)[0]
   if i%2==0:
     plt.plot(jj/J,xx[k][circV]  ,color=c,lw=0.7,alpha=a)[0]
@@ -122,10 +122,10 @@ ax.grid(color='k',alpha=0.6,lw=0.4,axis='y',which='major')
 # ax.set_facecolor('white')
 # ax.set_aspect('equal')
 # L = 40 # Num of lines to plot
-# for p in range(L):
-#   k = 143 + p*3
-#   c = cm.viridis(1-p/L)
-#   a = 0.8-0.2*p/L
+# for P in range(L):
+#   k = 143 + P*3
+#   c = cm.viridis(1-P/L)
+#   a = 0.8-0.2*P/L
 #   plt.plot(*tU(xx[k][circU]),color=c,lw=2,alpha=a)[0]
 #   plt.plot(*tV(xx[k][circV]),color=c,lw=1,alpha=a)[0]
 

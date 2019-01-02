@@ -13,8 +13,8 @@ from mods.LA.core import sinusoidal_sample, Fmat
 from mods.Lorenz95.liveplotting import LP_setup
 
 M = 1000
-p = 4
-jj = equi_spaced_integers(M,p)
+P = 4
+jj = equi_spaced_integers(M,P)
 
 tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1)
 

@@ -11,7 +11,7 @@ from mods.Lorenz84.core import step, dfdx
 from mods.Lorenz63.liveplotting import LP_setup
 
 M = 3
-p = M
+P = M
 
 
 day = 0.05/6 * 24 # coz dt=0.05 <--> 6h in "model time scale"
@@ -28,9 +28,9 @@ Dyn = {
 X0  = GaussRV(C=0.01,M=M) # Decreased from Pajonk's C=1.
 
 Obs = {
-    'M'    : p,
+    'M'    : P,
     'model': Id_op(),
-    'jacob': Id_mat(p),
+    'jacob': Id_mat(P),
     'noise': 0.1,
     }
 

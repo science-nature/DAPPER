@@ -63,7 +63,7 @@ def hostname_hash():
   """
   h = socket.gethostname()
   h = h[:2]+h[-2:]
-  h = sum([10**p*np.mod(ord(c),10) for p,c in enumerate(h)])
+  h = sum([10**q*np.mod(ord(c),10) for q,c in enumerate(h)])
   return h
 
 

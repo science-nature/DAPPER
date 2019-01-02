@@ -338,7 +338,7 @@ Conventions:
 * fau_series
 * E,w,A
 * M-by-N
-* M (not ndims coz thats like 2 for matrices), p, chrono
+* M (not ndims coz thats like 2 for matrices), P, chrono
 * n
 * ii, jj
 * xx,yy

@@ -62,41 +62,41 @@
 # The question then remains (to be proven combinatorically?)
 # if the +/- 1 matrices exist for dim>4
 # Furthermore, experiments do not seem to indicate that I can push
-# p much lower than for the case H = Identity,
+# P much lower than for the case H = Identity,
 # even though the rmse is a lot lower with spectral H.
 # Am I missing something?
 
 
 from mods.Lorenz95.sak08 import *
 
-# The (M-p) highest frequency observation modes are
+# The (M-P) highest frequency observation modes are
 # left out of H below.
-# If p>M, then H no longer has independent
+# If P>M, then H no longer has independent
 # (let alone orthogonal) columns,
 # yet more information is gained, since the
 # observations are noisy.
-p = 12
+P = 12
 
 
 X0 = GaussRV(M=M, C=0.001) 
 
-def make_H(p,M):
+def make_H(P,M):
   xx = linspace(-1,1,M+1)[1:]
-  H = zeros((p,M))
+  H = zeros((P,M))
   H[0] = 1/sqrt(2)
-  for k in range(-(p//2),(p+1)//2):
+  for k in range(-(P//2),(P+1)//2):
     ind = 2*abs(k) - (k<0)
     H[ind] = sin(pi*k*xx + pi/4)
   H /= sqrt(M/2)
   return H
 
-H = make_H(p,M)
+H = make_H(P,M)
 # plt.figure(1).gca().matshow(H)
 # plt.figure(2).gca().matshow(H @ H.T)
 
 
 # "raw" obs plotting
-# if p<=M:
+# if P<=M:
   # Hinv = H.T
 # else:
   # Hinv = sla.pinv2(H)
@@ -105,7 +105,7 @@ H = make_H(p,M)
   # return lh
 
 # "implicit" (interpolated sine/cosine) obs plotting
-Hplot = make_H(p,max(p,201))
+Hplot = make_H(P,max(P,201))
 Hplot_inv = Hplot.T
 def yplot(y):
   x = y @ Hplot_inv.T
@@ -114,9 +114,9 @@ def yplot(y):
   return lh
 
 Obs = {
-    'M': p,
+    'M': P,
     'model': lambda x,t: x @ H.T,
-    'noise': GaussRV(C=0.01*eye(p)),
+    'noise': GaussRV(C=0.01*eye(P)),
     'plot' : yplot,
     }
 

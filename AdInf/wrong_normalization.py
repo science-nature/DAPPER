@@ -18,9 +18,9 @@ sd0 = seed(5)
 t = Chronology(dt=1,dkObs=5,T=600,BurnIn=500)
 
 M = 5;
-p = M;
+P = M;
 
-jj = equi_spaced_integers(M,p)
+jj = equi_spaced_integers(M,P)
 Obs = partial_direct_obs_setup(M,jj)
 Obs['noise'] = 1.0
 

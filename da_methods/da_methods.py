@@ -1232,7 +1232,7 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
         E += sqrt(dt*qroot)*(D@Dyn.noise.C.Right)
 
         if qroot != 1.0:
-          # Evaluate p/q (for each col of D) when q:=p**(1/qroot).
+          # Evaluate P/q (for each col of D) when q:=P**(1/qroot).
           w *= exp(-0.5*np.sum(D**2, axis=1) * (1 - 1/qroot))
           w /= w.sum()
 
@@ -1357,7 +1357,7 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
         E += sqrt(dt*qroot)*(D@Dyn.noise.C.Right)
 
         if qroot != 1.0:
-          # Evaluate p/q (for each col of D) when q:=p**(1/qroot).
+          # Evaluate P/q (for each col of D) when q:=P**(1/qroot).
           w *= exp(-0.5*np.sum(D**2, axis=1) * (1 - 1/qroot))
           w /= w.sum()
 

@@ -9,7 +9,7 @@ N = 5*10**2
 
 # Target distribution
 dof = 3
-p = np.random.chisquare(dof,N)
+P = np.random.chisquare(dof,N)
 def pdf(x,k):
   return 2**(-k/2) / sp.special.gamma(k/2) * x**(k/2 - 1) * exp(-x/2)
 
@@ -33,7 +33,7 @@ xx   = linspace(0,XL,201)
 bins = linspace(0,XL,50)
 
 # Illustrate
-axs[0].hist(p,bins,normed=True,label='Example sample')
+axs[0].hist(P,bins,normed=True,label='Example sample')
 axs[1].hist(q,bins,normed=True,label='Proposal sample and pdf')
 axs[2].hist(q,bins,normed=True,label='Proposal sample - weighted', weights=w)
 axs[3].hist(r,bins,normed=True,label='resmpl: Residual')

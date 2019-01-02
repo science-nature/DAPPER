@@ -11,9 +11,9 @@ from mods.Lorenz95.liveplotting import LP_setup
 tseq = Chronology(dt=1,dkObs=5,T=500,BurnIn=60)
 
 M = 1000;
-p = 40;
+P = 40;
 
-jj = equi_spaced_integers(M,p)
+jj = equi_spaced_integers(M,P)
 Obs = partial_direct_obs_setup(M,jj)
 Obs['noise'] = 0.01
 

@@ -478,26 +478,26 @@ def linear_model_setup(ModelMatrix):
   return f
 
 
-def equi_spaced_integers(M,p):
-  """Provide a range of p equispaced integers between 0 and M-1"""
-  return np.round(linspace(floor(M/p/2),ceil(M-M/p/2-1),p)).astype(int)
+def equi_spaced_integers(M,P):
+  """Provide a range of P equispaced integers between 0 and M-1"""
+  return np.round(linspace(floor(M/P/2),ceil(M-M/P/2-1),P)).astype(int)
 
 
 def direct_obs_matrix(M,obs_inds):
   """Matrix that "picks" state elements obs_inds out of range(M)"""
-  p = len(obs_inds)
-  H = zeros((p,M))
-  H[range(p),obs_inds] = 1
+  P = len(obs_inds)
+  H = zeros((P,M))
+  H[range(P),obs_inds] = 1
   return H
 
 def partial_direct_obs_setup(M,obs_inds):
-  p = len(obs_inds)
+  P = len(obs_inds)
   H = direct_obs_matrix(M,obs_inds)
   @ens_compatible
   def model(x,t): return x[obs_inds]
   def jacob(x,t): return H
   Obs = {
-      'M'    : p,
+      'M'    : P,
       'model': model,
       'jacob': jacob,
       }

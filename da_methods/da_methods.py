@@ -1073,7 +1073,6 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
 
     # Init DA cycles
     E = X0.sample(N)
-    stats.iters = np.full(KObs+1,nan)
 
     # Loop DA cycles
     for kObs in progbar(arange(KObs+1)):
@@ -1224,9 +1223,6 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
     E = X0.sample(N)
     w = 1/N*ones(N)
 
-    stats.N_eff  = np.full(chrono.KObs+1,nan)
-    stats.resmpl = zeros(chrono.KObs+1,dtype=bool)
-    stats.innovs = np.full((chrono.KObs+1,N,Obs.m),nan)
     stats.assess(0,E=E,w=1/N)
 
     for k,kObs,t,dt in progbar(chrono.ticker):
@@ -1285,8 +1281,6 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
     E = X0.sample(N)
     w = 1/N*ones(N)
 
-    stats.N_eff  = np.full(chrono.KObs+1,nan)
-    stats.resmpl = zeros(chrono.KObs+1,dtype=bool)
     stats.assess(0,E=E,w=1/N)
 
     for k,kObs,t,dt in progbar(chrono.ticker):
@@ -1354,10 +1348,6 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
     E = X0.sample(N)
     w = 1/N*ones(N)
 
-    stats.N_eff  = np.full(chrono.KObs+1,nan)
-    stats.resmpl = zeros(chrono.KObs+1,dtype=bool)
-    stats.wroot  = np.full(chrono.KObs+1,nan)
-    stats.innovs = np.full((chrono.KObs+1,N,Obs.m),nan)
     stats.assess(0,E=E,w=1/N)
 
     for k,kObs,t,dt in progbar(chrono.ticker):
@@ -1430,9 +1420,6 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
 
     DD = None
     
-    stats.N_eff  = np.full(chrono.KObs+1,nan)
-    stats.wroot  = np.full(chrono.KObs+1,nan)
-    stats.resmpl = zeros(chrono.KObs+1,dtype=bool)
     stats.assess(0,E=E,w=1/N)
 
     for k,kObs,t,dt in progbar(chrono.ticker):
@@ -1540,8 +1527,6 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
     E  = X0.sample(N)
     w  = 1/N*ones(N)
 
-    stats.N_eff  = np.full(chrono.KObs+1,nan)
-    stats.resmpl = zeros(chrono.KObs+1,dtype=bool)
     stats.assess(0,E=E,w=1/N)
 
     for k,kObs,t,dt in progbar(chrono.ticker):

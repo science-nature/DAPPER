@@ -19,18 +19,29 @@ class Stats(MLR_Print):
     Note: you may well allocate & compute individual stats elsewhere,
           and simply assigne them as an attribute to the stats instance.
     """
-
+    ######################################
+    # Save twin experiment settings 
+    ######################################
     self.config = config
     self.HMM    = HMM
     self.xx     = xx
     self.yy     = yy
 
-    m    = HMM.Dyn.m    ; assert m   ==xx.shape[1]
+    m    = HMM.Dyn.m  ; assert m   ==xx.shape[1]
     K    = HMM.t.K    ; assert K   ==xx.shape[0]-1
-    p    = HMM.Obs.m    ; assert p   ==yy.shape[1]
+    p    = HMM.Obs.m  ; assert p   ==yy.shape[1]
     KObs = HMM.t.KObs ; assert KObs==yy.shape[0]-1
 
-    # time-series constructor alias
+
+    ######################################
+    # Declare time series of various stats
+    ######################################
+    # Note: These can be declared these anywhere
+    # (Python allows dynamic class attributes),
+    # for example at the top of your experimental DA method,
+    # which avoids "polluting" this space.
+
+    # time-series (FAU type) constructor alias
     new_series = self.new_FAU_series
 
     self.mu     = new_series(m) # Mean
@@ -60,10 +71,18 @@ class Stats(MLR_Print):
     self.svals = new_series(m_Nm) # Principal component (SVD) scores
     self.umisf = new_series(m_Nm) # Error in component directions
 
-    # Other
+    ######################################
+    # Declare non-FAU series
+    ######################################
     self.trHK  = np.full(KObs+1, nan)
     self.infl  = np.full(KObs+1, nan)
     self.iters = np.full(KObs+1, nan)
+
+    # Weight-related
+    self.resmpl = np.zeros(KObs+1         ,dtype=bool)
+    self.N_eff  = np.full( KObs+1         ,nan)
+    self.wroot  = np.full( KObs+1         ,nan)
+    self.innovs = np.full((KObs+1,N,Obs.m),nan)
 
 
   def assess(self,k,kObs=None,f_a_u=None,

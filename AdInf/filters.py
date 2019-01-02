@@ -17,7 +17,7 @@ def EnKF_pre(upd_a,N,infl=1.0,rot=False,**kwargs):
     stats.assess(0,E=E)
 
     # Loop
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -63,7 +63,7 @@ def EAKF_A07(N,var_f=None,damp=0.9,CLIP=0.9,ordr='rand',
 
     stats.var_f = zeros(chrono.KObs+1)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -174,7 +174,7 @@ def ETKF_M11(N,var_f,var_o=None,CLIP=0.9,damp=1.0,
     b2 = 1.0
 
     # Loop
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -254,7 +254,7 @@ def EnKF_N_mod(N,L=np.inf,nu_f=None,nu_o=1,nu0=100,Cond=True,
     stats.nu_f = np.full(chrono.KObs+1,nan)
 
     # Loop
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -347,7 +347,7 @@ def ETKF_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,deb=False,damp=1.0,
     stats.nu_o = np.full(chrono.KObs+1,nan)
 
     # Loop
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -425,7 +425,7 @@ def ETKF_InvCS(N,Uni=True,Var=False,pt='mean',L=np.inf,nu0=1000,deb=False,damp=1
     stats.nu_f = np.full(chrono.KObs+1,nan)
 
     # Loop
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -521,7 +521,7 @@ def EnKF_N_InvCS(N,g2=0,joint=False,pt='mean',
     stats.nu_f = np.full(chrono.KObs+1,nan)
 
     # Loop
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -651,7 +651,7 @@ def EnKF_N_Xplct(N,L=np.inf,nu_f=None,nu_o1=True,nu0=100,Cond=True,
     stats.nu_o = np.full(chrono.KObs+1,nan)
 
     # Loop
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 

@@ -204,7 +204,7 @@ DAPPER is aimed at research and teaching (see discussion on top).
 Example of limitations:
  * It is not suited for very big models (>60k unknowns).
  * Time-dependent error covariances and changes in lengths of state/obs
-     (although models Dyn and Obs may otherwise be time-dependent).
+     (although models f and Obs may otherwise be time-dependent).
  * Non-uniform time sequences not fully supported.
 
 Also, DAPPER comes with no guarantees/support.
@@ -368,10 +368,11 @@ TODO
 * Make function DA_Config() a member called 'method' of DAC. Rename DAC to DA_Config.
     => Yields (???) decorator syntax @DA_Config.method  (which would look nice) 
 * Rename DA_Config to DA_method or something
+* Get rid of Tuple assignment of twin/setup items
 
 * Rename common to DAPPER_workspace.
 * Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
-* Defaults file (fail_gently, liveplotting, store_u mkl.set_num_threads, etc)
+* Defaults file (fail_gently, liveplotting, store_u mkl.set_num_threads, print options in MLR_print)
 
 * Requirements
 
@@ -380,13 +381,12 @@ TODO
 * Fix Windows bug (key listening: ncurses?)
 
 * Fix dtObs bug
+* Fix __name__ bug
 
 * Review ens_compatible
 * Rm vectorize0 (too messy). See SO.com/questions/29318459 and more
 
-* Get rid of Tuple assignment of twin/setup items
-
-* Change m to M and ndim? (what about model?)
+* Change m to M and/or len? (caution: other things called M)
 
 * Post version on norce, nersc and link from enkf.nersc
 

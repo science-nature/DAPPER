@@ -60,7 +60,7 @@ def EnKF_wrong(N,**kwargs):
     stats.assess(0,E=E)
 
     # Loop
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -100,7 +100,7 @@ cfgs += EnKF_wrong(    10,fnoise_treatm='Sqrt-Core')
 # Truth/Obs
 xx = zeros((chrono.K+1,Dyn.m))
 yy = zeros((chrono.KObs+1,Obs.m))
-for k,kObs,t,dt in chrono.forecast_range:
+for k,kObs,t,dt in chrono.ticker:
   # DONT USE MODEL. Use  (below), or comment out entirely.
   pass # xx := 0.
   #xx[k] = xx[k-1] + sqrt(dt)*Dyn.noise.sample(1)  # random walk

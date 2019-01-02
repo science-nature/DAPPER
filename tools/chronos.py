@@ -161,10 +161,10 @@ class Chronology:
   # Other
   ######################################
   @property
-  def forecast_range(self):
+  def ticker(self):
     """"
     Fancy version of range(1,K+1),
-    also providing t, dt, and kObs.
+    also yields t, dt, and kObs.
     """
     tckr = Ticker(self.tt,self.kkObs)
     next(tckr)

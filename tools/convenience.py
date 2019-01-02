@@ -10,7 +10,7 @@ def simulate(HMM,desc='Truth & Obs'):
   yy    = zeros((chrono.KObs+1,Obs.m))
 
   # Loop
-  for k,kObs,t,dt in progbar(chrono.forecast_range,desc):
+  for k,kObs,t,dt in progbar(chrono.ticker,desc):
     xx[k] = Dyn(xx[k-1],t-dt,dt) + sqrt(dt)*Dyn.noise.sample(1)
     if kObs is not None:
       yy[kObs] = Obs(xx[k],t) + Obs.noise.sample(1)

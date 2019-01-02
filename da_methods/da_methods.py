@@ -19,7 +19,7 @@ def EnKF(upd_a,N,infl=1.0,rot=False,**kwargs):
     stats.assess(0,E=E)
 
     # Loop
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -336,7 +336,7 @@ def EnKS(upd_a,N,Lag,infl=1.0,rot=False,**kwargs):
     E    = zeros((chrono.K+1,N,Dyn.m))
     E[0] = X0.sample(N)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E[k] = Dyn(E[k-1],t-dt,dt)
       E[k] = add_noise(E[k], dt, Dyn.noise, kwargs)
 
@@ -379,7 +379,7 @@ def EnRTS(upd_a,N,cntr,infl=1.0,rot=False,**kwargs):
     E[0] = X0.sample(N)
 
     # Forward pass
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E[k]  = Dyn(E[k-1],t-dt,dt)
       E[k]  = add_noise(E[k], dt, Dyn.noise, kwargs)
       Ef[k] = E[k]
@@ -444,7 +444,7 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
     E = X0.sample(N)
     stats.assess(0,E=E)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -554,7 +554,7 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
     E = X0.sample(N)
     stats.assess(0,E=E)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       # Forecast
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
@@ -787,7 +787,7 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
     stats.assess(0,E=E)
 
     # Loop
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       # Forecast
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
@@ -1229,7 +1229,7 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
     stats.innovs = np.full((chrono.KObs+1,N,Obs.m),nan)
     stats.assess(0,E=E,w=1/N)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       if Dyn.noise.C is not 0:
         D  = randn((N,m))
@@ -1289,7 +1289,7 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
     stats.resmpl = zeros(chrono.KObs+1,dtype=bool)
     stats.assess(0,E=E,w=1/N)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       if Dyn.noise.C is not 0:
         E += sqrt(dt)*(randn((N,m))@Dyn.noise.C.Right)
@@ -1360,7 +1360,7 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
     stats.innovs = np.full((chrono.KObs+1,N,Obs.m),nan)
     stats.assess(0,E=E,w=1/N)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       if Dyn.noise.C is not 0:
         D  = randn((N,m))
@@ -1435,7 +1435,7 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
     stats.resmpl = zeros(chrono.KObs+1,dtype=bool)
     stats.assess(0,E=E,w=1/N)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       if Dyn.noise.C is not 0:
         E += sqrt(dt)*(randn((N,m))@Dyn.noise.C.Right)
@@ -1544,7 +1544,7 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
     stats.resmpl = zeros(chrono.KObs+1,dtype=bool)
     stats.assess(0,E=E,w=1/N)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       if Dyn.noise.C is not 0:
         E += sqrt(dt)*(randn((N,m))@Dyn.noise.C.Right)
@@ -1829,7 +1829,7 @@ def EnCheat(upd_a,N,infl=1.0,rot=False,**kwargs):
     E = X0.sample(N)
     stats.assess(0,E=E)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -1871,7 +1871,7 @@ def Climatology(**kwargs):
     stats.assess(0,mu=muC,Cov=PC)
     stats.trHK[:] = 0
 
-    for k,kObs,_,_ in progbar(chrono.forecast_range):
+    for k,kObs,_,_ in progbar(chrono.ticker):
       stats.assess(k,kObs,'fau',mu=muC,Cov=PC)
   return assimilator
 
@@ -1907,7 +1907,7 @@ def OptInterp(**kwargs):
     mu = muC
     stats.assess(0,mu=mu,Cov=PC)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       # Forecast
       mu = Dyn(mu,t-dt,dt)
       if kObs is not None:
@@ -1945,7 +1945,7 @@ def Var3D(infl=1.0,**kwargs):
     P  = PC
     stats.assess(0,mu=mu,Cov=P)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       # Forecast
       mu = Dyn(mu,t-dt,dt)
       P  = 2*PC*WaveC(k)
@@ -1993,7 +1993,7 @@ def Var3D_Lag(infl=1.0,**kwargs):
     mu = muC
     stats.assess(0,mu=mu,Cov=PC)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       # Forecast
       mu = Dyn(mu,t-dt,dt)
       if kObs is not None:
@@ -2078,7 +2078,7 @@ def ExtRTS(infl=1.0,**kwargs):
     stats.assess(0,mu=mu[0],Cov=P[0])
 
     # Forward pass
-    for k,kObs,t,dt in progbar(chrono.forecast_range, 'ExtRTS->'):
+    for k,kObs,t,dt in progbar(chrono.ticker, 'ExtRTS->'):
       mu[k]  = Dyn(mu[k-1],t-dt,dt)
       F      = Dyn.jacob(mu[k-1],t-dt,dt) 
       P [k]  = infl**(dt)*(F@P[k-1]@F.T) + dt*Q
@@ -2135,7 +2135,7 @@ def ExtKF(infl=1.0,**kwargs):
 
     stats.assess(0,mu=mu,Cov=P)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       
       mu = Dyn(mu,t-dt,dt)
       F  = Dyn.jacob(mu,t-dt,dt) 
@@ -2186,7 +2186,7 @@ def RHF(N,ordr='rand',infl=1.0,rot=False,**kwargs):
     E = X0.sample(N)
     stats.assess(0,E=E)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -2250,7 +2250,7 @@ def LNETF(N,loc_rad,taper='GC',infl=1.0,Rs=1.0,rot=False,**kwargs):
     E = X0.sample(N)
     stats.assess(0,E=E)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 

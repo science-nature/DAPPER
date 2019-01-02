@@ -27,7 +27,7 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
     E = X0.sample(N)
     stats.assess(0,E=E)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       E = add_noise(E, dt, Dyn.noise, kwargs)
 
@@ -106,7 +106,7 @@ def DEnKF_diagR(N,infl=1.0,rot=False,**kwargs):
     E = X0.sample(N)
     stats.assess(0,E=E)
 
-    for k,kObs,t,dt in progbar(chrono.forecast_range):
+    for k,kObs,t,dt in progbar(chrono.ticker):
       E  = Dyn.model(E,t-dt,dt)
       E += sqrt(dt)*Dyn.noise.sample(N)
 

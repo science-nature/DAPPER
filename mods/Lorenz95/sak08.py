@@ -88,7 +88,9 @@ HMM = HiddenMarkovModel(Dyn,Obs,t,X0, LP=LP_setup(jj))
 # Fig 2 (smoother averages):
 # cfgs += iEnKS('-N', N=20,Lag=10,xN=2.0)                       # 0.163
 # The analysis-time smoother averages can be computed as
-# mean(s[indx].rmse.u[HMM.t.kkObs_BI])
+# kkObs_BI = HMM.t.kkObs[HMM.t.maskObs_BI]
+# mean(stats_object.rmse.u[kkObs_BI])
+
 # while universal-time averages are given by 
 # print_averages(cfgs,avrgs,[],['rmse_u'])
 

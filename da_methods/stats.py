@@ -71,6 +71,7 @@ class Stats(NestedPrint):
     self.svals = new_series(mMN) # Principal component (SVD) scores
     self.umisf = new_series(mMN) # Error in component directions
 
+
     ######################################
     # Declare non-FAU (i.e. normal) series
     ######################################

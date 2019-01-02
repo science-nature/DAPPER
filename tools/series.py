@@ -271,7 +271,7 @@ class FAU_series(NestedPrint):
     t = self.chrono
     for sub in 'afu':
       if sub=='u':
-        inds = t.kk_BI
+        inds = t.kk[t.mask_BI]
       else:
         inds = t.maskObs_BI
       if hasattr(self,sub):

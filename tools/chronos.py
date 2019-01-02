@@ -32,8 +32,6 @@ class Chronology:
   These attributes may be set (altered) after init: dt, dkObs, K, T.
   Other attributes may not, due to ambiguity
   (e.g. should dtObs*=2 yield a doubling of T too?)
-
-  Future: Support non-equi-spaced time seq.
   """
 
   def __init__(self,dt=None,dtObs=None,T=None,BurnIn=-1, \
@@ -145,17 +143,12 @@ class Chronology:
   # Burn In. NB: uses > (strict inequality)
   @property
   def mask_BI(self):
+    "Example use: kk_BI = kk[mask_BI]"
     return self.tt > self.BurnIn
   @property
   def maskObs_BI(self):
+    "Example use: kkObs_BI = kkObs[maskObs_BI]"
     return self.ttObs > self.BurnIn
-  #
-  @property
-  def kk_BI(self):
-    return self.kk[self.mask_BI]
-  @property
-  def kkObs_BI(self):
-    return self.kkObs[self.maskObs_BI]
 
   ######################################
   # Other

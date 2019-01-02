@@ -456,12 +456,15 @@ def raise_AFE(msg,time_index=None):
 
 def vectorize0(f):
   """
-  Vectorize f for its 1st (index 0) argument.
+  Vectorize f for its 1st (index 0) argument,
+  and do so recursively.
 
   Compared to np.vectorize:
     - less powerful, but safer to only vectorize 1st argument
     - doesn't evaluate the 1st item twice
     - doesn't always return array
+
+  Still, it's quite messy, and should not be used in "production code".
 
   Example:
   >>> @vectorize0

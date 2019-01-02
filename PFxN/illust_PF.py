@@ -135,12 +135,10 @@ h['F'] = delta_plot(ax,F        ,c='r',label='Resampled particles')
 h['G'] = delta_plot(ax,G        ,c='r',label='Jittered particles')
 
 
-sys.exit(0)
-
 savefig_n.index = 1
 def tog(h,save=True,*a,**b):
   toggle_viz(h,prompt=False,*a,**b)
-  if save: savefig_n()
+  # if save: savefig_n()
 
 # Hide all elements
 toggle_viz(h.values(),prompt=False) # legend=0 also nice

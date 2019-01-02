@@ -352,7 +352,6 @@ TODO
 * Update list of methods (e.g. ESOPS)
 * Darcy, LotkaVolterra, 2pendulum, Kuramoto-Sivashinsky , Nikolaevskiy Equation
 * Lage demo fil/liveplotting for LorenzUV
-* Reorg file structure: Turn into package?
 * Simplify time management?
 * Use pandas for stats time series?
 * Upgrade example_4 with plot_1d_minz ?
@@ -370,26 +369,20 @@ TODO
 * Rename DA_Config to DA_method or something
 * Get rid of Tuple assignment of twin/setup items
 
+* Reorg file structure: Turn into package?
 * Rename common to DAPPER_workspace.
 * Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
 * Defaults file (fail_gently, liveplotting, store_u mkl.set_num_threads, print options in NestedPrint)
-
 * Requirements
+* Post version on norce, nersc and link from enkf.nersc
 
 * Replace print_c and termcolors dict by 'with coloring:'. Requirements
 
-* Fix Windows bug (key listening: ncurses?)
-
-* Fix dtObs bug
-* Fix __name__ bug
+* Bugs:
+    * On Windows: key listening for liveplotting: ncurses?
+*   * __name__ for HMM via inspect fails when running a second, different script
 
 * Review ens_compatible
-* Rm vectorize0 (too messy). See SO.com/questions/29318459 and more
-
-* Post version on norce, nersc and link from enkf.nersc
-
-* Get good/simple local PF with reproduction of Alban's results
-* Reproduce Pulido
 
 -->
 

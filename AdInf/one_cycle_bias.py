@@ -1,7 +1,7 @@
 # Investigate whether the EnKF-N has a "one-cycle" intrinsic bias.
 #
 # TODO: Compute misfit as |x|_B/|x|_Bb
-# TODO: Don't use iChi2 which is p(l2|E), 
+# TODO: Don't use iChi2 which is pdf(l2|E), 
 #       but use pure likelihood for lambda (to get unbiased).
 # TODO: Average over all innovations.
 

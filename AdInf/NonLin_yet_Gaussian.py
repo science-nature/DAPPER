@@ -86,17 +86,17 @@ plt.ylim(-xlim,xlim)
 
 
 # Bin mapping
-xx_bins = [p.get_x() for p in xxp]
+xx_bins = [pr.get_x() for pr in xxp]
 yy_bins = [NLT(x) for x in xx_bins]
 inds    = sorted(range(nBins), key=lambda k: yy_bins[k])
 
 cm = plt.cm.get_cmap('viridis')
 
 # Bin colouring
-for i,p in enumerate(xxp):
-  p.set_color(cm(i/(nBins-1)))
-for i,p in enumerate(yyp):
-  p.set_color(cm(inds[i]/(nBins-1)))
+for i,pr in enumerate(xxp):
+  pr.set_color(cm(i/(nBins-1)))
+for i,pr in enumerate(yyp):
+  pr.set_color(cm(inds[i]/(nBins-1)))
 
 
 ###########################

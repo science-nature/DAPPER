@@ -46,9 +46,9 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
         V,s,U_T = svd0( Y @ Rm12.T )
 
         # Make dual cost function (in terms of lambda^1)
-        m_Nm = min(N,Obs.M)
+        m_NM = min(N,Obs.M)
         du   = U_T @ (Rm12 @ dy)
-        dgn  = lambda l: pad0( (l*s)**2, m_Nm ) + (N-1)
+        dgn  = lambda l: pad0( (l*s)**2, m_NM ) + (N-1)
         PR   = (s**2).sum()/(N-1)
         fctr = sqrt(mode**(1/(1+PR)))
         J    = lambda l:          np.sum(du**2/dgn(l)) \
@@ -56,10 +56,10 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
                + fctr*clog*log(l**2)
         #l1  = sp.optimize.minimize_scalar(J, bracket=(LowB, 1e2), tol=1e-4).x
         # Derivatives
-        dJ1  = lambda l: -2*l   * np.sum(pad0(s**2, m_Nm) * du**2/dgn(l)**2) \
+        dJ1  = lambda l: -2*l   * np.sum(pad0(s**2, m_NM) * du**2/dgn(l)**2) \
                + -2*(1/fctr)*eN/l**3 \
                +  2*fctr*clog  /l
-        dJ2  = lambda l: 8*l**2 * np.sum(pad0(s**4, m_Nm) * du**2/dgn(l)**3) \
+        dJ2  = lambda l: 8*l**2 * np.sum(pad0(s**4, m_NM) * du**2/dgn(l)**3) \
                +  6*(1/fctr)*eN/l**4 \
                + -2*fctr*clog  /l**2
         # Find inflation factor

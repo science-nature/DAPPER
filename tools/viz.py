@@ -1080,8 +1080,8 @@ def toggle_lines(ax=None,autoscl=True,numbering=False,txtwidth=15,txtsize=None,s
 
   # Get lines and their properties
   lines = {'handle': list(ax.get_lines())}
-  for p in ['label','color','visible']:
-    lines[p] = [plt.getp(x,p) for x in lines['handle']]
+  for prop in ['label','color','visible']:
+    lines[prop] = [plt.getp(x,prop) for x in lines['handle']]
   # Put into pandas for some reason
   lines = pd.DataFrame(lines)
   # Rm those that start with _

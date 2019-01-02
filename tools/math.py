@@ -428,7 +428,7 @@ def svd0(A):
   For reduction down to rank, see tsvd() instead.
   """
   M,N = A.shape
-  if M>n: return sla.svd(A, full_matrices=True)
+  if M>N: return sla.svd(A, full_matrices=True)
   else:   return sla.svd(A, full_matrices=False)
 
 def pad0(ss,N):

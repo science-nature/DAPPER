@@ -22,9 +22,9 @@ mu = P*(b/B+y/R)
 # Proposal: prior
 q = Nrml(b, B)
 # Target: posterior
-p = Nrml(mu,P)
+pt = Nrml(mu,P)
 # Pdf ratio: Likelihood, normalized so that weights don't have to be self-normalized.
-l = lambda x: p.pdf(x) / q.pdf(x)
+l = lambda x: pt.pdf(x) / q.pdf(x)
 #l = lambda x: Nrml(x,R).pdf(y) / Nrml(b,R+B).pdf(y) # Know by marginalization
 
 # Sample ensemble
@@ -33,4 +33,4 @@ E = q.rvs(N)
 statistic = lambda x: 1
 #statistic = lambda x: x
 
-estimate = 1/N * sum( statistic(E) * p.pdf(E) / q.pdf(E) )
+estimate = 1/N * sum( statistic(E) * pt.pdf(E) / q.pdf(E) )

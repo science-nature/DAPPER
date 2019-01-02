@@ -78,9 +78,9 @@ fig, (ax1, ax2) = plt.subplots(2,1,sharex=True,num=1, gridspec_kw = {'height_rat
 ax1.hist(E0[0,:],bins=linspace(*xx[[0,-1]],nbins),
     normed=True, label='$E_0$',alpha=0.6)
 
-ax1.plot(xx,prior_xx, 'b-' , label='$p(x)$')
-ax1.plot(xx,lklhd_xx, 'g-' , label='$p(y='+str(y[0,0])+'|x)$')
-ax1.plot(xx,postr_xx, 'r--', label='$p(x|y)$')
+ax1.plot(xx,prior_xx, 'b-' , label='$pdf(x)$')
+ax1.plot(xx,lklhd_xx, 'g-' , label='$pdf(y='+str(y[0,0])+'|x)$')
+ax1.plot(xx,postr_xx, 'r--', label='$pdf(x|y)$')
 
 with np.errstate(divide='ignore'):
   ax2.plot(xx,-log( prior_xx ), 'b-' )
@@ -88,8 +88,8 @@ with np.errstate(divide='ignore'):
   ax2.plot(xx,-log( postr_xx ), 'r--')
   ax2.set_ylim(-2,70)
 
-ax1.set_ylabel('p')
-ax2.set_ylabel('-log p')
+ax1.set_ylabel('pdf')
+ax2.set_ylabel('-log pdf')
 ax1.legend()
 ax2.set_xlabel('x')
 

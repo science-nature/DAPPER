@@ -138,7 +138,7 @@ def ind2sub(ind): return np.unravel_index(ind, shape[::-1])
 # Free run
 #########################
 def gen_sample(model,nSamples,SpinUp,Spacing):
-  simulator = make_recursive(model.step,prog="Simulating")
+  simulator = with_recursion(model.step,prog="Simulating")
   K         = SpinUp + nSamples*Spacing
   M         = np.prod(shape) # total state length
   sample    = simulator(zeros(M), K, 0.0, model.prms["dtout"])

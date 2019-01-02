@@ -31,7 +31,7 @@ model_step = with_rk4(LUV.dxdt_trunc,autonom=True)
 ###########################
 # Compute truth trajectory
 ###########################
-true_K = make_recursive(true_step,with_prog=1)
+true_K = with_recursion(true_step,with_prog=1)
 x0 = true_K(x0,int(2/dt),t0,dt)[-1] # BurnIn
 xx = true_K(x0,K        ,t0,dt)
 

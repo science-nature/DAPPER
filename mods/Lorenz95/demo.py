@@ -25,7 +25,7 @@ def amplitude_animation(xx,periodic=False,skip=1):
 
 ##
 if __name__ == "__main__":
-  simulator = make_recursive(step, prog="Simulating")
+  simulator = with_recursion(step, prog="Simulating")
 
   x0 = zeros(40); x0[0] = 1
   xx = simulator(x0, k=500, t=0, dt=0.05)

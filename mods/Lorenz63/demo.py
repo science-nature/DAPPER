@@ -5,7 +5,7 @@ from common import *
 from mods.Lorenz63.core import step
 
 ##
-simulator = make_recursive(step, prog="Simulating")
+simulator = with_recursion(step, prog="Simulating")
 
 x0 = array([1,1,1])
 xx = simulator(x0, k=5*10**3, t0=0, dt=0.01)

@@ -5,7 +5,7 @@ from common import *
 from mods.Lorenz84.core import step
 
 ##
-simulator = make_recursive(step, prog="Simulating")
+simulator = with_recursion(step, prog="Simulating")
 
 x0 = array([1,1,1])
 N  = 400

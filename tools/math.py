@@ -130,13 +130,13 @@ def with_rk4(dxdt,autonom=False,order=4):
   step = NamedFunc(step,name)
   return step
 
-def make_recursive(func,prog=False):
+def with_recursion(func,prog=False):
   """
   Return a version of func() whose 2nd argument (k)
-  is the number of times to times apply func on its output.
+  specifies the number of times to times apply func on its output.
   Example:
     def step(x,t,dt): ...
-    step_k = make_recursive(step)
+    step_k = with_recursion(step)
     x[k]   = step_k(x0,k,t=NaN,dt)[-1]
   """
   def fun_k(x0,k,*args,**kwargs):

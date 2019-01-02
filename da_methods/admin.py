@@ -1,6 +1,6 @@
 from common import *
 
-class HiddenMarkovModel(MLR_Print):
+class HiddenMarkovModel(NestedPrint):
   """
   Container for attributes of a Hidden Markov Model (HMM), to run a
   "twin experiment", i.e. an "OSSE (observing system simulation experiment)".
@@ -27,7 +27,7 @@ class HiddenMarkovModel(MLR_Print):
   @property
   def P(self): return self.Obs.m
 
-class Operator(MLR_Print):
+class Operator(NestedPrint):
   """
   Container for operators (models).
   """

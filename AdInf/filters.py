@@ -782,7 +782,7 @@ def diag_Gauss_logp(mu, sigma2, x):
 from scipy.optimize import brenth
 from scipy.optimize import minimize_scalar as minz
 #from scipy.integrate import quad
-class InvChi2Filter(MLR_Print):
+class InvChi2Filter(NestedPrint):
   def __init__(self,sc=1.0,nu=5,L=np.inf):
     """
     - nu: certainty; start at nu=5 such that e.g. variance exists.

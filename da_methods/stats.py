@@ -1,6 +1,6 @@
 from common import *
 
-class Stats(MLR_Print):
+class Stats(NestedPrint):
   """
   Contains and computes statistics of the DA methods.
   """
@@ -8,8 +8,8 @@ class Stats(MLR_Print):
   # Adjust this to omit heavy computations
   comp_threshold_3 = 51
 
-  # Used by MLR_Print
-  excluded  = MLR_Print.excluded + ['HMM','config','xx','yy']
+  # Used by NestedPrint
+  excluded  = NestedPrint.excluded + ['HMM','config','xx','yy']
   precision = 3
   ordr_by_linenum = -1
  
@@ -62,7 +62,7 @@ class Stats(MLR_Print):
       mMN          = min(M,N)
       self.w       = new_series(N)           # Importance weights
       self.rh      = new_series(M,dtype=int) # Rank histogram
-      #self.N      = N               # Use w.shape[1] instead
+      #self.N      = N                       # Use w.shape[1] instead
     else:
       # Linear-Gaussian assessment
       self._is_ens = False
@@ -74,15 +74,14 @@ class Stats(MLR_Print):
     ######################################
     # Declare non-FAU (i.e. normal) series
     ######################################
-    self.trHK  = np.full(KObs+1, nan)
-    self.infl  = np.full(KObs+1, nan)
-    self.iters = np.full(KObs+1, nan)
+    self.trHK   = np.full (KObs+1, nan)
+    self.infl   = np.full (KObs+1, nan)
+    self.iters  = np.full (KObs+1, nan)
 
     # Weight-related
-    self.resmpl = np.zeros(KObs+1     ,dtype=bool)
-    self.N_eff  = np.full( KObs+1     ,nan)
-    self.wroot  = np.full( KObs+1     ,nan)
-    self.innovs = np.full((KObs+1,N,P),nan)
+    self.resmpl = np.zeros(KObs+1, dtype=bool)
+    self.N_eff  = np.full (KObs+1, nan)
+    self.wroot  = np.full (KObs+1, nan)
 
 
   def assess(self,k,kObs=None,f_a_u=None,

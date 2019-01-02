@@ -372,7 +372,7 @@ TODO
 
 * Rename common to DAPPER_workspace.
 * Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
-* Defaults file (fail_gently, liveplotting, store_u mkl.set_num_threads, print options in MLR_print)
+* Defaults file (fail_gently, liveplotting, store_u mkl.set_num_threads, print options in NestedPrint)
 
 * Requirements
 
@@ -385,8 +385,6 @@ TODO
 
 * Review ens_compatible
 * Rm vectorize0 (too messy). See SO.com/questions/29318459 and more
-
-* Change m to M and/or len? (caution: other things called M)
 
 * Post version on norce, nersc and link from enkf.nersc
 

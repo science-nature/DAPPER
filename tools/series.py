@@ -108,7 +108,7 @@ def series_mean_with_conf(xx):
   return vc
 
 
-class WeightedSeries(MLR_Print):
+class WeightedSeries(NestedPrint):
   """
   Light-weight implementation of a rolling, weighted series.
   """
@@ -135,7 +135,7 @@ class WeightedSeries(MLR_Print):
 
 
 
-class FAU_series(MLR_Print):
+class FAU_series(NestedPrint):
   """
   Container for time series of a statistic from filtering.
   Data is indexed with key (k,kObs,f_a_u) or simply k.
@@ -151,13 +151,13 @@ class FAU_series(MLR_Print):
       then you should use a simple np.array instead.
   """
 
-  # Used by MLR_Print
-  included = MLR_Print.included + ['f','a','store_u']
+  # Used by NestedPrint
+  included = NestedPrint.included + ['f','a','store_u']
   aliases  = {
       'f':'Forecast (.f)',
       'a':'Analysis (.a)',
       'u':'All      (.u)'}
-  aliases  = {**MLR_Print.aliases, **aliases}
+  aliases  = {**NestedPrint.aliases, **aliases}
 
   def __init__(self,chrono,m,store_u=True,**kwargs):
     """

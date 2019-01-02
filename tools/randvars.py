@@ -3,10 +3,10 @@
 from common import *
 
 
-class RV(MLR_Print):
+class RV(NestedPrint):
   "Class to represent random variables."
 
-  # Used by MLR_Print
+  # Used by NestedPrint
   ordr_by_linenum = +1
 
   def __init__(self,m,**kwargs):

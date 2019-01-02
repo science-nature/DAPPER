@@ -197,7 +197,7 @@ def repr_type_and_name(thing):
   return s
 
 
-class MLR_Print:
+class NestedPrint:
   """
   Multi-Line, Recursive repr (print) functionality.
   Set class variables to change look:
@@ -214,7 +214,7 @@ class MLR_Print:
   precision=None
 
   # Recursion monitoring.
-  _stack=[] # Reference using MLR_Print._stack, ...
+  _stack=[] # Reference using NestedPrint._stack, ...
   # not self._stack or self.__class__, which reference sub-class "instance".
 
   # Reference using self.excluded, to access sub-class "instance".
@@ -232,11 +232,11 @@ class MLR_Print:
 
       # Infinite recursion prevention
       is_top_level = False
-      if MLR_Print._stack == []:
+      if NestedPrint._stack == []:
         is_top_level = True
-      if self in MLR_Print._stack:
+      if self in NestedPrint._stack:
         return "**Recursion**"
-      MLR_Print._stack += [self]
+      NestedPrint._stack += [self]
 
       # Use included or filter-out excluded
       keys = self.included or filter_out(vars(self), *self.excluded)
@@ -265,7 +265,7 @@ class MLR_Print:
 
       # Empty _stack when top-level printing finished
       if is_top_level:
-        MLR_Print._stack = []
+        NestedPrint._stack = []
 
       return s
 

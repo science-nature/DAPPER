@@ -374,8 +374,6 @@ TODO
 * Requirements
 * Post version on norce, nersc and link from enkf.nersc
 
-* Replace print_c and termcolors dict by 'with coloring:'. Requirements
-
 * Bugs:
     * On Windows: key listening for liveplotting: ncurses?
     * __name__ for HMM via inspect fails when running a 2nd, ≠ script.

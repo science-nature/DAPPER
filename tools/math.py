@@ -153,12 +153,12 @@ def make_recursive(func,prog=False):
 
   return fun_k
 
-def integrate_TLM(M,dt,method='approx'):
+def integrate_TLM(TLM,dt,method='approx'):
   """
   Returns the resolvent, i.e. (equivalently)
    - the Jacobian of the step func.
-   - the integral of dU/dt = M@U, with U0=eye.
-  Note that M (the TLM) is assumed constant.
+   - the integral of dU/dt = TLM@U, with U0=eye.
+  Note that the TLM is assumed constant.
 
   method:
    - 'analytic': exact (assuming TLM is constant).
@@ -167,15 +167,15 @@ def integrate_TLM(M,dt,method='approx'):
   NB: 'analytic' typically requries higher inflation in the ExtKF.
   """
   if method == 'analytic':
-    Lambda,V  = np.linalg.eig(M)
+    Lambda,V  = np.linalg.eig(TLM)
     resolvent = (V * exp(dt*Lambda)) @ np.linalg.inv(V)
     resolvent = np.real_if_close(resolvent, tol=10**5)
   else:
-    I = eye(M.shape[0])
+    I = eye(TLM.shape[0])
     if method == 'rk4':
-      resolvent = rk4(lambda t,U: M@U, I, np.nan, dt)
+      resolvent = rk4(lambda t,U: TLM@U, I, np.nan, dt)
     elif method.lower().startswith('approx'):
-      resolvent = I + dt*M
+      resolvent = I + dt*TLM
     else:
       raise ValueError
   return resolvent
@@ -454,7 +454,7 @@ def tinv(A,*kargs,**kwargs):
 
 
 ########################
-# Setup facilation
+# HMM setup shortcuts 
 ########################
 
 def Id_op():
@@ -463,13 +463,13 @@ def Id_mat(m):
   I = np.eye(m)
   return NamedFunc(lambda x,t: I, "Id("+str(m)+") matrix")
 
-def linear_model_setup(M):
-  "M is normalized wrt step length dt."
-  M = np.asarray(M) # sparse or matrix classes not supported
-  m = len(M)
+def linear_model_setup(ModelMatrix):
+  "ModelMatrix is normalized wrt step length dt."
+  ModelMatrix = np.asarray(ModelMatrix) # sparse or matrix classes not supported
+  m = len(ModelMatrix)
   @ens_compatible
-  def model(x,t,dt): return dt*(M@x)
-  def jacob(x,t,dt): return dt*M
+  def model(x,t,dt): return dt*(ModelMatrix@x)
+  def jacob(x,t,dt): return dt*ModelMatrix
   Dyn = {
       'm'    : m,
       'model': model,
@@ -478,10 +478,10 @@ def linear_model_setup(M):
   return f
 
 
-
 def equi_spaced_integers(m,p):
   """Provide a range of p equispaced integers between 0 and m-1"""
   return np.round(linspace(floor(m/p/2),ceil(m-m/p/2-1),p)).astype(int)
+
 
 def direct_obs_matrix(m,obs_inds):
   """Matrix that "picks" state elements obs_inds out of range(m)"""
@@ -502,5 +502,6 @@ def partial_direct_obs_setup(m,obs_inds):
       'jacob': jacob,
       }
   return Obs
+
 
 

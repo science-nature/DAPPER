@@ -26,11 +26,13 @@ def coloring(*color_codes):
   print(colorama.Style.RESET_ALL, end="", flush=True)
 
 
+def print_c(*args,color='blue',**kwargs):
+  """Print with color.
+  But I prefer using the coloring context manager defined above."""
+  s = ' '.join([str(k) for k in args])
+  print(termcolors[color] + s + termcolors['ENDC'],**kwargs)
 
-#########################################
-# OBSOLETE -- use the above coloring context mngr
-#########################################
-# Terminal color codes. Use:
+# Terminal color codes. Better to use colorama (above) instead.
 termcolors={
     'blue'      : '\033[94m',
     'green'     : '\033[92m',
@@ -43,10 +45,6 @@ termcolors={
     'bold'      : '\033[1m' ,
     'underline' : '\033[4m' ,
 }
-def print_c(*args,color='blue',**kwargs):
-  s = ' '.join([str(k) for k in args])
-  print(termcolors[color] + s + termcolors['ENDC'],**kwargs)
-
 
 
 #########################################

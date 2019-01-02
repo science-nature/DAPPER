@@ -51,10 +51,13 @@ def roll_n_sub(arr,item,i_repl=0):
 ########################
 
 def ens_compatible(func):
-  """Tranpose before and after."""
+  """Tranpose before and after.
+  Helpful to make functions compatible with both 1d and 2d ndarrays.
+  Other tricks (e.g. ellipsis, as in dxdt of LorenzUV) can also be used.
+  """
   @functools.wraps(func)
-  def wrapr(x,*kargs,**kwargs):
-    return func(x.T,*kargs,**kwargs).T
+  def wrapr(x,*args,**kwargs):
+    return func(x.T,*args,**kwargs).T
   return wrapr
 
 def center(E,axis=0,rescale=False):

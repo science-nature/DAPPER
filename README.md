@@ -354,8 +354,6 @@ TODO
 * Lage demo fil/liveplotting for LorenzUV
 * Simplify time management?
 * Use pandas for stats time series?
-* Upgrade example_4 with plot_1d_minz ?
-* Implement spatialized inflation?
 
 * EITHER: Rm *args, **kwargs from da_methods? (less spelling errors)
 *         Replace with opts argument (could be anything).
@@ -380,9 +378,7 @@ TODO
 
 * Bugs:
     * On Windows: key listening for liveplotting: ncurses?
-*   * __name__ for HMM via inspect fails when running a second, different script
-
-* Review ens_compatible
+    * __name__ for HMM via inspect fails when running a 2nd, ≠ script.
 
 -->
 

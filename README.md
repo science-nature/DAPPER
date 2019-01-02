@@ -86,14 +86,14 @@ References provided at bottom
 
 Method name                                            | Literature RMSE results reproduced
 ------------------------------------------------------ | ---------------------------------------
-EnKF <sup>1</sup>                                      | Sakov and Oke (2008)
+EnKF <sup>1</sup>                                      | Sakov and Oke (2008), Hoteit (2015)
 EnKF-N                                                 | Bocquet (2012), (2015)
 EnKS, EnRTS                                            | Raanes (2016a)
-iEnKS (and -N)                                         | Sakov (2012), Bocquet (2012), (2014)
+iEnKS <sup>2</sup>                                                 | Sakov (2012), Bocquet (2012), (2014)
 LETKF, local & serial EAKF                             | Bocquet (2011)
 Sqrt. model noise methods                              | Raanes (2015)
-Particle filter (bootstrap) <sup>2</sup>               | Bocquet (2010)
-Optimal/implicit Particle filter  <sup>2</sup>         | "
+Particle filter (bootstrap) <sup>3</sup>               | Bocquet (2010)
+Optimal/implicit Particle filter  <sup>3</sup>         | "
 NETF                                                   | Tödter (2015), Wiljes (2017)
 Rank histogram filter (RHF)                            | Anderson (2010)
 Extended KF                                            | Raanes (2016b)
@@ -101,9 +101,11 @@ Optimal interpolation                                  | "
 Climatology                                            | "
 3D-Var                                                 | 
 
-<sup>1</sup>: Stochastic, DEnKF (i.e. half-update), ETKF (i.e. sym. sqrt.).  
+<sup>1</sup>: Stochastic, DEnKF (i.e. half-update), ETKF (i.e. sym. sqrt.). Serial forms are also available.  
 Tuned with inflation and "random, orthogonal rotations".  
-<sup>2</sup>: Resampling: multinomial (including systematic/universal and residual).  
+<sup>2</sup>: Includes (as particular cases) EnRML, iEnKS, iEnKF.  
+Also supports MDA forms, the bundle version, and "EnKF-N"-type inflation.  
+<sup>3</sup>: Resampling: multinomial (including systematic/universal and residual).  
 The particle filter is tuned with "effective-N monitoring", "regularization/jittering" strength, and more.
 
 **To add a new method:**
@@ -276,6 +278,7 @@ References
 - Bocquet (2015) : Bocquet, Raanes, and Hannart. "Expanding the validity of the ensemble Kalman filter without the intrinsic need for inflation".  
 - Tödter (2015)  : Tödter and Ahrens. "A second-order exact ensemble square root filter for nonlinear data assimilation".  
 - Raanes (2015)  : Raanes, Carrassi, and Bertino. "Extending the square root method to account for model noise in the ensemble Kalman filter".  
+- Hoteit (2015)  : "Mitigating Observation Perturbation Sampling Errors in the Stochastic EnKF"
 - Raanes (2016a) : Raanes. "On the ensemble Rauch-Tung-Striebel smoother and its equivalence to the ensemble Kalman smoother".  
 - Raanes (2016b) : Raanes. "Improvements to Ensemble Methods for Data Assimilation in the Geosciences".  
 - Wiljes (2017)  : Aceved, Wilje and Reich. "Second-order accurate ensemble transform particle filters".  
@@ -349,11 +352,9 @@ Conventions:
 <!--
 TODO
 ------------------------------------------------
-* Update list of methods (e.g. ESOPS)
-* Darcy, LotkaVolterra, 2pendulum, Kuramoto-Sivashinsky , Nikolaevskiy Equation
-* Lage demo fil/liveplotting for LorenzUV
-* Simplify time management?
-* Use pandas for stats time series?
+* Bugs:
+    * On Windows: key listening for liveplotting: ncurses?
+    * __name__ for HMM via inspect fails when running a 2nd, ≠ script.
 
 * EITHER: Rm *args, **kwargs from da_methods? (less spelling errors)
 *         Replace with opts argument (could be anything).
@@ -374,9 +375,9 @@ TODO
 * Requirements
 * Post version on norce, nersc and link from enkf.nersc
 
-* Bugs:
-    * On Windows: key listening for liveplotting: ncurses?
-    * __name__ for HMM via inspect fails when running a 2nd, ≠ script.
+* Darcy, LotkaVolterra, 2pendulum, Kuramoto-Sivashinsky , Nikolaevskiy Equation
+* Simplify time management?
+* Use pandas for stats time series?
 
 -->
 

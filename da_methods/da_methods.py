@@ -114,7 +114,9 @@ def EnKF_analysis(E,Eo,hnoise,y,upd_a,stats,kObs):
         # But: little benefit, model costly (?), updates cannot be accumulated on S and T.
 
         if any(x in upd_a for x in ['Stoch','ESOPS','Var1']):
-            # More details: Misc/Serial_ESOPS.py
+            # More details: Misc/Serial_ESOPS.py.
+            # Settings for reproducing literature benchmarks may be found in
+            # mods/Lorenz95/hot15.py
             for i,j in enumerate(inds):
 
               # Perturbation creation
@@ -894,7 +896,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
   - Lag   : Length of the DA window (DAW), in multiples of dkObs (i.e. cycles).
             Lag=1 (default) => iterative "filter" iEnKF (Sakov et al 2012).
             Lag=0           => maximum-likelihood filter (Zupanski 2005).
-  - Shift : How far (in cycles) to slide the DAW. Fixed at 1 for simplicity.
+  - Shift : How far (in cycles) to slide the DAW. Fixed at 1 for code simplicity.
   - nIter : Maximal num. of iterations used (>=1).
             Supporting nIter==0 requires more code than it's worth.
   - wTol  : Rel. tolerance defining convergence. Default: 0 => always do nIter iterations.
@@ -1001,7 +1003,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
 
                 else: # Frame update as Gauss-Newton optimzt. of log-posterior.
                     grad  = Y0@dy - w*za # Cost function gradient
-                    w     = w + grad @Pw # Gauss-Newton step
+                    w     = w + grad@Pw  # Gauss-Newton step
                     if 'Sqrt' in upd_a:      ### "ETKF-ish". By Bocquet/Sakov.
                       T     = Pw_pwr(0.5) * sqrt(N1) # Sqrt-transforms
                       Tinv  = Pw_pwr(-.5) / sqrt(N1) # Saves time [vs tinv(T)] when M<N

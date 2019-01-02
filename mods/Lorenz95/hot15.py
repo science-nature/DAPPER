@@ -4,12 +4,13 @@
 
 from mods.Lorenz95.sak08 import HMM
 
-# Experiments are repeated 10 times. 
 HMM.t.T = 365
 HMM.t.BurnIn = 4
+# Further settings used in paper:
+# Experiments repeated 10 times. 
 # Sometimes used: dkObs=4.
-# Sometimes used: obs_inds = arange(M)[::2]
-# Used localization: as in Whitaker/Hamill'2002: GC, with R (length scale) defined as in DAPPER.
+# Sometimes used: obs_inds = arange(M)[::2].
+# Used localization: as in Whitaker/Hamill'2002: GC.
 
 
 ####################

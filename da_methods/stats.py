@@ -16,9 +16,13 @@ class Stats(MLR_Print):
   def __init__(self,config,HMM,xx,yy):
     """
     Init the default statistics.
-    Note: you may well allocate & compute individual stats elsewhere,
-          and simply assigne them as an attribute to the stats instance.
+
+    Note: you may also allocate & compute individual stats elsewhere
+          (Python allows dynamic class attributes).
+          For example at the top of your experimental DA method,
+          which avoids "polluting" this space.
     """
+
     ######################################
     # Save twin experiment settings 
     ######################################
@@ -27,27 +31,23 @@ class Stats(MLR_Print):
     self.xx     = xx
     self.yy     = yy
 
-    m    = HMM.Dyn.m  ; assert m   ==xx.shape[1]
+    # Validations
+    M    = HMM.M      ; assert M   ==xx.shape[1]
+    P    = HMM.P      ; assert P   ==yy.shape[1]
     K    = HMM.t.K    ; assert K   ==xx.shape[0]-1
-    p    = HMM.Obs.m  ; assert p   ==yy.shape[1]
     KObs = HMM.t.KObs ; assert KObs==yy.shape[0]-1
 
 
     ######################################
     # Declare time series of various stats
     ######################################
-    # Note: These can be declared these anywhere
-    # (Python allows dynamic class attributes),
-    # for example at the top of your experimental DA method,
-    # which avoids "polluting" this space.
-
     # time-series (FAU type) constructor alias
     new_series = self.new_FAU_series
 
-    self.mu     = new_series(m) # Mean
-    self.var    = new_series(m) # Variances
-    self.mad    = new_series(m) # Mean abs deviations
-    self.err    = new_series(m) # Error (mu-truth)
+    self.mu     = new_series(M) # Mean
+    self.var    = new_series(M) # Variances
+    self.mad    = new_series(M) # Mean abs deviations
+    self.err    = new_series(M) # Error (mu-truth)
     self.logp_m = new_series(1) # Marginal, Gaussian Log score
     self.skew   = new_series(1) # Skewness
     self.kurt   = new_series(1) # Kurtosis
@@ -59,30 +59,30 @@ class Stats(MLR_Print):
       self._had_0v = False
       self._is_ens = True
       N            = config.N
-      m_Nm         = min(m,N)
+      mMN          = min(M,N)
       self.w       = new_series(N)           # Importance weights
-      self.rh      = new_series(m,dtype=int) # Rank histogram
+      self.rh      = new_series(M,dtype=int) # Rank histogram
       #self.N      = N               # Use w.shape[1] instead
     else:
       # Linear-Gaussian assessment
       self._is_ens = False
-      m_Nm         = m
+      mMN          = M
 
-    self.svals = new_series(m_Nm) # Principal component (SVD) scores
-    self.umisf = new_series(m_Nm) # Error in component directions
+    self.svals = new_series(mMN) # Principal component (SVD) scores
+    self.umisf = new_series(mMN) # Error in component directions
 
     ######################################
-    # Declare non-FAU series
+    # Declare non-FAU (i.e. normal) series
     ######################################
     self.trHK  = np.full(KObs+1, nan)
     self.infl  = np.full(KObs+1, nan)
     self.iters = np.full(KObs+1, nan)
 
     # Weight-related
-    self.resmpl = np.zeros(KObs+1         ,dtype=bool)
-    self.N_eff  = np.full( KObs+1         ,nan)
-    self.wroot  = np.full( KObs+1         ,nan)
-    self.innovs = np.full((KObs+1,N,Obs.m),nan)
+    self.resmpl = np.zeros(KObs+1     ,dtype=bool)
+    self.N_eff  = np.full( KObs+1     ,nan)
+    self.wroot  = np.full( KObs+1     ,nan)
+    self.innovs = np.full((KObs+1,N,P),nan)
 
 
   def assess(self,k,kObs=None,f_a_u=None,

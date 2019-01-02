@@ -17,16 +17,16 @@ sd0 = seed(5)
 
 t = Chronology(dt=1,dkObs=5,T=600,BurnIn=500)
 
-m = 5;
-p = m;
+M = 5;
+p = M;
 
-jj = equi_spaced_integers(m,p)
-Obs = partial_direct_obs_setup(m,jj)
+jj = equi_spaced_integers(M,p)
+Obs = partial_direct_obs_setup(M,jj)
 Obs['noise'] = 1.0
 
-X0 = GaussRV(C=1.0,m=m)
+X0 = GaussRV(C=1.0,M=M)
 
-f = linear_model_setup(1.2*eye(m))
+f = linear_model_setup(1.2*eye(M))
 Dyn['noise'] = 0.0
 
 #other = {'name': os.path.relpath(__file__,'mods/')}

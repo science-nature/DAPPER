@@ -340,17 +340,17 @@ def circulant_ACF(C,do_abs=False):
   assuming it is the cov/corr matrix
   of a 1D periodic domain.
   """
-  m    = len(C)
-  #cols = np.flipud(sla.circulant(arange(m)[::-1]))
-  cols = sla.circulant(arange(m))
-  ACF  = zeros(m)
-  for i in range(m):
+  M    = len(C)
+  #cols = np.flipud(sla.circulant(arange(M)[::-1]))
+  cols = sla.circulant(arange(M))
+  ACF  = zeros(M)
+  for i in range(M):
     row = C[i,cols[i]]
     if do_abs:
       row = abs(row)
     ACF += row
     # Note: this actually also accesses masked values in C.
-  return ACF/m
+  return ACF/M
 
 
 ########################
@@ -428,7 +428,7 @@ def svd0(A):
   For reduction down to rank, see tsvd() instead.
   """
   M,N = A.shape
-  if m>n: return sla.svd(A, full_matrices=True)
+  if M>n: return sla.svd(A, full_matrices=True)
   else:   return sla.svd(A, full_matrices=False)
 
 def pad0(ss,N):
@@ -459,45 +459,45 @@ def tinv(A,*kargs,**kwargs):
 
 def Id_op():
   return NamedFunc(lambda *args: args[0], "Id operator")
-def Id_mat(m):
-  I = np.eye(m)
-  return NamedFunc(lambda x,t: I, "Id("+str(m)+") matrix")
+def Id_mat(M):
+  I = np.eye(M)
+  return NamedFunc(lambda x,t: I, "Id("+str(M)+") matrix")
 
 def linear_model_setup(ModelMatrix):
   "ModelMatrix is normalized wrt step length dt."
   ModelMatrix = np.asarray(ModelMatrix) # sparse or matrix classes not supported
-  m = len(ModelMatrix)
+  M = len(ModelMatrix)
   @ens_compatible
   def model(x,t,dt): return dt*(ModelMatrix@x)
   def jacob(x,t,dt): return dt*ModelMatrix
   Dyn = {
-      'm'    : m,
+      'M'    : M,
       'model': model,
       'jacob': jacob,
       }
   return f
 
 
-def equi_spaced_integers(m,p):
-  """Provide a range of p equispaced integers between 0 and m-1"""
-  return np.round(linspace(floor(m/p/2),ceil(m-m/p/2-1),p)).astype(int)
+def equi_spaced_integers(M,p):
+  """Provide a range of p equispaced integers between 0 and M-1"""
+  return np.round(linspace(floor(M/p/2),ceil(M-M/p/2-1),p)).astype(int)
 
 
-def direct_obs_matrix(m,obs_inds):
-  """Matrix that "picks" state elements obs_inds out of range(m)"""
+def direct_obs_matrix(M,obs_inds):
+  """Matrix that "picks" state elements obs_inds out of range(M)"""
   p = len(obs_inds)
-  H = zeros((p,m))
+  H = zeros((p,M))
   H[range(p),obs_inds] = 1
   return H
 
-def partial_direct_obs_setup(m,obs_inds):
+def partial_direct_obs_setup(M,obs_inds):
   p = len(obs_inds)
-  H = direct_obs_matrix(m,obs_inds)
+  H = direct_obs_matrix(M,obs_inds)
   @ens_compatible
   def model(x,t): return x[obs_inds]
   def jacob(x,t): return H
   Obs = {
-      'm'    : p,
+      'M'    : p,
       'model': model,
       'jacob': jacob,
       }

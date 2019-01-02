@@ -24,8 +24,8 @@
 # - More applications of model render the sample more noisy.
 #   Thus, a longer DAW (e.g.) will cause a greater need for infl.
 #
-# Todo: m-dim case: NLT can be made for radius of multivariate Gaussian,
-#       which is chi2(ddof=m).
+# Todo: M-dim case: NLT can be made for radius of multivariate Gaussian,
+#       which is chi2(ddof=M).
 
 
 ###########################

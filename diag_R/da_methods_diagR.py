@@ -88,7 +88,7 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
         E = post_process(E,infl,rot)
 
         stats.infl[kObs] = l1
-        stats.trHK[kObs] = (((l1*s)**2 + (N-1))**(-1.0)*s**2).sum()/Obs.noise.m
+        stats.trHK[kObs] = (((l1*s)**2 + (N-1))**(-1.0)*s**2).sum()/Obs.noise.M
 
       stats.assess(k,kObs,E=E)
   return assimilator

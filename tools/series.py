@@ -159,11 +159,11 @@ class FAU_series(NestedPrint):
       'u':'All      (.u)'}
   aliases  = {**NestedPrint.aliases, **aliases}
 
-  def __init__(self,chrono,m,store_u=True,**kwargs):
+  def __init__(self,chrono,M,store_u=True,**kwargs):
     """
     Constructor.
      - chrono  : a Chronology object.
-     - m       : len (or shape) of items in series. 
+     - M       : len (or shape) of items in series. 
      - store_u : if False: only the current value is stored.
      - kwargs  : passed on to ndarrays.
     """
@@ -172,17 +172,17 @@ class FAU_series(NestedPrint):
     self.chrono  = chrono
 
     # Convert int-len to shape-tuple
-    self.m = m # store first
-    if is_int(m):
-      if m==1: m = ()
-      else:    m = (m,)
+    self.M = M # store first
+    if is_int(M):
+      if M==1: M = ()
+      else:    M = (M,)
 
-    self.a   = np.full((chrono.KObs+1,)+m, nan, **kwargs)
-    self.f   = np.full((chrono.KObs+1,)+m, nan, **kwargs)
+    self.a   = np.full((chrono.KObs+1,)+M, nan, **kwargs)
+    self.f   = np.full((chrono.KObs+1,)+M, nan, **kwargs)
     if self.store_u:
-      self.u = np.full((chrono.K   +1,)+m, nan, **kwargs)
+      self.u = np.full((chrono.K   +1,)+M, nan, **kwargs)
     else:
-      self.tmp   = np.full(m, nan, **kwargs)
+      self.tmp   = np.full(M, nan, **kwargs)
       self.k_tmp = None
   
   def validate_key(self,key):
@@ -265,7 +265,7 @@ class FAU_series(NestedPrint):
     Avarage series,
     but only if it's univariate (scalar).
     """
-    if self.m > 1:
+    if self.M > 1:
       raise NotImplementedError
     avrg = {}
     t = self.chrono

@@ -9,10 +9,10 @@ def print_mm(s, diff):
   print("Mismatch " + s.ljust(15) + ": ", round2(sla.norm(diff),1e-4))
 
 
-m = 6 # state/obs dim
+M = 6 # state/obs dim
 N = 5 # ens size
 
-E = randn((m,N))
+E = randn((M,N))
 A = mean0(E,axis=1)
 
 
@@ -24,11 +24,11 @@ Vh = Vh_T.T
 #Ah = A @ Vh
 #Yh = Y @ Vh
 
-R = CovMat(randcov(m))
+R = CovMat(randcov(M))
 Rm12 = R.sym_sqrt_inv
-H = eye(m)
+H = eye(M)
 Y = H@A
-dy= randn(m)
+dy= randn(M)
 d = Y.T @ R.inv @ dy
 
 ####################

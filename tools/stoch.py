@@ -76,11 +76,11 @@ def LCG(seed=-1):
   """  
   if seed > -1:
     LCG.k = seed
-  m = 2**32
+  M = 2**32
   a = 1664525
   c = 1013904223
-  LCG.k = (LCG.k * a + c) % m
-  return float(LCG.k) / m
+  LCG.k = (LCG.k * a + c) % M
+  return float(LCG.k) / M
 LCG.k = 1
 
 def myrand(shape=(1,)):

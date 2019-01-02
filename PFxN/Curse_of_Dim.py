@@ -1,8 +1,8 @@
-# Sample (1) m times from N(0,1), and (2) once from N(0,I_m).
-# If prior cov B approaches ones((m,m)), i.e. perfect degeneracy,
+# Sample (1) M times from N(0,1), and (2) once from N(0,I_m).
+# If prior cov B approaches ones((M,M)), i.e. perfect degeneracy,
 # then the two should become equivalent.
 
-# Explains why it's min(m,p) that determines weight variation,
+# Explains why it's min(M,p) that determines weight variation,
 # and why serial assimilation of obs is pointless.
 
 ############################
@@ -21,10 +21,10 @@ y_bar = mean(yy)
 ww = sp.stats.norm.pdf(xx,loc=y_bar,scale=sqrt(R/p))
 ww /= ww.sum()
 
-#B12 = ones((m,m))
-#for i in range(m):
+#B12 = ones((M,M))
+#for i in range(M):
   #B12[i,i] = 0.9
-#B = B12 @ B12 / m
+#B = B12 @ B12 / M
 
 ############################
 # 

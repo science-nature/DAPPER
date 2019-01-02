@@ -10,10 +10,10 @@ self = InvChi2Filter(nu=50,sc=1)
 DR   = 1e3
 
 ########### Likelihood
-m      = 3
+M      = 3
 trHPHR = 3
 dR2    = 6
-log_lklhd = lambda b2: Chi2_logp(m + trHPHR*b2, m, dR2)
+log_lklhd = lambda b2: Chi2_logp(M + trHPHR*b2, M, dR2)
 
 
 ########### Posterior: log_update

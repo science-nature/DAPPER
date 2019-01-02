@@ -163,7 +163,7 @@ class Stats(NestedPrint):
   def assess_ens(self,k,E,w=None):
     """Ensemble and Particle filter (weighted/importance) assessment."""
     # Unpack
-    N,m = E.shape
+    N,M = E.shape
     x = self.xx[k[0]]
 
     # Process weights
@@ -207,8 +207,8 @@ class Stats(NestedPrint):
 
     self.derivative_stats(k,x)
 
-    if sqrt(m*N) <= Stats.comp_threshold_3:
-      if N<=m:
+    if sqrt(M*N) <= Stats.comp_threshold_3:
+      if N<=M:
         _,s,UT         = svd( (sqrt(w)*A.T).T, full_matrices=False)
         s             *= sqrt(ub) # Makes s^2 unbiased
         self.svals[k]  = s
@@ -222,7 +222,7 @@ class Stats(NestedPrint):
 
       # For each state dim [i], compute rank of truth (x) among the ensemble (E)
       Ex_sorted     = np.sort(np.vstack((E,x)),axis=0,kind='heapsort')
-      self.rh[k]    = [np.where(Ex_sorted[:,i] == x[i])[0][0] for i in range(m)]
+      self.rh[k]    = [np.where(Ex_sorted[:,i] == x[i])[0][0] for i in range(M)]
 
 
   def assess_ext(self,k,mu,P):
@@ -233,7 +233,7 @@ class Stats(NestedPrint):
     if not isFinite: raise_AFE("Estimates not finite.",k)
     if not isReal:   raise_AFE("Estimates not Real.",k)
 
-    m = len(mu)
+    M = len(mu)
     x = self.xx[k[0]]
 
     self.mu[k]  = mu
@@ -243,7 +243,7 @@ class Stats(NestedPrint):
 
     self.derivative_stats(k,x)
 
-    if m <= Stats.comp_threshold_3:
+    if M <= Stats.comp_threshold_3:
       P             = P.full if isinstance(P,CovMat) else P
       s2,U          = nla.eigh(P)
       self.svals[k] = sqrt(np.maximum(s2,0.0))[::-1]
@@ -259,11 +259,11 @@ class Stats(NestedPrint):
     
   def MGLS(self,k):
     # Marginal Gaussian Log Score.
-    m              = len(self.err[k])
+    M              = len(self.err[k])
     ldet           = log(self.var[k]).sum()
     nmisf          = self.var[k]**(-1/2) * self.err[k]
     logp_m         = (nmisf**2).sum() + ldet
-    self.logp_m[k] = logp_m/m
+    self.logp_m[k] = logp_m/M
 
 
   def average_in_time(self):
@@ -322,28 +322,28 @@ class Stats(NestedPrint):
 
 
 
-  def new_FAU_series(self,m,**kwargs):
+  def new_FAU_series(self,M,**kwargs):
     "Convenience FAU_series constructor."
     store_u = self.config.store_u
-    return FAU_series(self.HMM.t, m, store_u=store_u, **kwargs)
+    return FAU_series(self.HMM.t, M, store_u=store_u, **kwargs)
 
   # TODO: Provide frontend initializer 
 
   # Better to initialize manually (np.full...)
-  # def new_array(self,f_a_u,m,**kwargs):
+  # def new_array(self,f_a_u,M,**kwargs):
   #   "Convenience array constructor."
   #   t = self.HMM.t
   #   # Convert int-len to shape-tuple
-  #   if is_int(m):
-  #     if m==1: m = ()
-  #     else:    m = (m,)
+  #   if is_int(M):
+  #     if M==1: M = ()
+  #     else:    M = (M,)
   #   # Set length
   #   if f_a_u=='a':
   #     K = t.KObs
   #   elif f_a_u=='u':
   #     K = t.K
   #   #
-  #   return np.full((K+1,)+m,**kwargs)
+  #   return np.full((K+1,)+M,**kwargs)
 
 
 
@@ -355,8 +355,8 @@ def average_each_field(table,axis=1):
     table = np.transpose(table)
   assert table.ndim == 2
 
-  m,N = table.shape
-  avrg = np.empty(m,dict)
+  M,N = table.shape
+  avrg = np.empty(M,dict)
 
   for i,row in enumerate(table):
     avrg[i] = dict()

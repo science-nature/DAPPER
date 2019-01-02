@@ -18,7 +18,7 @@ seed()
 invm = lambda x: funm_psd(x, np.reciprocal)
 m12  = lambda x: funm_psd(x, lambda x: x**(-1/2))
 
-m  = 5
+M  = 5
 N  = 6 
 eN = 1 + 1/N
 nu = N-1
@@ -44,8 +44,8 @@ iChi2_mode = minz(lambda x:  -iChi2_pdf(x),  Domain).x  # nu/(nu+2)
 # plt.plot(xx, iChi2_pdf(xx))
 # plt.hist(iChi2_gen(100000),normed=True,bins=100,range=(0,5))
 
-B     = randcov(m)
-R     = randcov(m)
+B     = randcov(M)
+R     = randcov(M)
 iR    = invm(R)
 Y2S   = m12(nu*R)
 P     = invm( iR + invm(B) )
@@ -54,7 +54,7 @@ B_12  = funm_psd(B, sqrt)
 tR, tB, tP = trace(R), trace(B), trace(P)
 
 for k in range(K):
-  E     = B_12 @ randn((m,N))
+  E     = B_12 @ randn((M,N))
   A, xb = center(E,1)
   Bb    = A@A.T / nu
   iBb   = invm(Bb)
@@ -74,7 +74,7 @@ for k in range(K):
   msft.P_av[k] =     Pb_av/tP
 
   #l2s = iChi2_gen(K)
-  #XX  = xb + eN*A/sqrt(N-1) @ randn((m,K)) * l2s
+  #XX  = xb + eN*A/sqrt(N-1) @ randn((M,K)) * l2s
   
 
 for key,val in msft.items():

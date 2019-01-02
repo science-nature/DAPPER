@@ -5,10 +5,10 @@ from common import *
 from scipy.stats import chi2
 
 K = 10**5
-m = 5
+M = 5
 
-A = diag(1+arange(m)**2) # randcov(m)
-B = diag(1+arange(m)**2) # randcov(m)
+A = diag(1+arange(M)**2) # randcov(M)
+B = diag(1+arange(M)**2) # randcov(M)
 C = A+B
 
 C12 = sqrtm(C)
@@ -21,12 +21,12 @@ Cm12 = funm_psd(C, lambda x: x**-.5)
 fig, ax = plt.subplots()
 xx = linspace(0,4*trace(C))
 
-dd = C12 @ randn((m,K))
+dd = C12 @ randn((M,K))
 nn = sum(dd**2,0)
 
 ax.hist(nn,normed=1,bins=100)
 
-C2 = chi2(df=m,scale=trace(C)/m)
+C2 = chi2(df=M,scale=trace(C)/M)
 ax.plot(xx,C2.pdf(xx))
 
 

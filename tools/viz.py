@@ -27,7 +27,7 @@ class LivePlot:
 
     HMM    = stats.HMM
     config = stats.config
-    m      = HMM.M
+    M      = HMM.M
     dt     = HMM.t.dt
 
     # Store
@@ -50,19 +50,19 @@ class LivePlot:
     ens_props = {'color': 0.7*RGBs['w'],'alpha':0.3}
 
     # For periodic functions
-    ii,wrap = setup_wrapping(m)
+    ii,wrap = setup_wrapping(M)
 
 
     #####################
     # Correlation plot
     #####################
-    if 2 in only and m<1001:
+    if 2 in only and M<1001:
       GS = {'height_ratios':[4, 1],'hspace':0.09,'top':0.95}
       fig_C, (ax_C,ax_AC) = freshfig(2, (5,6), nrows=2, gridspec_kw=GS)
       win_title(fig_C, "Correlations")
       set_figpos('2311')
 
-      if m<=1003:
+      if M<=1003:
         # Get cov matrix
         if E is not None:
           C = np.cov(E.T, ddof=1)
@@ -99,9 +99,9 @@ class LivePlot:
         # ax_AC = inset_axes(ax_C,width="30%",height="60%",loc=3)
         ACF = circulant_ACF(C)
         AAF = circulant_ACF(C,do_abs=True)
-        line_AC, = ax_AC.plot(arange(m), ACF, label='Correlation')
-        line_AA, = ax_AC.plot(arange(m), AAF, label='Abs. corr.')
-        _   = ax_AC.hlines(0,0,m-1,'k','dotted',lw=1)
+        line_AC, = ax_AC.plot(arange(M), ACF, label='Correlation')
+        line_AA, = ax_AC.plot(arange(M), AAF, label='Abs. corr.')
+        _   = ax_AC.hlines(0,0,M-1,'k','dotted',lw=1)
         # Align ax_AC with ax_C
         bb_AC = ax_AC.get_position()
         bb_C  = ax_C.get_position()
@@ -340,9 +340,9 @@ class LivePlot:
 
     stats = self.stats
     mu    = stats.mu
-    m     = self.xx.shape[1]
+    M     = self.xx.shape[1]
 
-    ii,wrap = setup_wrapping(m)
+    ii,wrap = setup_wrapping(M)
     
     #####################
     # Correlation plot
@@ -516,20 +516,20 @@ def plot_pause(duration):
     time.sleep(0.1)
 
 
-def setup_wrapping(m,periodic=True):
+def setup_wrapping(M,periodic=True):
   """
   Make periodic indices and a corresponding function
   (that works for ensemble input).
   """
 
   if periodic:
-    ii = np.hstack([-0.5, arange(m), m-0.5])
+    ii = np.hstack([-0.5, arange(M), M-0.5])
     def wrap(E):
       midpoint = (E[[0],...] + E[[-1],...])/2
       return ccat(midpoint,E,midpoint)
 
   else:
-    ii = arange(m)
+    ii = arange(M)
     wrap = lambda x: x
 
   return ii, wrap
@@ -749,8 +749,8 @@ def plot_time_series(stats,**kwargs):
   # Time
   chrono = stats.HMM.t
   xx     = stats.xx
-  m      = xx.shape[1]
-  dims   = equi_spaced_integers(m, min(m, 10))
+  M      = xx.shape[1]
+  dims   = equi_spaced_integers(M, min(M, 10))
   kk,kkA = get_plot_inds(xx[:,dims],chrono,mult=80,**kwargs)
   tt,ttA = chrono.tt[kk], chrono.tt[kkA]
   KA     = len(kkA)      
@@ -795,7 +795,7 @@ def plot_hovmoller(xx,chrono=None,**kwargs):
   fig, ax = freshfig(16,(4,3.5))
   set_figpos('3311 mac')
 
-  m = xx.shape[1]
+  M = xx.shape[1]
 
   if chrono!=None:
     kk,_ = get_plot_inds(xx,chrono,mult=40,**kwargs)
@@ -806,7 +806,7 @@ def plot_hovmoller(xx,chrono=None,**kwargs):
     tt   = arange(pK)
     ax.set_ylabel('Time indices (k)')
 
-  plt.contourf(arange(m),tt,xx[kk],25)
+  plt.contourf(arange(M),tt,xx[kk],25)
   plt.colorbar()
   ax.set_position([0.125, 0.20, 0.62, 0.70])
   ax.set_title("Hovmoller diagram (of 'Truth')")
@@ -856,7 +856,7 @@ def plot_err_components(stats):
   set_figpos('1312 mac')
 
   chrono = stats.HMM.t
-  m      = stats.xx.shape[1]
+  M      = stats.xx.shape[1]
 
   err   = mean( abs(stats.err  .a) ,0)
   sprd  = mean(     stats.mad  .a  ,0)
@@ -864,17 +864,17 @@ def plot_err_components(stats):
   usprd = mean(     stats.svals.a  ,0)
 
   ax_r = plt.subplot(311)
-  ax_r.plot(          arange(m),               err,'k',lw=2, label='Error')
-  if m<10**3:
-    ax_r.fill_between(arange(m),[0]*len(sprd),sprd,alpha=0.7,label='Spread')
+  ax_r.plot(          arange(M),               err,'k',lw=2, label='Error')
+  if M<10**3:
+    ax_r.fill_between(arange(M),[0]*len(sprd),sprd,alpha=0.7,label='Spread')
   else:
-    ax_r.plot(        arange(m),              sprd,alpha=0.7,label='Spread')
+    ax_r.plot(        arange(M),              sprd,alpha=0.7,label='Spread')
   #ax_r.set_yscale('log')
   ax_r.set_title('Element-wise error comparison')
   ax_r.set_xlabel('Dimension index (i)')
   ax_r.set_ylabel('Time-average (_a) magnitude')
   ax_r.set_ylim(bottom=mean(sprd)/10)
-  ax_r.set_xlim(right=m-1); add_endpoint_xtick(ax_r)
+  ax_r.set_xlim(right=M-1); add_endpoint_xtick(ax_r)
   ax_r.get_xaxis().set_major_locator(MaxNLocator(integer=True))
   plt.subplots_adjust(hspace=0.55) # OR: [0.125,0.6, 0.78, 0.34]
   ax_r.legend()
@@ -890,7 +890,7 @@ def plot_err_components(stats):
     ax_s.fill_between(arange(L),[0]*L,usprd,alpha=0.7,label='Spread')
     ax_s.set_yscale('log')
     ax_s.set_ylim(bottom=1e-4*usprd.sum())
-    ax_s.set_xlim(right=m-1); add_endpoint_xtick(ax_s)
+    ax_s.set_xlim(right=M-1); add_endpoint_xtick(ax_s)
     ax_s.get_xaxis().set_major_locator(MaxNLocator(integer=True))
     ax_s.legend()
   else:
@@ -926,7 +926,7 @@ def plot_rank_histogram(stats):
   if has_been_computed:
     w     = stats.w.a [chrono.maskObs_BI]
     ranks = stats.rh.a[chrono.maskObs_BI]
-    m     = ranks.shape[1]
+    M     = ranks.shape[1]
     N     = w.shape[1]
     if are_uniform(w):
       # Ensemble rank histogram
@@ -939,7 +939,7 @@ def plot_rank_histogram(stats):
       w  = w
       K  = len(w)
       w  = np.hstack([w, ones((K,1))/N]) # define weights for rank N+1
-      w  = array([ w[arange(K),ranks[arange(K),i]] for i in range(m)])
+      w  = array([ w[arange(K),ranks[arange(K),i]] for i in range(M)])
       w  = w.T.ravel()
       w  = np.maximum(w, 1/N/100) # Artificial cap. Reduces variance, but introduces bias.
       w  = 1/w
@@ -980,7 +980,7 @@ def set_figpos(loc):
   Place figure on screen, where 'loc' can be either
     NW, E, ...
   or
-    4 digits (as str or int) to define grid m,N,i,j.
+    4 digits (as str or int) to define grid M,N,i,j.
   """
 
   #Only works with both:
@@ -1042,13 +1042,13 @@ def set_figpos(loc):
     elif loc.startswith('N' ): loc = '2111'
 
   # Place
-  m,N,i,j = [int(x) for x in loc[:4]]
-  assert m>=i>0 and N>=j>0
-  h0   -= (m-1)*25
+  M,N,i,j = [int(x) for x in loc[:4]]
+  assert M>=i>0 and N>=j>0
+  h0   -= (M-1)*25
   yoff  = 25*(i-1)
   if i>1:
     yoff += 25
-  place((j-1)*w0/N, yoff + (i-1)*h0/m, w0/N, h0/m)
+  place((j-1)*w0/N, yoff + (i-1)*h0/M, w0/N, h0/M)
 
 
 # stackoverflow.com/a/7396313

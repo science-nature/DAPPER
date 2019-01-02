@@ -43,7 +43,7 @@ def EnKF_analysis(E,Eo,hnoise,y,upd_a,stats,kObs):
     Sakov and Oke (2008). "A deterministic formulation of the EnKF..."
     """
     R = hnoise.C    # Obs noise cov
-    N,m = E.shape   # Dimensionality
+    N,M = E.shape   # Dimensionality
     N1  = N-1       # Ens size - 1
 
     mu = mean(E,0)  # Ens mean
@@ -69,7 +69,7 @@ def EnKF_analysis(E,Eo,hnoise,y,upd_a,stats,kObs):
         
         # The various versions below differ only numerically.
         # EVD is default, but for large N use SVD version.
-        if upd_a == 'Sqrt' and N>m:
+        if upd_a == 'Sqrt' and N>M:
           upd_a = 'Sqrt svd'
         
         if 'explicit' in upd_a:
@@ -184,8 +184,8 @@ def EnKF_analysis(E,Eo,hnoise,y,upd_a,stats,kObs):
       raise KeyError("No analysis update method found: '" + upd_a + "'.") 
 
     # Diagnostic: relative influence of observations
-    if 'trHK' in locals(): stats.trHK[kObs] = trHK     /hnoise.m
-    elif 'HK' in locals(): stats.trHK[kObs] = trace(HK)/hnoise.m
+    if 'trHK' in locals(): stats.trHK[kObs] = trHK     /hnoise.M
+    elif 'HK' in locals(): stats.trHK[kObs] = trace(HK)/hnoise.M
 
     return E
 
@@ -203,7 +203,7 @@ def post_process(E,infl,rot):
 
   if do_infl or rot:
     A, mu = center(E)
-    N,m   = E.shape
+    N,M   = E.shape
     T     = eye(N)
 
     if do_infl:
@@ -230,7 +230,7 @@ def add_noise(E, dt, noise, config):
 
   if noise.C is 0: return E
 
-  N,m  = E.shape
+  N,M  = E.shape
   A,mu = center(E)
   Q12  = noise.C.Left
   Q    = noise.C.full
@@ -240,14 +240,14 @@ def add_noise(E, dt, noise, config):
     Qa12 = np.nan # cause error if used
     A2   = A.copy() # Instead of using (the implicitly nonlocal) A,
     # which changes A outside as well. NB: This is a bug in Datum!
-    if N<=m:
+    if N<=M:
       Ainv = tinv(A2.T)
       Qa12 = Ainv@Q12
       T    = funm_psd(eye(N) + dt*(N-1)*(Qa12@Qa12.T), sqrt)
       A2   = T@A2
     else: # "Left-multiplying" form
       P = A2.T @ A2 /(N-1)
-      L = funm_psd(eye(m) + dt*mrdiv(Q,P), sqrt)
+      L = funm_psd(eye(M) + dt*mrdiv(Q,P), sqrt)
       A2= A2 @ L.T
     E = mu + A2
     return E, T, Qa12
@@ -262,7 +262,7 @@ def add_noise(E, dt, noise, config):
     ratio  = (varE + dt*diag(Q).sum())/varE
     E      = mu + sqrt(ratio)*A
     E      = reconst(*tsvd(E,0.999)) # Explained in Datum
-  elif method == 'Mult-m':
+  elif method == 'Mult-M':
     varE   = np.var(E,axis=0)
     ratios = sqrt( (varE + dt*diag(Q))/varE )
     E      = mu + A*ratios
@@ -273,7 +273,7 @@ def add_noise(E, dt, noise, config):
     varE0 = np.var(E,axis=0,ddof=1).sum()
     varE2 = (varE0 + dt*diag(Q).sum())
     E, _, Qa12 = sqrt_core()
-    if N<=m:
+    if N<=M:
       A,mu   = center(E)
       varE1  = np.var(E,axis=0,ddof=1).sum()
       ratio  = varE2/varE1
@@ -281,12 +281,12 @@ def add_noise(E, dt, noise, config):
       E      = reconst(*tsvd(E,0.999)) # Explained in Datum
   elif method == 'Sqrt-Add-Z':
     E, _, Qa12 = sqrt_core()
-    if N<=m:
+    if N<=M:
       Z  = Q12 - A.T@Qa12
       E += sqrt(dt)*(Z@randn((Z.shape[1],N))).T
   elif method == 'Sqrt-Dep':
     E, T, Qa12 = sqrt_core()
-    if N<=m:
+    if N<=M:
       # Q_hat12: reuse svd for both inversion and projection.
       Q_hat12      = A.T @ Qa12
       U,s,VT       = tsvd(Q_hat12,0.99)
@@ -309,12 +309,12 @@ def add_noise(E, dt, noise, config):
 # Reshapings used in smoothers to go to/from
 # 3D arrays, where the 0th axis is the Lag index.
 def reshape_to(E):
-  K,N,m = E.shape
-  return E.transpose([1,0,2]).reshape((N,K*m))
-def reshape_fr(E,m):
+  K,N,M = E.shape
+  return E.transpose([1,0,2]).reshape((N,K*M))
+def reshape_fr(E,M):
   N,Km = E.shape
-  K    = Km//m
-  return E.reshape((N,K,m)).transpose([1,0,2])
+  K    = Km//M
+  return E.reshape((N,K,M)).transpose([1,0,2])
 
 
 @DA_Config
@@ -764,7 +764,7 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
 
   'Hess': use non-approx Hessian for ensemble transform matrix?
 
-  'g' is the nullity of A (state anomalies's), ie. g=max(1,N-m),
+  'g' is the nullity of A (state anomalies's), ie. g=max(1,N-M),
   compensating for the redundancy in the space of w.
   But we have made it an input argument instead, with default 0,
   because mode-finding (of p(x) via the dual) completely ignores this redundancy,
@@ -872,7 +872,7 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
         E = post_process(E,infl,rot)
 
         stats.infl[kObs] = l1
-        stats.trHK[kObs] = (((l1*s)**2 + N1)**(-1.0)*s**2).sum()/Obs.noise.m
+        stats.trHK[kObs] = (((l1*s)**2 + N1)**(-1.0)*s**2).sum()/Obs.noise.M
 
       stats.assess(k,kObs,E=E)
   return assimilator
@@ -1030,7 +1030,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
             stats.assess(k,DAW_right,'a', E = w2x_right(w+T) )
             stats.iters   [DAW_right]       = iteration+1
             stats.infl    [DAW_right]       = sqrt(N1/za)
-            stats.trHK    [DAW_right]       = trace(Y0.T @ Pw @ Y0)/Obs.noise.m # TODO mda
+            stats.trHK    [DAW_right]       = trace(Y0.T @ Pw @ Y0)/Obs.noise.M # TODO mda
 
             # Final estimate of E at [DAW_left-1]
             E = w2x_left(w+T)
@@ -1157,7 +1157,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
 
         # Analysis 'a' stats for E[kObs].
         stats.assess(k,kObs,'a',E=E)
-        stats.trHK [kObs] = trace(Y.T @ Pw @ Y)/Obs.noise.m
+        stats.trHK [kObs] = trace(Y.T @ Pw @ Y)/Obs.noise.M
         stats.infl [kObs] = sqrt(N1/za)
         stats.iters[kObs] = iteration+1
 
@@ -1218,7 +1218,7 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
 
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12 = Dyn.M, Obs.noise.C.sym_sqrt_inv
+    M, Rm12 = Dyn.M, Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1228,7 +1228,7 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
     for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       if Dyn.noise.C is not 0:
-        D  = randn((N,m))
+        D  = randn((N,M))
         E += sqrt(dt*qroot)*(D@Dyn.noise.C.Right)
 
         if qroot != 1.0:
@@ -1244,7 +1244,7 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
 
         stats.assess(k,kObs,'a',E=E,w=w)
         if trigger_resampling(w,NER,stats,kObs):
-          C12    = reg*bandw(N,m)*raw_C12(E,w)
+          C12    = reg*bandw(N,M)*raw_C12(E,w)
           #C12  *= sqrt(rroot) # Re-include?
           idx,w  = resample(w, resampl, wroot=wroot)
           E,chi2 = regularize(C12,E,idx,nuj)
@@ -1276,7 +1276,7 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
   """
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, R = Dyn.M, Obs.noise.C.full
+    M, R = Dyn.M, Obs.noise.C.full
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1286,7 +1286,7 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
     for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       if Dyn.noise.C is not 0:
-        E += sqrt(dt)*(randn((N,m))@Dyn.noise.C.Right)
+        E += sqrt(dt)*(randn((N,M))@Dyn.noise.C.Right)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E,w=w)
@@ -1296,7 +1296,7 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
         innovs = y - Eo
 
         # EnKF-ish update
-        s   = Qs*bandw(N,m)
+        s   = Qs*bandw(N,M)
         As  = s*raw_C12(E,w)
         Ys  = s*raw_C12(Eo,w)
         C   = Ys.T@Ys + R
@@ -1314,7 +1314,7 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
         # Resampling
         stats.assess(k,kObs,'a',E=E,w=w)
         if trigger_resampling(w,NER,stats,kObs):
-          C12    = reg*bandw(N,m)*raw_C12(E,w)
+          C12    = reg*bandw(N,M)*raw_C12(E,w)
           idx,w  = resample(w, resampl, wroot=wroot)
           E,_    = regularize(C12,E,idx,nuj)
 
@@ -1343,7 +1343,7 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
 
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12 = Dyn.M, Obs.noise.C.sym_sqrt_inv
+    M, Rm12 = Dyn.M, Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1353,7 +1353,7 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
     for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       if Dyn.noise.C is not 0:
-        D  = randn((N,m))
+        D  = randn((N,M))
         E += sqrt(dt*qroot)*(D@Dyn.noise.C.Right)
 
         if qroot != 1.0:
@@ -1369,7 +1369,7 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
 
         stats.assess(k,kObs,'a',E=E,w=w)
         if trigger_resampling(w,NER,stats,kObs):
-          C12    = reg*bandw(N,m)*raw_C12(E,w)
+          C12    = reg*bandw(N,M)*raw_C12(E,w)
           #C12  *= sqrt(rroot) # Re-include?
 
           wroot = 1.0
@@ -1413,7 +1413,7 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
   """
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12, Ri = Dyn.M, Obs.noise.C.sym_sqrt_inv, Obs.noise.C.inv
+    M, Rm12, Ri = Dyn.M, Obs.noise.C.sym_sqrt_inv, Obs.noise.C.inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1425,7 +1425,7 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
     for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       if Dyn.noise.C is not 0:
-        E += sqrt(dt)*(randn((N,m))@Dyn.noise.C.Right)
+        E += sqrt(dt)*(randn((N,M))@Dyn.noise.C.Right)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E,w=w)
@@ -1445,15 +1445,15 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
           Yw = raw_C12(Eo,wD)
 
           # EnKF-without-pertubations update
-          if N>m:
+          if N>M:
             C       = Yw.T @ Yw + Obs.noise.C.full
             KG      = mrdiv(Aw.T@Yw,C)
             cntrs   = E + (y-Eo)@KG.T
             Pa      = Aw.T@Aw - KG@Yw.T@Aw
             P_cholU = funm_psd(Pa, sqrt)
             if DD is None or not re_use:
-              DD    = randn((N*xN,m))
-              chi2  = np.sum(DD**2, axis=1) * m/N
+              DD    = randn((N*xN,M))
+              chi2  = np.sum(DD**2, axis=1) * M/N
               log_q = -0.5 * chi2
           else:
             V,sig,UT = svd0( Yw @ Rm12.T )
@@ -1464,7 +1464,7 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
             # Generate N·xN random numbers from NormDist(0,1), and compute
             # log(q(x))
             if DD is None or not re_use:
-              rnk   = min(m,N-1)
+              rnk   = min(M,N-1)
               DD    = randn((N*xN,N))
               chi2  = np.sum(DD**2, axis=1) * rnk/N
               log_q = -0.5 * chi2
@@ -1482,7 +1482,7 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
           ED = ED + AD
 
           # log(prior_kernel(x))
-          s         = Qs*bandw(N,m)
+          s         = Qs*bandw(N,M)
           innovs_pf = AD @ tinv(s*Aw)
           # NB: Correct: innovs_pf = (ED-E_orig) @ tinv(s*Aw)
           #     But it seems to make no difference on well-tuned performance !
@@ -1521,7 +1521,7 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
   """
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12 = Dyn.M, Obs.noise.C.sym_sqrt_inv
+    M, Rm12 = Dyn.M, Obs.noise.C.sym_sqrt_inv
 
     DD = None
     E  = X0.sample(N)
@@ -1532,7 +1532,7 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
     for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
       if Dyn.noise.C is not 0:
-        E += sqrt(dt)*(randn((N,m))@Dyn.noise.C.Right)
+        E += sqrt(dt)*(randn((N,M))@Dyn.noise.C.Right)
 
       if kObs is not None:
         stats.assess(k,kObs,'f',E=E,w=w)
@@ -1545,12 +1545,12 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
         stats.assess(k,kObs,'a',E=E,w=w)
         if trigger_resampling(w,NER,stats,kObs):
           # Compute kernel colouring matrix
-          cholR = Qs*bandw(N,m)*raw_C12(E,wD)
+          cholR = Qs*bandw(N,M)*raw_C12(E,wD)
           cholR = chol_reduce(cholR)
 
           # Generate N·xN random numbers from NormDist(0,1)
           if DD is None or not re_use:
-            DD = randn((N*xN,m))
+            DD = randn((N*xN,M))
 
           # Duplicate and jitter
           ED  = E.repeat(xN,0)
@@ -1640,7 +1640,7 @@ def mask_unique_of_sorted(idx):
   duplicates |= idx==np.roll(idx,-1)
   return duplicates
 
-def bandw(N,m):
+def bandw(N,M):
   """"
   Optimal bandwidth (not bandwidth^2), as per Scott's rule-of-thumb.
   Refs: [1] section 12.2.2, and [2] #Rule_of_thumb
@@ -1648,7 +1648,7 @@ def bandw(N,m):
     "Sequential Monte Carlo Methods in Practice"
   [2] wikipedia.org/wiki/Multivariate_kernel_density_estimation
   """
-  return N**(-1/(m+4))
+  return N**(-1/(M+4))
 
 
 def regularize(C12,E,idx,no_uniq_jitter):
@@ -1779,15 +1779,15 @@ def sample_quickly_with(C12,N=None):
   Gaussian sampling in the quickest fashion,
   which depends on the size of the colouring matrix 'C12'.
   """
-  (N_,m) = C12.shape
+  (N_,M) = C12.shape
   if N is None: N = N_
-  if N_ > 2*m:
+  if N_ > 2*M:
     cholR  = chol_reduce(C12)
     D      = randn((N,cholR.shape[0]))
     chi2   = np.sum(D**2, axis=1)
     sample = D@cholR
   else:
-    chi2_compensate_for_rank = min(m/N_,1.0)
+    chi2_compensate_for_rank = min(M/N_,1.0)
     D      = randn((N,N_))
     chi2   = np.sum(D**2, axis=1) * chi2_compensate_for_rank
     sample = D@C12

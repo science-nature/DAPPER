@@ -6,17 +6,17 @@
 
 # For M11 (meth='Xplct R'):
 #  - Expect(estimate_s2) = (s2+1/N)*nu/(nu-2) != s2 (i.e. it's biased),
-#    where nu=N1*m. and HBH@inv(R) \propto eye(m) has been assumed. Thus,
-#    - To observe bias due to division by B (i.e. trHPHR), use smallish m.
+#    where nu=N1*M. and HBH@inv(R) \propto eye(M) has been assumed. Thus,
+#    - To observe bias due to division by B (i.e. trHPHR), use smallish M.
 #    - To observe bias due to not accounting for the fact that dy is defined
 #      through the **ensemble** mean, use small N.
 # For meth='C' and meth='HBH' the bias is much worse
 #   because the division happens before taking the trace.
 #   Also the direction (pos/neg) of the bias is less clear.
 # For meth 'VB heur I', use
-#   - small m (eg m=2, N=100) to observe a severe bias (don't know why)
-#   - large m (eg m=40, N=20) to also observe a severe bias
-#   - m=5, N=50 to obsere a slight bias, but a better (smaller)
+#   - small M (eg M=2, N=100) to observe a severe bias (don't know why)
+#   - large M (eg M=40, N=20) to also observe a severe bias
+#   - M=5, N=50 to obsere a slight bias, but a better (smaller)
 #     variance than 'Xplct R' [inspect with np.var(stat.b2_o)]
 
 
@@ -31,7 +31,7 @@ sd0 = seed()
 
 meth = 'Xplct C'
 K = 10**3
-m = 20
+M = 20
 N = 24
 N1 = N-1
 eN = (N+1)/N
@@ -39,12 +39,12 @@ eN = (N+1)/N
 # This is what infl^2 (here 'b2_o') should estimate
 s2 = 0.2
 
-B = eye(m) # randcov(m) diag(1+arange(m)**2) 
-R = eye(m) # randcov(m) diag(1+arange(m)**2)
+B = eye(M) # randcov(M) diag(1+arange(M)**2) 
+R = eye(M) # randcov(M) diag(1+arange(M)**2)
 R = CovMat(R)
 B = CovMat(B)
 
-b = ones(m)
+b = ones(M)
 C = CovMat(R.full + B.full)
 
 
@@ -57,9 +57,9 @@ steps = zeros((K,ITER))
 # afterwards, do: plot(abs(steps).mean(axis=0))
 
 for k in progbar(range(K)):
-  x  = b + randn(m)     @ B.Right
-  Eo = b + randn((N,m)) @ B.Right / sqrt(s2)
-  y  = x + randn(m)     @ R.Right
+  x  = b + randn(M)     @ B.Right
+  Eo = b + randn((N,M)) @ B.Right / sqrt(s2)
+  y  = x + randn(M)     @ R.Right
 
   xo = mean(Eo,0)
   Y  = Eo-xo
@@ -72,7 +72,7 @@ for k in progbar(range(K)):
 
     if 'R' in meth:
       trHPHR = trace(YR.T @ YR)/N1 # sum(s**2)/N1
-      b2_o   = (dR@dR - m)/trHPHR
+      b2_o   = (dR@dR - M)/trHPHR
     elif 'HBH' in meth:
       V,s,UT = tsvd(YR)
       du     = UT @ dR
@@ -88,13 +88,13 @@ for k in progbar(range(K)):
     if 'Uni' in meth:
       # Solution available analytically, and equal to 'Xplct R' !
       trHPHR    = trace(YR.T @ YR)/N1 # sum(s**2)/N1
-      log_lklhd = lambda b2: -Chi2_logp(m + trHPHR*b2, m, dR@dR)
-      LB        = -0.99*m/trHPHR
+      log_lklhd = lambda b2: -Chi2_logp(M + trHPHR*b2, M, dR@dR)
+      LB        = -0.99*M/trHPHR
     elif 'Mult' in meth:
       V,s,UT = svd0(YR) # could use tsvd for some methods?
       du     = UT @ dR
 
-      dgn_v     = diag_HBH_I(s/sqrt(N1),min(N,m))
+      dgn_v     = diag_HBH_I(s/sqrt(N1),min(N,M))
       log_lklhd = lambda b2: -diag_Gauss_logp(0, dgn_v(b2), du).sum(axis=1)
       LB        = -0.99*N1/max(s**2)
     b2_o = minimize_scalar(log_lklhd, bounds=(LB,9), method='Bounded').x
@@ -102,19 +102,19 @@ for k in progbar(range(K)):
   elif 'VB heur' in meth:
     b2 = b2_o = 1 # init -- shouldn't matter coz using flat prior
     trHPH = trace(Y.T  @ Y )/N1 # sum(s**2)/N1
-    if N<m: V,s,UT = svd0(YR)
+    if N<M: V,s,UT = svd0(YR)
 
     for itr in range(ITER):
       # Udate state with current estimate of inflation
       za = N1/b2
-      if N<m:
+      if N<M:
         du     = UT @ dR
         Pw     = (V * (pad0(s**2,N) + za)**-1.0) @ V.T
         w      = dy @ R.inv @ Y.T @ Pw
         daf    = w@Y                 # innovation (analysis - forecast)
         trHPaH = trace(Y.T @ Pw @ Y) # trace analysis cov
       else:
-        iC     = inv(YR.T@YR + za*eye(m))
+        iC     = inv(YR.T@YR + za*eye(M))
         HPaH   = b2*Y.T@( eye(N) - YR@iC@YR.T )@Y
         trHPaH = trace(HPaH)/N1
         daf    = Y.T@YR@iC@dR
@@ -136,12 +136,12 @@ for k in progbar(range(K)):
       za     = N1/b2
       B0     = Y.T @ Y / N1
       Ba     = Y.T @ Y / za
-      iC     = inv(Ba + eye(m))
-      Pa     = (eye(m) - Ba@iC) @ Ba
+      iC     = inv(Ba + eye(M))
+      Pa     = (eye(M) - Ba@iC) @ Ba
       dx     = Ba@iC@dR
-      b2     = dx@inv(B0)@dx/m + trace(Pa @ inv(B0))/m
+      b2     = dx@inv(B0)@dx/M + trace(Pa @ inv(B0))/M
 
-      # BUGGY. And: how to treat N<m case?
+      # BUGGY. And: how to treat N<M case?
       #Pw     = (V * (pad0(s**2,N) + za)**-1.0) @ V.T
       #w      = dy @ R.inv @ Y.T @ Pw
       #b2     = za*w@w + trace(za*Pw)

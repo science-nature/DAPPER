@@ -62,7 +62,7 @@ class DiscretePosRV():
 
 lklhd = 'Uni'
 K = 10**2
-m = 15
+M = 15
 N = 8
 N1 = N-1
 eN = (N+1)/N
@@ -71,12 +71,12 @@ eN = (N+1)/N
 arr  = lambda K: np.full(K, nan)
 stat = Bunch(mean=arr(K),var=arr(K))
 
-B = eye(m) # randcov(m) diag(1+arange(m)**2) 
-R = eye(m) # randcov(m) diag(1+arange(m)**2)
+B = eye(M) # randcov(M) diag(1+arange(M)**2) 
+R = eye(M) # randcov(M) diag(1+arange(M)**2)
 R = CovMat(R)
 B = CovMat(B)
 
-b = ones(m)
+b = ones(M)
 C = CovMat(R.full + B.full)
 
 # This is what infl^2 should estimate
@@ -90,9 +90,9 @@ dP = K//KP
 Colrs = plt.cm.plasma(linspace(0, 1, KP))
 
 for k in range(K):
-  x  = b + randn(m)     @ B.Right
-  Eo = b + randn((N,m)) @ B.Right / sqrt(s2)
-  y  = x + randn(m)     @ R.Right
+  x  = b + randn(M)     @ B.Right
+  Eo = b + randn((N,M)) @ B.Right / sqrt(s2)
+  y  = x + randn(M)     @ R.Right
 
   xo = mean(Eo,0)
   Y  = Eo-xo
@@ -106,9 +106,9 @@ for k in range(K):
 
   if 'Uni' in lklhd:
     trHPHR    = trace(YR.T @ YR)/N1 # sum(s**2)/N1
-    log_lklhd = lambda b2: Chi2_logp(m + trHPHR*b2, m, dR@dR)
+    log_lklhd = lambda b2: Chi2_logp(M + trHPHR*b2, M, dR@dR)
   elif 'Mult' in lklhd:
-    dgn_v     = diag_HBH_I(s/sqrt(N1),min(N,m))
+    dgn_v     = diag_HBH_I(s/sqrt(N1),min(N,M))
     log_lklhd = lambda b2: diag_Gauss_logp(0, dgn_v(b2), du).sum(axis=1)
 
   if k%dP==0 and k/dP<KP:

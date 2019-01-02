@@ -10,25 +10,25 @@ from common import *
 from mods.Lorenz84.core import step, dfdx
 from mods.Lorenz63.liveplotting import LP_setup
 
-m = 3
-p = m
+M = 3
+p = M
 
 
 day = 0.05/6 * 24 # coz dt=0.05 <--> 6h in "model time scale"
 t = Chronology(0.05,dkObs=1,T=200*day,BurnIn=10*day)
 
-m = 3
+M = 3
 Dyn = {
-    'm'    : m,
+    'M'    : M,
     'model': step,
     'jacob': dfdx,
     'noise': 0
     }
 
-X0  = GaussRV(C=0.01,m=m) # Decreased from Pajonk's C=1.
+X0  = GaussRV(C=0.01,M=M) # Decreased from Pajonk's C=1.
 
 Obs = {
-    'm'    : p,
+    'M'    : p,
     'model': Id_op(),
     'jacob': Id_mat(p),
     'noise': 0.1,
@@ -38,7 +38,7 @@ other = {'name': os.path.relpath(__file__,'mods/')}
 
 HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
-HMM.liveplotting = LP_setup(arange(m))
+HMM.liveplotting = LP_setup(arange(M))
 
 ####################
 # Suggested tuning

@@ -34,10 +34,10 @@ def step(x0, t, dt):
 def TLM(x):
   """Tangent linear model"""
   assert is1d(x)
-  m    = len(x)
-  TLM  = np.zeros((m,m))
-  md   = lambda i: np.mod(i,m)
-  for i in range(m):
+  M    = len(x)
+  TLM  = np.zeros((M,M))
+  md   = lambda i: np.mod(i,M)
+  for i in range(M):
     TLM[i,i]       = -1.0
     TLM[i,   i-2 ] = -x[i-1]
     TLM[i,md(i+1)] = +x[i-1]

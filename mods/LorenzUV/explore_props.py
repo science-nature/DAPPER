@@ -23,7 +23,7 @@ K  = 2000
 dt = 0.005
 t0 = np.nan
 
-x0 = 0.01*randn(LUV.m)
+x0 = 0.01*randn(LUV.M)
 
 true_step  = with_rk4(LUV.dxdt      ,autonom=True)
 model_step = with_rk4(LUV.dxdt_trunc,autonom=True)
@@ -46,9 +46,9 @@ plt.pause(0.1)
 ###########################
 if False:
   eps = 0.001
-  U   = eye(LUV.m)
+  U   = eye(LUV.M)
   E   = xx[0] + eps*U
-  LL_exp = zeros((K,LUV.m))
+  LL_exp = zeros((K,LUV.M))
   tt     = dt*(1+arange(K))
   for k,t in enumerate(progbar(tt,desc='Lyap')):
     E         = true_step(E,99,dt)

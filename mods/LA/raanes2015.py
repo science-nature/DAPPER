@@ -10,11 +10,11 @@ from mods.Lorenz95.liveplotting import LP_setup
 # Burn-in allows damp*x and x+noise balance out
 tseq = Chronology(dt=1,dkObs=5,T=500,BurnIn=60)
 
-m = 1000;
+M = 1000;
 p = 40;
 
-jj = equi_spaced_integers(m,p)
-Obs = partial_direct_obs_setup(m,jj)
+jj = equi_spaced_integers(M,p)
+Obs = partial_direct_obs_setup(M,jj)
 Obs['noise'] = 0.01
 
 
@@ -33,7 +33,7 @@ except FileNotFoundError:
   # First-time use
   print('Generating a sample from which to initialize experiments.')
   NQ        = 20000 # Must have NQ > (2*wnumQ+1)
-  A         = sinusoidal_sample(m,wnumQ,NQ)
+  A         = sinusoidal_sample(M,wnumQ,NQ)
   A         = 1/10 * center(A)[0] / sqrt(NQ)
   Q         = A.T @ A
   U,s,_     = tsvd(Q)
@@ -44,13 +44,13 @@ X0 = GaussRV(C=CovMat(sqrt(5)*L,'Left'))
 
 ################### Forward model ###################
 damp = 0.98;
-Fm = Fmat(m,-1,1,tseq.dt)
+Fm = Fmat(M,-1,1,tseq.dt)
 def step(x,t,dt):
   assert dt == tseq.dt
   return x @ Fm.T
 
 Dyn = {
-    'm'    : m,
+    'M'    : M,
     'model': lambda x,t,dt: damp * step(x,t,dt),
     'jacob': lambda x,t,dt: damp * Fm,
     'noise': GaussRV(C=CovMat(L,'Left')),
@@ -78,7 +78,7 @@ HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,
 # where XXX is one of:
 # - Stoch
 # - Mult-1
-# - Mult-m
+# - Mult-M
 # - Sqrt-Core
 # - Sqrt-Add-Z
 # - Sqrt-Dep

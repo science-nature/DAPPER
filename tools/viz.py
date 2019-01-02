@@ -27,7 +27,7 @@ class LivePlot:
 
     HMM    = stats.HMM
     config = stats.config
-    m      = HMM.Dyn.m
+    m      = HMM.M
     dt     = HMM.t.dt
 
     # Store
@@ -971,8 +971,8 @@ def show_figs(fignums=None):
 def win_title(fig, string, num=True):
   "Set window title"
   if num:
-    n      = fig.number
-    string += " [" + str(n) + "]"
+    N      = fig.number
+    string += " [" + str(N) + "]"
   fig.canvas.set_window_title(string)
 
 def set_figpos(loc):
@@ -980,7 +980,7 @@ def set_figpos(loc):
   Place figure on screen, where 'loc' can be either
     NW, E, ...
   or
-    4 digits (as str or int) to define grid m,n,i,j.
+    4 digits (as str or int) to define grid m,N,i,j.
   """
 
   #Only works with both:
@@ -1042,13 +1042,13 @@ def set_figpos(loc):
     elif loc.startswith('N' ): loc = '2111'
 
   # Place
-  m,n,i,j = [int(x) for x in loc[:4]]
-  assert m>=i>0 and n>=j>0
+  m,N,i,j = [int(x) for x in loc[:4]]
+  assert m>=i>0 and N>=j>0
   h0   -= (m-1)*25
   yoff  = 25*(i-1)
   if i>1:
     yoff += 25
-  place((j-1)*w0/n, yoff + (i-1)*h0/m, w0/n, h0/m)
+  place((j-1)*w0/N, yoff + (i-1)*h0/m, w0/N, h0/m)
 
 
 # stackoverflow.com/a/7396313

@@ -1,29 +1,29 @@
 from common import *
 
 # Test matrices
-def randcov(m):
+def randcov(M):
   """(Makeshift) random cov mat."""
-  N = int(ceil(2+m**1.2))
-  E = randn((N,m))
+  N = int(ceil(2+M**1.2))
+  E = randn((N,M))
   return E.T @ E
-def randcorr(m):
+def randcorr(M):
   """(Makeshift) random corr mat."""
-  Cov  = randcov(m)
+  Cov  = randcov(M)
   Dm12 = diag(diag(Cov)**(-0.5))
   return Dm12@Cov@Dm12
 
 
-def genOG(m):
+def genOG(M):
   """Generate random orthonormal matrix."""
   # TODO: This (using Householder) is (slightly?) wrong, 
   # as per section 4 of mezzadri2006generate.
-  Q,R = nla.qr(randn((m,m)))
-  for i in range(m):
+  Q,R = nla.qr(randn((M,M)))
+  for i in range(M):
     if R[i,i] < 0:
       Q[:,i] = -Q[:,i]
   return Q
 
-def genOG_modified(m,opts=(0,1.0)):
+def genOG_modified(M,opts=(0,1.0)):
   """
   genOG with modifications.
   Caution: although 'degree' ∈ (0,1) for all versions,
@@ -34,9 +34,9 @@ def genOG_modified(m,opts=(0,1.0)):
   # Parse opts
   if not opts:
     # Shot-circuit in case of False or 0
-    return eye(m)
+    return eye(M)
   elif isinstance(opts,bool) or opts is 1:
-    return genOG(m)
+    return genOG(M)
   elif isinstance(opts,float):
     ver    = 1
     degree = opts
@@ -52,14 +52,14 @@ def genOG_modified(m,opts=(0,1.0)):
     setattr(genOG_modified,"counter",counter)
     # Compute rot or skip
     if np.mod(counter, dc) < 1:
-      Q = genOG(m)
+      Q = genOG(M)
     else:
-      Q = eye(m)
+      Q = eye(M)
   elif ver==2:
     # Decompose and reduce angle of (complex) diagonal. Background:
     # stackoverflow.com/questions/38426349
     # https://en.wikipedia.org/wiki/Orthogonal_matrix
-    Q   = genOG(m)
+    Q   = genOG(M)
     s,U = sla.eig(Q)
     s2  = exp(1j*np.angle(s)*degree) # reduce angles
     Q   = mrdiv(U * s2, U)
@@ -68,7 +68,7 @@ def genOG_modified(m,opts=(0,1.0)):
     # Reduce Given's rotations in QR algo
     raise NotImplementedError
   elif ver==4:
-    # Introduce correlation between columns of randn((m,m))
+    # Introduce correlation between columns of randn((M,M))
     raise NotImplementedError
   elif ver==5:
      # stats.stackexchange.com/q/25552
@@ -134,7 +134,7 @@ def chol_reduce(Right):
   #if info!=0:
     #R = R[:info]
   # Explanation: R is truncated when cholesky() finds a 'leading negative minor'.
-  # Thus, R is rectangular, with height ∈ [rank, m].
+  # Thus, R is rectangular, with height ∈ [rank, M].
 
   return R
 
@@ -165,9 +165,9 @@ class CovMat():
     The covariance (say P) can be input (specified in the following ways):
     kind    : data
     ----------------------
-    'full'  : full m-by-m array (P)
+    'full'  : full M-by-M array (P)
     'diag'  : diagonal of P (assumed diagonal)
-    'E'     : ensemble (N-by-m) with sample cov P
+    'E'     : ensemble (N-by-M) with sample cov P
     'A'     : as 'E', but pre-centred by mean(E,axis=0)
     'Right' : any R such that P = R.T@R (e.g. weighted form of 'A')
     'Left'  : any L such that P = L@L.T
@@ -202,32 +202,32 @@ class CovMat():
         # which will probably be put to use in the DA.
         C           = exactly_2d(data)
         self._C     = C
-        m           = len(C)
+        M           = len(C)
         d,V         = eigh(C)
         d           = CovMat._clip(d)
         rk          = (d>0).sum()
         d           =  d  [-rk:][::-1]
         V           = (V.T[-rk:][::-1]).T
-        self._assign_EVD(m,rk,d,V)
+        self._assign_EVD(M,rk,d,V)
       elif kind=='diag':
         # With diagonal input, it would be great to use a sparse
         # (or non-existant) representation of V,
         # but that would require so much other adaption of other code.
         d         = exactly_1d(data)
         self.diag = d
-        m         = len(d)
+        M         = len(d)
         if np.all(d==d[0]):
-          V   = eye(m)
-          rk  = m
+          V   = eye(M)
+          rk  = M
         else:
           d   = CovMat._clip(d)
           rk  = (d>0).sum()
           idx = np.argsort(d)[::-1]
           d   = d[idx][:rk]
           nn0 = idx<rk
-          V   = zeros((m,rk))
+          V   = zeros((M,rk))
           V[nn0, idx[nn0]] = 1
-        self._assign_EVD(m,rk,d,V)
+        self._assign_EVD(M,rk,d,V)
       else:
         raise KeyError
 
@@ -239,7 +239,7 @@ class CovMat():
   # Protected
   ##################################
   @property
-  def m(self):
+  def M(self):
     """ndims"""
     return self._m
 
@@ -277,7 +277,7 @@ class CovMat():
   @property
   def Left(self):
     """L such that C = L@L.T. Note that L is typically rectangular, but not triangular,
-    and that its width is somewhere betwen the rank and m."""
+    and that its width is somewhere betwen the rank and M."""
     if hasattr(self,'_R'):
       return self._R.T
     else:
@@ -285,7 +285,7 @@ class CovMat():
   @property
   def Right(self):
     """R such that C = R.T@R. Note that R is typically rectangular, but not triangular,
-    and that its height is somewhere betwen the rank and m."""
+    and that its height is somewhere betwen the rank and M."""
     if hasattr(self,'_R'):
       return self._R
     else:
@@ -294,8 +294,8 @@ class CovMat():
   ##################################
   # EVD stuff
   ##################################
-  def _assign_EVD(self,m,rk,d,V):
-      self._m   = m
+  def _assign_EVD(self,M,rk,d,V):
+      self._m   = M
       self._d   = d
       self._V   = V
       self._rk  = rk
@@ -307,13 +307,13 @@ class CovMat():
   def _do_EVD(self):
     if not self.has_done_EVD():
       V,s,UT = svd0(self._R)
-      m      = UT.shape[1]
+      M      = UT.shape[1]
       d      = s**2
       d      = CovMat._clip(d)
       rk     = (d>0).sum()
       d      = d [:rk]
       V      = UT[:rk].T
-      self._assign_EVD(m,rk,d,V)
+      self._assign_EVD(M,rk,d,V)
 
   def has_done_EVD(self):
     """Whether or not eigenvalue decomposition has been done for matrix."""
@@ -369,7 +369,7 @@ class CovMat():
 
   @lazy_property
   def inv(self):
-    if self.m != self.rk:
+    if self.M != self.rk:
       raise RuntimeError("Matrix is rank deficient, "+
           "and cannot be inverted. Use .tinv() instead?")
     # Temporarily remove any truncation
@@ -384,7 +384,7 @@ class CovMat():
   # __repr__
   ##################################
   def __repr__(self):
-    s  = "\n    m: " + str (self.m)
+    s  = "\n    M: " + str (self.M)
     s += "\n kind: " + repr(self.kind)
     s += "\ntrunc: " + str (self.trunc)
 
@@ -397,7 +397,7 @@ class CovMat():
 
     # Full (as affordable)
     s += "\n full:"
-    if hasattr(self,'_C') or np.get_printoptions()['threshold'] > self.m**2:
+    if hasattr(self,'_C') or np.get_printoptions()['threshold'] > self.M**2:
       # We can afford to compute full matrix
       t = "\n" + str(self.full)
     else:

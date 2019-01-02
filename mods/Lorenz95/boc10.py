@@ -6,17 +6,17 @@ from mods.Lorenz95 import core
 
 t = Chronology(0.05,dkObs=1,T=4**3,BurnIn=20)
 
-m = 10
+M = 10
 Dyn = {
-    'm'    : m,
+    'M'    : M,
     'model': core.step,
     'noise': 0
     }
 
-X0 = GaussRV(m=m, C=0.001)
+X0 = GaussRV(M=M, C=0.001)
 
-jj = arange(0,m,2)
-Obs = partial_direct_obs_setup(m,jj)
+jj = arange(0,M,2)
+Obs = partial_direct_obs_setup(M,jj)
 Obs['noise'] = 1.5
  
 other = {'name': os.path.relpath(__file__,'mods/')}

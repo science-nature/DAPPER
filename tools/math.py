@@ -393,14 +393,14 @@ def tsvd(A, threshold=0.99999, avoid_pathological=True):
                       NB: only applies for float threshold.
   """
 
-  m,n = A.shape
+  M,N = A.shape
   full_matrices = False
 
   if is_int(threshold):
     # Assume specific number is requested
     r = threshold
-    assert 1 <= r <= max(m,n)
-    if r > min(m,n):
+    assert 1 <= r <= max(M,N)
+    if r > min(M,N):
       full_matrices = True
 
   # SVD
@@ -427,7 +427,7 @@ def svd0(A):
   both of which always compute the reduced svd.
   For reduction down to rank, see tsvd() instead.
   """
-  m,n = A.shape
+  M,N = A.shape
   if m>n: return sla.svd(A, full_matrices=True)
   else:   return sla.svd(A, full_matrices=False)
 

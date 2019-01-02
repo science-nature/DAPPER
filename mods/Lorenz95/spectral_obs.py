@@ -17,7 +17,7 @@
 # This can be shown to be equivalent to requiring that the state
 # component is equally resolved by each observation,
 # and moreover, that the magnitude (abs) of each element of H
-# be a constant (1/sqrt(m)).
+# be a constant (1/sqrt(M)).
 
 # Can such an H be constructed/found?
 # In the 2d case: H = [1, 1; 1, -1] / sqrt(2).
@@ -69,34 +69,34 @@
 
 from mods.Lorenz95.sak08 import *
 
-# The (m-p) highest frequency observation modes are
+# The (M-p) highest frequency observation modes are
 # left out of H below.
-# If p>m, then H no longer has independent
+# If p>M, then H no longer has independent
 # (let alone orthogonal) columns,
 # yet more information is gained, since the
 # observations are noisy.
 p = 12
 
 
-X0 = GaussRV(m=m, C=0.001) 
+X0 = GaussRV(M=M, C=0.001) 
 
-def make_H(p,m):
-  xx = linspace(-1,1,m+1)[1:]
-  H = zeros((p,m))
+def make_H(p,M):
+  xx = linspace(-1,1,M+1)[1:]
+  H = zeros((p,M))
   H[0] = 1/sqrt(2)
   for k in range(-(p//2),(p+1)//2):
     ind = 2*abs(k) - (k<0)
     H[ind] = sin(pi*k*xx + pi/4)
-  H /= sqrt(m/2)
+  H /= sqrt(M/2)
   return H
 
-H = make_H(p,m)
+H = make_H(p,M)
 # plt.figure(1).gca().matshow(H)
 # plt.figure(2).gca().matshow(H @ H.T)
 
 
 # "raw" obs plotting
-# if p<=m:
+# if p<=M:
   # Hinv = H.T
 # else:
   # Hinv = sla.pinv2(H)
@@ -109,12 +109,12 @@ Hplot = make_H(p,max(p,201))
 Hplot_inv = Hplot.T
 def yplot(y):
   x = y @ Hplot_inv.T
-  ii = linspace(0,m-1,len(x))
+  ii = linspace(0,M-1,len(x))
   lh = plt.plot(ii,x,'g')[0]
   return lh
 
 Obs = {
-    'm': p,
+    'M': p,
     'model': lambda x,t: x @ H.T,
     'noise': GaussRV(C=0.01*eye(p)),
     'plot' : yplot,

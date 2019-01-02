@@ -5,9 +5,9 @@ def simulate(HMM,desc='Truth & Obs'):
   Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
   # Init
-  xx    = zeros((chrono.K+1,Dyn.m))
+  xx    = zeros((chrono.K+1,Dyn.M))
   xx[0] = X0.sample(1)
-  yy    = zeros((chrono.KObs+1,Obs.m))
+  yy    = zeros((chrono.KObs+1,Obs.M))
 
   # Loop
   for k,kObs,t,dt in progbar(chrono.ticker,desc):

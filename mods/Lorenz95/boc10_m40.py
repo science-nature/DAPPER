@@ -1,13 +1,13 @@
 # Same as boc10, except that here ndim=40 (i.e. Fig. 5 of paper)
 from mods.Lorenz95.boc10 import *
 
-m = 40
-Dyn['m'] = m
+M = 40
+Dyn['M'] = M
 
-X0 = GaussRV(m=m, C=0.001)
+X0 = GaussRV(M=M, C=0.001)
 
-jj = arange(0,m,2)
-Obs = partial_direct_obs_setup(m,jj)
+jj = arange(0,M,2)
+Obs = partial_direct_obs_setup(M,jj)
 Obs['noise'] = 1.5
  
 other = {'name': os.path.relpath(__file__,'mods/')}

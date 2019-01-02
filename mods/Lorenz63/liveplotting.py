@@ -4,9 +4,9 @@ from common import *
 
 # Note: the usage of 'dims' in this module is rather unnecessary
 # (repleable by [:3], [:], or simply no indexing). 
-# It's left for generality, but is probably buggy for systems where m!=3.
-m = 3
-dims = arange(m)
+# It's left for generality, but is probably buggy for systems where M!=3.
+M = 3
+dims = arange(M)
 
 
 def LP_setup(
@@ -30,7 +30,7 @@ def LP_setup(
     #####################
     # Set up figure, axes
     #####################
-    fig, axs = freshfig(9, (9,5), nrows=m, sharex=True)
+    fig, axs = freshfig(9, (9,5), nrows=M, sharex=True)
     axs[0].set_title("Marginal time series.")
     # Add 3d axes
     fig.subplots_adjust(right=0.45, left=0.1, hspace=0.05)
@@ -40,7 +40,7 @@ def LP_setup(
     ax3.set_facecolor('w')
     ax3.set_title("Phase space trajectories")
     # Tune plots
-    for s,i in zip("xyz",range(m)):
+    for s,i in zip("xyz",range(M)):
       set_ilim(ax3,i,*fit_lim(xx[:,i],1.5))
       axs[i].set_ylim(*stretch(*span(xx), 1.01))
       eval("ax3.set_%slabel('%s')"%(s,s), {'ax3':ax3} )
@@ -53,10 +53,10 @@ def LP_setup(
     if E is None: N = 0
     else:         N = len(E)
 
-    hist_EE = np.full((lag,N,m)    , nan)
-    hist_mu = np.full((lag,m)      , nan)
-    hist_ss = np.full((lag,2,m)    , nan)
-    hist_xx = np.full((lag,m)      , nan)
+    hist_EE = np.full((lag,N,M)    , nan)
+    hist_mu = np.full((lag,M)      , nan)
+    hist_ss = np.full((lag,2,M)    , nan)
+    hist_xx = np.full((lag,M)      , nan)
     hist_yy = np.full((lag,len(jj)), nan)
     hist_tt = np.copy(tt[:lag]) # using nan's would yield bugs.
 

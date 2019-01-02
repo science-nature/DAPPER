@@ -21,20 +21,20 @@ from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 
 t = Chronology(0.05,dtObs=0.4,T=4**5,BurnIn=20)
 
-m = 40
+M = 40
 Dyn = {
-    'm'    : m,
+    'M'    : M,
     'model': step,
     'jacob': dfdx,
     'noise': 0
     }
 
-X0 = GaussRV(m=m, C=0.001)
+X0 = GaussRV(M=M, C=0.001)
 
-jj = 1 + arange(0,m,2)
-Obs = partial_direct_obs_setup(m,jj)
+jj = 1 + arange(0,M,2)
+Obs = partial_direct_obs_setup(M,jj)
 Obs['noise'] = 0.5
-Obs['localizer'] = loc_setup( (m,), (2,), jj, periodic=True )
+Obs['localizer'] = loc_setup( (M,), (2,), jj, periodic=True )
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)

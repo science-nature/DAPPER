@@ -8,7 +8,7 @@ from mods.Lorenz95.sak08 import HMM
 HMM.t.T = 365
 HMM.t.BurnIn = 4
 # Sometimes used: dkObs=4.
-# Sometimes used: obs_inds = arange(m)[::2]
+# Sometimes used: obs_inds = arange(M)[::2]
 # Used localization: as in Whitaker/Hamill'2002: GC, with R (length scale) defined as in DAPPER.
 
 

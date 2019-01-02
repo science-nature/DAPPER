@@ -18,26 +18,26 @@ class HiddenMarkovModel(NestedPrint):
     for key, value in kwargs.items():
       setattr(self, key, value)
     # Validation
-    if self.Obs.noise.C==0 or self.Obs.noise.C.rk!=self.Obs.noise.C.m:
+    if self.Obs.noise.C==0 or self.Obs.noise.C.rk!=self.Obs.noise.C.M:
         raise ValueError("Rank-deficient R not supported.")
   
-  # ndim (.m) shortcuts
+  # ndim (.M) shortcuts
   @property
-  def M(self): return self.Dyn.m
+  def M(self): return self.Dyn.M
   @property
-  def P(self): return self.Obs.m
+  def P(self): return self.Obs.M
 
 class Operator(NestedPrint):
   """
   Container for operators (models).
   """
-  def __init__(self,m,model=None,noise=None,**kwargs):
-    self.m = m
+  def __init__(self,M,model=None,noise=None,**kwargs):
+    self.M = M
 
     # None => Identity model
     if model is None:
       model = Id_op()
-      kwargs['jacob'] = Id_mat(m)
+      kwargs['jacob'] = Id_mat(M)
     self.model = model
 
     # None/0 => No noise
@@ -46,7 +46,7 @@ class Operator(NestedPrint):
     else:
       if noise is None: noise = 0
       if np.isscalar(noise):
-        self.noise = GaussRV(C=noise,m=m)
+        self.noise = GaussRV(C=noise,M=M)
       else:
         self.noise = GaussRV(C=noise)
 

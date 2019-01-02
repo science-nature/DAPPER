@@ -8,20 +8,20 @@ from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 
 t = Chronology(0.05,dkObs=2,T=4**5,BurnIn=20)
 
-m = 80
+M = 80
 Dyn = {
-    'm'    : m,
+    'M'    : M,
     'model': core.step,
     'noise': 0
     }
 
-X0 = GaussRV(m=m, C=0.001)
+X0 = GaussRV(M=M, C=0.001)
 
-jj = arange(0,m,2)
-Obs = partial_direct_obs_setup(m,jj)
-Obs['localizer'] = loc_setup( (m,), (1,), jj, periodic=True )
-# Obs['noise'] = LaplaceRV(C=1,m=len(jj))
-Obs['noise'] = LaplaceParallelRV(C=1,m=len(jj))
+jj = arange(0,M,2)
+Obs = partial_direct_obs_setup(M,jj)
+Obs['localizer'] = loc_setup( (M,), (1,), jj, periodic=True )
+# Obs['noise'] = LaplaceRV(C=1,M=len(jj))
+Obs['noise'] = LaplaceParallelRV(C=1,M=len(jj))
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)

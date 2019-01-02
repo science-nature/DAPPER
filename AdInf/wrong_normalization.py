@@ -98,8 +98,8 @@ cfgs += EnKF_wrong(    10,fnoise_treatm='Sqrt-Core')
 ##############################
 
 # Truth/Obs
-xx = zeros((chrono.K+1,Dyn.m))
-yy = zeros((chrono.KObs+1,Obs.m))
+xx = zeros((chrono.K+1,Dyn.M))
+yy = zeros((chrono.KObs+1,Obs.M))
 for k,kObs,t,dt in chrono.ticker:
   # DONT USE MODEL. Use  (below), or comment out entirely.
   pass # xx := 0.

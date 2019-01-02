@@ -333,7 +333,7 @@ def EnKS(upd_a,N,Lag,infl=1.0,rot=False,**kwargs):
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
-    E    = zeros((chrono.K+1,N,Dyn.m))
+    E    = zeros((chrono.K+1,N,Dyn.M))
     E[0] = X0.sample(N)
 
     for k,kObs,t,dt in progbar(chrono.ticker):
@@ -351,7 +351,7 @@ def EnKS(upd_a,N,Lag,infl=1.0,rot=False,**kwargs):
 
         ELag     = reshape_to(ELag)
         ELag     = EnKF_analysis(ELag,Eo,Obs.noise,y,upd_a,stats,kObs)
-        E[kkLag] = reshape_fr(ELag,Dyn.m)
+        E[kkLag] = reshape_fr(ELag,Dyn.M)
         E[k]     = post_process(E[k],infl,rot)
         stats.assess(k,kObs,'a',E=E[k])
 
@@ -374,7 +374,7 @@ def EnRTS(upd_a,N,cntr,infl=1.0,rot=False,**kwargs):
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
-    E    = zeros((chrono.K+1,N,Dyn.m))
+    E    = zeros((chrono.K+1,N,Dyn.M))
     Ef   = E.copy()
     E[0] = X0.sample(N)
 
@@ -815,7 +815,7 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
 
         if dual:
             # Make dual cost function (in terms of l1)
-            pad_rk = lambda arr: pad0( arr, min(N,Obs.m) )
+            pad_rk = lambda arr: pad0( arr, min(N,Obs.M) )
             dgn_rk = lambda l: pad_rk((l*s)**2) + N1
             J      = lambda l:          np.sum(du**2/dgn_rk(l)) \
                      +    eN/l**2 \
@@ -1218,7 +1218,7 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
 
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12 = Dyn.m, Obs.noise.C.sym_sqrt_inv
+    m, Rm12 = Dyn.M, Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1276,7 +1276,7 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
   """
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, R = Dyn.m, Obs.noise.C.full
+    m, R = Dyn.M, Obs.noise.C.full
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1343,7 +1343,7 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
 
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12 = Dyn.m, Obs.noise.C.sym_sqrt_inv
+    m, Rm12 = Dyn.M, Obs.noise.C.sym_sqrt_inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1413,7 +1413,7 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
   """
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12, Ri = Dyn.m, Obs.noise.C.sym_sqrt_inv, Obs.noise.C.inv
+    m, Rm12, Ri = Dyn.M, Obs.noise.C.sym_sqrt_inv, Obs.noise.C.inv
 
     E = X0.sample(N)
     w = 1/N*ones(N)
@@ -1521,7 +1521,7 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
   """
   def assimilator(stats,HMM,xx,yy):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-    m, Rm12 = Dyn.m, Obs.noise.C.sym_sqrt_inv
+    m, Rm12 = Dyn.M, Obs.noise.C.sym_sqrt_inv
 
     DD = None
     E  = X0.sample(N)
@@ -1829,7 +1829,7 @@ def EnCheat(upd_a,N,infl=1.0,rot=False,**kwargs):
         w,res,_,_ = sla.lstsq(E.T, xx[k])
         if not res.size:
           res = 0
-        res = diag((res/HMM.Dyn.m) * ones(HMM.Dyn.m))
+        res = diag((res/HMM.M) * ones(HMM.M))
         opt = w @ E
         # NB: Center on the optimal solution?
         #E += opt - mean(E,0)
@@ -1884,7 +1884,7 @@ def OptInterp(**kwargs):
 
     # Setup scalar "time-series" covariance dynamics.
     # ONLY USED FOR DIAGNOSTICS, not to change the Kalman gain.
-    Pa    = (eye(Dyn.m) - KG@H) @ PC
+    Pa    = (eye(Dyn.M) - KG@H) @ PC
     CorrL = estimate_corr_length(AC.ravel(order='F'))
     WaveC = wave_crest(trace(Pa)/trace(2*PC),CorrL)
 
@@ -1946,7 +1946,7 @@ def Var3D(infl=1.0,**kwargs):
 
         # Re-calibrate wave_crest with new W0 = Pa/(2*PC).
         # Note: obs innovations are not used to estimate P!
-        Pa    = (eye(Dyn.m) - KH) @ P
+        Pa    = (eye(Dyn.M) - KH) @ P
         WaveC = wave_crest(trace(Pa)/trace(2*PC),CorrL)
 
       stats.assess(k,kObs,mu=mu,Cov=2*PC*WaveC(k,kObs))
@@ -2049,13 +2049,13 @@ def ExtRTS(infl=1.0,**kwargs):
     R  = Obs.noise.C.full
     Q  = 0 if Dyn.noise.C==0 else Dyn.noise.C.full
 
-    mu    = zeros((chrono.K+1,Dyn.m))
-    P     = zeros((chrono.K+1,Dyn.m,Dyn.m))
+    mu    = zeros((chrono.K+1,Dyn.M))
+    P     = zeros((chrono.K+1,Dyn.M,Dyn.M))
 
     # Forecasted values
-    muf   = zeros((chrono.K+1,Dyn.m))
-    Pf    = zeros((chrono.K+1,Dyn.m,Dyn.m))
-    Ff    = zeros((chrono.K+1,Dyn.m,Dyn.m))
+    muf   = zeros((chrono.K+1,Dyn.M))
+    Pf    = zeros((chrono.K+1,Dyn.M,Dyn.M))
+    Ff    = zeros((chrono.K+1,Dyn.M,Dyn.M))
 
     mu[0] = X0.mu
     P [0] = X0.C.full
@@ -2080,7 +2080,7 @@ def ExtRTS(infl=1.0,**kwargs):
         y     = yy[kObs]
         mu[k] = mu[k] + KG@(y - Obs(mu[k],t))
         KH    = KG@H
-        P[k]  = (eye(Dyn.m) - KH) @ P[k]
+        P[k]  = (eye(Dyn.M) - KH) @ P[k]
         stats.assess(k,kObs,'a',mu=mu[k],Cov=P[k])
 
     # Backward pass
@@ -2136,9 +2136,9 @@ def ExtKF(infl=1.0,**kwargs):
         y  = yy[kObs]
         mu = mu + KG@(y - Obs(mu,t))
         KH = KG@H
-        P  = (eye(Dyn.m) - KH) @ P
+        P  = (eye(Dyn.M) - KH) @ P
 
-        stats.trHK[kObs] = trace(KH)/Dyn.m
+        stats.trHK[kObs] = trace(KH)/Dyn.M
 
       stats.assess(k,kObs,mu=mu,Cov=P)
   return assimilator

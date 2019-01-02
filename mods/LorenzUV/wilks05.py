@@ -20,17 +20,17 @@ t = Chronology(dt=0.005,dtObs=0.05,T=4**3,BurnIn=6)  # requires rk4
 
 
 Dyn = {
-    'm'    : LUV.m,
+    'M'    : LUV.M,
     'model': with_rk4(LUV.dxdt,autonom=True),
     'noise': 0,
     'jacob': LUV.dfdx,
     'plot' : LUV.plot_state
     }
 
-X0 = GaussRV(C=0.01*eye(LUV.m))
+X0 = GaussRV(C=0.01*eye(LUV.M))
 
 R = 0.1
-Obs = partial_direct_obs_setup(LUV.m,arange(LUV.nU))
+Obs = partial_direct_obs_setup(LUV.M,arange(LUV.nU))
 Obs['noise'] = R
 
 other = {'name': rel_path(__file__,'mods/')+'_full'}
@@ -45,7 +45,7 @@ HMM_full = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 t = Chronology(dt=0.05, dtObs=0.05,T=4**3,BurnIn=6)
 
 Dyn = {
-    'm'    : nU,
+    'M'    : nU,
     'model': with_rk4(LUV.dxdt_parameterized),
     'noise': 0,
     }

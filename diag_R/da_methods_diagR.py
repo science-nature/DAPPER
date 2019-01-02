@@ -18,7 +18,7 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
 
     # EnKF-N constants
     g    = 1             # Nullity of Y (obs anom's).
-    #g   = max(1,N-Obs.m)  # TODO: No good
+    #g   = max(1,N-Obs.M)  # TODO: No good
     eN   = (N+1)/N       # Effect of unknown mean
     clog = (N+g)/(N-1)   # Coeff in front of log term
     mode = eN/clog       # Mode of prior for lambda
@@ -46,7 +46,7 @@ def EnKF_N_diagR(N,infl=1.0,rot=False,Hess=False,**kwargs):
         V,s,U_T = svd0( Y @ Rm12.T )
 
         # Make dual cost function (in terms of lambda^1)
-        m_Nm = min(N,Obs.m)
+        m_Nm = min(N,Obs.M)
         du   = U_T @ (Rm12 @ dy)
         dgn  = lambda l: pad0( (l*s)**2, m_Nm ) + (N-1)
         PR   = (s**2).sum()/(N-1)

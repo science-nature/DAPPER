@@ -4,11 +4,8 @@
 
 from common import *
 
-from mods.Lorenz63.core import step, dfdx
+from mods.Lorenz63.core import step, dfdx, Nx
 from tools.localization import no_localization
-
-Nx = 3
-
 
 t = Chronology(0.01,dkObs=12,T=4**5,BurnIn=4)
 

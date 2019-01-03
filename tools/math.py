@@ -53,7 +53,12 @@ def roll_n_sub(arr,item,i_repl=0):
 def ens_compatible(func):
   """Tranpose before and after.
   Helpful to make functions compatible with both 1d and 2d ndarrays.
-  Other tricks (e.g. ellipsis, as in dxdt of LorenzUV) can also be used.
+
+  An older version also used np.atleast_2d and squeeze(),
+  but that is more messy than necessary.
+
+  Note: this is the_way™ -- other tricks are sometimes more practical.
+  See for example core.py:dxdt() of LorenzUV, Lorenz95, LotkaVolterra.
   """
   @functools.wraps(func)
   def wrapr(x,*args,**kwargs):

@@ -22,12 +22,12 @@ def pdesc(desc):
   if desc is not None:
     return desc
   try:
-    #stackoverflow.com/q/15608987
-    DAC_name  = inspect.stack()[3].frame.f_locals['name_hook']
+    # Assuming we're in a DAC, go look above (i.e. stack[3]) for a name_hook.
+    name = inspect.stack()[3].frame.f_locals['name_hook'] #so.com/q/15608987
   except (KeyError, AttributeError):
-    #stackoverflow.com/a/900404
-    DAC_name  = inspect.stack()[2].function
-  return DAC_name 
+    # Otherwise: just get name of what's calling progbar (i.e. stack[2]) 
+    name = inspect.stack()[2].function #so.com/a/900404
+  return name 
 
 # Define progbar as tqdm or noobar
 try:

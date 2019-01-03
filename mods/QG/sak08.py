@@ -32,7 +32,7 @@ X0 = RV(M=Dyn['M'],file=sample_filename)
 ############################
 
 # This will look like satellite tracks when plotted in 2D
-Ny  = 300
+Ny = 300
 jj = equi_spaced_integers(Dyn['M'],Ny)
 jj = jj-jj[0]
 

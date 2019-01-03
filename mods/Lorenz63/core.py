@@ -5,6 +5,9 @@
 import numpy as np
 from tools.math import with_rk4, is1d, ens_compatible, integrate_TLM
 
+# State length
+Nx = 3
+
 # Constants
 sig = 10.0; rho = 28.0; beta = 8.0/3
 

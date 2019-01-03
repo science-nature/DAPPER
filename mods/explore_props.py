@@ -121,8 +121,9 @@ LS = running_LS[-1]
 print('Lyapunov spectrum estimate after t=T:')
 with printoptions(precision=2): print(LS)
 n0 = sum(LS >= 0)
-print('n0: '   , n0)
-print('var X: ', np.var(xx))
+print('n0  : ', n0)
+print('var : ', np.var(xx))
+print('mean: ', np.mean(xx))
 
 ##
 

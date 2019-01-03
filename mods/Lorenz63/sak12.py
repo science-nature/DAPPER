@@ -23,7 +23,7 @@ mu0 = array([1.509, -1.531, 25.46])
 X0 = GaussRV(C=2,mu=mu0)
 
 jj = arange(Nx) # obs_inds
-Obs = partial_direct_obs_setup(Nx, jj)
+Obs = partial_direct_Obs(Nx, jj)
 Obs['noise'] = 2 # GaussRV(C=CovMat(2*eye(Ny)))
 
 HMM = HiddenMarkovModel(Dyn,Obs,t,X0,liveplotting=LP_setup(jj))

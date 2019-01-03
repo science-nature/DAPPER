@@ -21,7 +21,7 @@ Nx = 5;
 Ny = Nx;
 
 jj = equi_spaced_integers(Nx,Ny)
-Obs = partial_direct_obs_setup(Nx,jj)
+Obs = partial_direct_Obs(Nx,jj)
 Obs['noise'] = 1.0
 
 X0 = GaussRV(C=1.0,Nx=Nx)

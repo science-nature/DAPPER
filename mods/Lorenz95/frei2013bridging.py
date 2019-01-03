@@ -32,7 +32,7 @@ Dyn = {
 X0 = GaussRV(M=Nx, C=0.001)
 
 jj = 1 + arange(0,Nx,2)
-Obs = partial_direct_obs_setup(Nx,jj)
+Obs = partial_direct_Obs(Nx,jj)
 Obs['noise'] = 0.5
 Obs['localizer'] = loc_setup( (Nx,), (2,), jj, periodic=True )
 

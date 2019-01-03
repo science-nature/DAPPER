@@ -20,7 +20,7 @@ Dyn = {
 
 X0 = GaussRV(C=1,mu=ones(Nx))
 
-Obs = partial_direct_obs_setup(Nx,arange(Nx))
+Obs = partial_direct_Obs(Nx,arange(Nx))
 Obs['noise'] = 8.0
 Obs['localizer'] = no_localization([Nx],arange(Nx))
 

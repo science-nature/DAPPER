@@ -27,7 +27,7 @@ X0 = GaussRV(C=homogeneous_1D_cov(Nx,Nx/8,kind='Gauss'))
 
 Ny  = 4
 jj = equi_spaced_integers(Nx,Ny)
-Obs  = partial_direct_obs_setup(Nx,jj)
+Obs  = partial_direct_Obs(Nx,jj)
 Obs['noise'] = 0.01
 
  

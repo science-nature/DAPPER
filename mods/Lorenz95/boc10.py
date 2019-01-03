@@ -16,7 +16,7 @@ Dyn = {
 X0 = GaussRV(M=Nx, C=0.001)
 
 jj = arange(0,Nx,2)
-Obs = partial_direct_obs_setup(Nx,jj)
+Obs = partial_direct_Obs(Nx,jj)
 Obs['noise'] = 1.5
  
 other = {'name': os.path.relpath(__file__,'mods/')}

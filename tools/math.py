@@ -490,7 +490,7 @@ def direct_obs_matrix(Nx,obs_inds):
   H[range(Ny),obs_inds] = 1
   return H
 
-def partial_direct_obs_setup(Nx,obs_inds):
+def partial_direct_Obs(Nx,obs_inds):
   Ny = len(obs_inds)
   H = direct_obs_matrix(Nx,obs_inds)
   @ens_compatible

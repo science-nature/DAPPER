@@ -23,7 +23,7 @@ mu0 = array([1.509, -1.531, 25.46])
 X0 = GaussRV(C=2,mu=mu0)
 
 jj = array([0])
-Obs = partial_direct_obs_setup(Nx,jj)
+Obs = partial_direct_Obs(Nx,jj)
 Obs['noise'] = 8
 Obs['localizer'] = no_localization([Nx],jj)
 

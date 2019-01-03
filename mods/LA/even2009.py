@@ -40,7 +40,7 @@ Dyn = {
 wnum  = 25
 X0 = RV(M=Nx, func = lambda N: sqrt(5)/10 * sinusoidal_sample(Nx,wnum,N))
 
-Obs = partial_direct_obs_setup(Nx,jj)
+Obs = partial_direct_Obs(Nx,jj)
 Obs['noise'] = 0.01
 
 HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,

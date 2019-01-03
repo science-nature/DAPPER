@@ -21,11 +21,11 @@ class HiddenMarkovModel(NestedPrint):
     if self.Obs.noise.C==0 or self.Obs.noise.C.rk!=self.Obs.noise.C.M:
         raise ValueError("Rank-deficient R not supported.")
   
-  # ndim (.M) shortcuts
+  # ndim shortcuts
   @property
-  def M(self): return self.Dyn.M
+  def Nx(self): return self.Dyn.M
   @property
-  def P(self): return self.Obs.M
+  def Ny(self): return self.Obs.M
 
 class Operator(NestedPrint):
   """

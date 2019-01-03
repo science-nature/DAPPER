@@ -1,8 +1,8 @@
-# Sample (1) M times from N(0,1), and (2) once from N(0,I_m).
-# If prior cov B approaches ones((M,M)), i.e. perfect degeneracy,
+# Sample (1) Nx times from N(0,1), and (2) once from N(0,Id_Nx).
+# If prior cov B approaches ones((Nx,Nx)), i.e. perfect degeneracy,
 # then the two should become equivalent.
 
-# Explains why it's min(M,P) that determines weight variation,
+# Explains why it's min(Nx,Ny) that determines weight variation,
 # and why serial assimilation of obs is pointless.
 
 ############################
@@ -11,20 +11,20 @@
 from common import *
 #sd0 = seed(5)
 
-P = 10
-N = 10000
-R = 1
+Ny = 10
+N  = 10000
+R  = 1
 
 xx = randn(N)
-yy = randn(P)
+yy = randn(Ny)
 y_bar = mean(yy)
-ww = sp.stats.norm.pdf(xx,loc=y_bar,scale=sqrt(R/P))
+ww = sp.stats.norm.pdf(xx,loc=y_bar,scale=sqrt(R/Ny))
 ww /= ww.sum()
 
-#B12 = ones((M,M))
-#for i in range(M):
+#B12 = ones((Nx,Nx))
+#for i in range(Nx):
   #B12[i,i] = 0.9
-#B = B12 @ B12 / M
+#B = B12 @ B12 / Nx
 
 ############################
 # 

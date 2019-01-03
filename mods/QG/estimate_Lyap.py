@@ -19,7 +19,7 @@ T  = 1000.0
 K  = round(T/dt)
 tt = linspace(dt,T,K)
 
-M  = np.prod(shape) # ndim
+Nx  = np.prod(shape) # ndim
 
 ########################
 # Main loop
@@ -29,7 +29,7 @@ x = np.load(sample_filename)['sample'][-1]
 
 # Init U
 N = 300
-U = eye(M)[:N]
+U = eye(Nx)[:N]
 E = x + eps*U
 
 LL_exp = zeros((K,N))

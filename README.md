@@ -322,7 +322,7 @@ Powered by
 <!--
 Implementation choices
 * Uses python3.5+
-* NEW: Use `N-by-M` ndarrays. Pros:
+* NEW: Use `N-by-Nx` ndarrays. Pros:
     * python default
         * speed of (row-by-row) access, especially for models
         * same as default ordering of random numbers
@@ -331,17 +331,17 @@ Implementation choices
     * beneficial operator precedence without `()`. E.g. `dy @ Rinv @ Y.T @ Pw` (where `dy` is a vector)
     * fewer indices: `[n,:]` yields same as `[n]`
     * no checking if numpy return `ndarrays` even when input is `matrix`
-    * Regression literature uses `N-by-M` ("data matrix")
-* OLD: Use `M-by-N` matrix class. Pros:
-    * EnKF literature uses `M-by-N`
+    * Regression literature uses `N-by-Nx` ("data matrix")
+* OLD: Use `Nx-by-N` matrix class. Pros:
+    * EnKF literature uses `Nx-by-N`
     * Matrix multiplication through `*` -- since python3.5 can just use `@`
 
 Conventions:
 * DA_Config, assimilate, stats
 * fau_series
 * E,w,A
-* M-by-N
-* M (not ndims coz thats like 2 for matrices), P, chrono
+* Nx-by-N
+* Nx (not ndims coz thats like 2 for matrices), P, chrono
 * n
 * ii, jj
 * xx,yy

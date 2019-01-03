@@ -10,20 +10,20 @@ from mods.Lorenz95.liveplotting import LP_setup
 
 t = Chronology(0.05,dkObs=1,T=4**5,BurnIn=20)
 
-M = 40
+Nx = 40
 Dyn = {
-    'M'    : M,
+    'M'    : Nx,
     'model': step,
     'jacob': dfdx,
     'noise': 0
     }
 
-X0 = GaussRV(M=M, C=0.001) 
+X0 = GaussRV(M=Nx, C=0.001) 
 
-jj = arange(M) # obs_inds
-Obs = partial_direct_obs_setup(M, jj)
+jj = arange(Nx) # obs_inds
+Obs = partial_direct_obs_setup(Nx, jj)
 Obs['noise'] = 1
-Obs['localizer'] = loc_setup( (M,), (2,), jj, periodic=True )
+Obs['localizer'] = loc_setup( (Nx,), (2,), jj, periodic=True )
 
 
 HMM = HiddenMarkovModel(Dyn,Obs,t,X0, LP=LP_setup(jj))

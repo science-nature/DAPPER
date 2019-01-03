@@ -10,9 +10,9 @@ def amplitude_animation(xx,periodic=False,skip=1):
   fig, ax = plt.subplots()
   fig.suptitle('Amplitudes')
   ax.set_ylim(*stretch(*span(xx),1.1))
-  K,M = xx.shape
+  K,Nx = xx.shape
 
-  ii,wrap = setup_wrapping(M,periodic)
+  ii,wrap = setup_wrapping(Nx,periodic)
 
   lh, = ax.plot(ii, wrap(xx[0]))
   ax.set_xlim(*span(ii))

@@ -8,18 +8,18 @@ from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 
 t = Chronology(0.05,dkObs=2,T=4**5,BurnIn=20)
 
-M = 80
+Nx = 80
 Dyn = {
-    'M'    : M,
+    'M'    : Nx,
     'model': core.step,
     'noise': 0
     }
 
-X0 = GaussRV(M=M, C=0.001)
+X0 = GaussRV(M=Nx, C=0.001)
 
-jj = arange(0,M,2)
-Obs = partial_direct_obs_setup(M,jj)
-Obs['localizer'] = loc_setup( (M,), (1,), jj, periodic=True )
+jj = arange(0,Nx,2)
+Obs = partial_direct_obs_setup(Nx,jj)
+Obs['localizer'] = loc_setup( (Nx,), (1,), jj, periodic=True )
 # Obs['noise'] = LaplaceRV(C=1,M=len(jj))
 Obs['noise'] = LaplaceParallelRV(C=1,M=len(jj))
 

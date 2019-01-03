@@ -19,8 +19,8 @@ def LP_setup(
     k = key[0]
     tt = stats.HMM.t.tt
 
-    K, M = xx.shape
-    ii,wrap = setup_wrapping(M,periodic)
+    K, Nx = xx.shape
+    ii,wrap = setup_wrapping(Nx,periodic)
 
     # Set up figure, axes
     fig, ax = freshfig(9, (8,5))

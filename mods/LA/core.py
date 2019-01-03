@@ -1,6 +1,6 @@
 # "Linear advection"  model.
 # Optimal solution provided by Kalman filter (ExtKF).
-# System is typically used with a relatively large size (M=1000),
+# System is typically used with a relatively large size (Nx=1000),
 # but initialized with a moderate wavenumber (k),
 # which a DA method should hopefully be able to exploit.
 # 
@@ -14,9 +14,9 @@ from scipy.linalg import circulant
 from numpy import abs, sign, eye, ceil
 from scipy import sparse
 
-def Fmat(M,c,dx,dt):
+def Fmat(Nx,c,dx,dt):
   """
-  M  - System size
+  Nx - System size
   c  - Velocity of wave. Wave travels to the rigth for c>0.
   dx - Grid spacing
   dt - Time step
@@ -28,22 +28,22 @@ def Fmat(M,c,dx,dt):
   """
   assert abs(c*dt/dx)<=1, "Must satisfy CFL condition"
   # 1st order explicit upwind scheme
-  row1     = np.zeros(M)
+  row1     = np.zeros(Nx)
   row1[-1] = +(sign(c)+1)/2
   row1[+1] = -(sign(c)-1)/2
   row1[0]  = -1
   L        = circulant(row1)
-  F        = eye(M) + (dt/dx*abs(c))*L
+  F        = eye(Nx) + (dt/dx*abs(c))*L
   F        = sparse.dia_matrix(F)
   return F
 
 
-def basis_vector(M,k):
+def basis_vector(Nx,k):
   """
-  M - state vector length
-  k - max wavenumber (wavelengths to fit into interval 1:M)
+  Nx - state vector length
+  k  - max wavenumber (wavelengths to fit into interval 1:Nx)
   """
-  mm = arange(1,M+1) / M
+  mm = arange(1,Nx+1) / Nx
   kk = arange(k+1) # Wavenumbers
   aa = rand(k+1)   # Amplitudes
   pp = rand(k+1)   # Phases
@@ -52,16 +52,16 @@ def basis_vector(M,k):
 
   #% Normalise
   sd = np.std(s,ddof=1)
-  #if M >= (2*k + 1)
+  #if Nx >= (2*k + 1)
       #% See analytic_normzt.m
-      #sd = sqrt(sum(aa(2:end).^2)*(M/2)/(M-1));
+      #sd = sqrt(sum(aa(2:end).^2)*(Nx/2)/(Nx-1));
   s  = s/sd
 
   return s
 
 # Initialization as suggested by sakov'2008 "implications of...",
 # (but with some minor differences).
-def sinusoidal_sample(M,k,N):
+def sinusoidal_sample(Nx,k,N):
   """ Generate N basis vectors, and center them.
   The centring is not naturally a part of the basis generation,
   but serves to avoid the initial transitory regime
@@ -71,9 +71,9 @@ def sinusoidal_sample(M,k,N):
   > E = sinusoidal_sample(100,4,5)
   > plt.plot(E.T)
   """
-  sample = zeros((N,M))
+  sample = zeros((N,Nx))
   for n in range(N):
-    sample[n] = basis_vector(M,k)
+    sample[n] = basis_vector(Nx,k)
 
   # Note: Each sample member is centered
   # -- Not the sample as a whole.

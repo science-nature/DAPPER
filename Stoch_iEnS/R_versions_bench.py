@@ -86,7 +86,7 @@ from mods.Lorenz95.sak08 import HMM
 HMM.t.T = 4**3.5
 
 # Make R non-eye
-row0 = distance_nd(0,arange(HMM.M),(HMM.M,))
+row0 = distance_nd(0,arange(HMM.Nx),(HMM.Nx,))
 R = sla.circulant(exp(-row0/20))
 HMM.Obs.noise.C = CovMat(R)
 

@@ -32,10 +32,10 @@ class Stats(NestedPrint):
     self.yy     = yy
 
     # Validations
-    M    = HMM.M      ; assert M   ==xx.shape[1]
-    P    = HMM.P      ; assert P   ==yy.shape[1]
-    K    = HMM.t.K    ; assert K   ==xx.shape[0]-1
-    KObs = HMM.t.KObs ; assert KObs==yy.shape[0]-1
+    Nx   = HMM.Nx      ; assert Nx   ==xx.shape[1]
+    Ny   = HMM.Ny      ; assert Ny   ==yy.shape[1]
+    K    = HMM.t.K     ; assert K    ==xx.shape[0]-1
+    KObs = HMM.t.KObs  ; assert KObs ==yy.shape[0]-1
 
 
     ######################################
@@ -44,32 +44,32 @@ class Stats(NestedPrint):
     # time-series (FAU type) constructor alias
     new_series = self.new_FAU_series
 
-    self.mu     = new_series(M) # Mean
-    self.var    = new_series(M) # Variances
-    self.mad    = new_series(M) # Mean abs deviations
-    self.err    = new_series(M) # Error (mu-truth)
-    self.logp_m = new_series(1) # Marginal, Gaussian Log score
-    self.skew   = new_series(1) # Skewness
-    self.kurt   = new_series(1) # Kurtosis
-    self.rmv    = new_series(1) # Root-mean variance
-    self.rmse   = new_series(1) # Root-mean square error
+    self.mu     = new_series(Nx) # Mean
+    self.var    = new_series(Nx) # Variances
+    self.mad    = new_series(Nx) # Mean abs deviations
+    self.err    = new_series(Nx) # Error (mu-truth)
+    self.logp_m = new_series(1)  # Marginal, Gaussian Log score
+    self.skew   = new_series(1)  # Skewness
+    self.kurt   = new_series(1)  # Kurtosis
+    self.rmv    = new_series(1)  # Root-mean variance
+    self.rmse   = new_series(1)  # Root-mean square error
 
     if hasattr(config,'N'):
       # Ensemble-only init
       self._had_0v = False
       self._is_ens = True
       N            = config.N
-      mMN          = min(M,N)
-      self.w       = new_series(N)           # Importance weights
-      self.rh      = new_series(M,dtype=int) # Rank histogram
-      #self.N      = N                       # Use w.shape[1] instead
+      minN         = min(Nx,N)
+      self.w       = new_series(N)            # Importance weights
+      self.rh      = new_series(Nx,dtype=int) # Rank histogram
+      #self.N      = N                        # Use w.shape[1] instead
     else:
       # Linear-Gaussian assessment
       self._is_ens = False
-      mMN          = M
+      minN         = Nx
 
-    self.svals = new_series(mMN) # Principal component (SVD) scores
-    self.umisf = new_series(mMN) # Error in component directions
+    self.svals = new_series(minN) # Principal component (SVD) scores
+    self.umisf = new_series(minN) # Error in component directions
 
 
     ######################################
@@ -163,7 +163,7 @@ class Stats(NestedPrint):
   def assess_ens(self,k,E,w=None):
     """Ensemble and Particle filter (weighted/importance) assessment."""
     # Unpack
-    N,M = E.shape
+    N,Nx = E.shape
     x = self.xx[k[0]]
 
     # Process weights
@@ -207,8 +207,8 @@ class Stats(NestedPrint):
 
     self.derivative_stats(k,x)
 
-    if sqrt(M*N) <= Stats.comp_threshold_3:
-      if N<=M:
+    if sqrt(Nx*N) <= Stats.comp_threshold_3:
+      if N<=Nx:
         _,s,UT         = svd( (sqrt(w)*A.T).T, full_matrices=False)
         s             *= sqrt(ub) # Makes s^2 unbiased
         self.svals[k]  = s
@@ -222,7 +222,7 @@ class Stats(NestedPrint):
 
       # For each state dim [i], compute rank of truth (x) among the ensemble (E)
       Ex_sorted     = np.sort(np.vstack((E,x)),axis=0,kind='heapsort')
-      self.rh[k]    = [np.where(Ex_sorted[:,i] == x[i])[0][0] for i in range(M)]
+      self.rh[k]    = [np.where(Ex_sorted[:,i] == x[i])[0][0] for i in range(Nx)]
 
 
   def assess_ext(self,k,mu,P):
@@ -233,8 +233,8 @@ class Stats(NestedPrint):
     if not isFinite: raise_AFE("Estimates not finite.",k)
     if not isReal:   raise_AFE("Estimates not Real.",k)
 
-    M = len(mu)
-    x = self.xx[k[0]]
+    Nx = len(mu)
+    x  = self.xx[k[0]]
 
     self.mu[k]  = mu
     self.var[k] = P.diag if isinstance(P,CovMat) else diag(P)
@@ -243,7 +243,7 @@ class Stats(NestedPrint):
 
     self.derivative_stats(k,x)
 
-    if M <= Stats.comp_threshold_3:
+    if Nx <= Stats.comp_threshold_3:
       P             = P.full if isinstance(P,CovMat) else P
       s2,U          = nla.eigh(P)
       self.svals[k] = sqrt(np.maximum(s2,0.0))[::-1]
@@ -259,11 +259,11 @@ class Stats(NestedPrint):
     
   def MGLS(self,k):
     # Marginal Gaussian Log Score.
-    M              = len(self.err[k])
+    Nx             = len(self.err[k])
     ldet           = log(self.var[k]).sum()
     nmisf          = self.var[k]**(-1/2) * self.err[k]
     logp_m         = (nmisf**2).sum() + ldet
-    self.logp_m[k] = logp_m/M
+    self.logp_m[k] = logp_m/Nx
 
 
   def average_in_time(self):

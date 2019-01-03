@@ -1,36 +1,36 @@
 ##
 
 # Test if expected
-#  - projection matrix is identity  (answer: only if N>=M)
-#  - sensitivity matrix is unbiased (answer: only if N>=M -- not P)
+#  - projection matrix is identity  (answer: only if N>=Nx)
+#  - sensitivity matrix is unbiased (answer: only if N>=Nx -- not Ny)
 
 ## Preamble
 from common import *
 
-K = 10**4   # Num of experiments
-M = 3       # State length
-P = 4       # Obs length
-N = 6       # Ens size
+K  = 10**4   # Num of experiments
+Nx = 3       # State length
+Ny = 4       # Obs length
+N  = 6       # Ens size
 
 cntr = lambda E: mean0(E,axis=1)
 
 seed(6)
-#B = randcov(M)             # yields non-diag Pi_infty. Why? 
-B = np.diag(1+np.arange(M)) # yields diagonal Pi_infty.
-H = np.round(10*rand((P,M)))
+#B = randcov(Nx)             # yields non-diag Pi_infty. Why? 
+B = np.diag(1+np.arange(Nx)) # yields diagonal Pi_infty.
+H = np.round(10*rand((Ny,Nx)))
 Obs = lambda x: (H@x)**2 + 3*(H@x) + 4 # 2nd-D polynomial
 seed()
 
 # "infty" is exaggerated. There's still noticeable sampling error here.
-E_infty = sqrtm(B)@randn((M,K))
+E_infty = sqrtm(B)@randn((Nx,K))
 h_infty = cntr(Obs(E_infty)) @ tinv(cntr(E_infty))
 
 
-P_av = zeros((M,M))
-H_av = zeros((P,M))
-h_av = zeros((P,M))
+P_av = zeros((Nx,Nx))
+H_av = zeros((Ny,Nx))
+h_av = zeros((Ny,Nx))
 for k in range(K):
-  E  = sqrtm(B)@randn((M,N))
+  E  = sqrtm(B)@randn((Nx,N))
   iE = tinv(cntr(E), threshold=1-1e-3)
 
   P_av +=   E  @ iE / K

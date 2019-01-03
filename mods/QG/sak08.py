@@ -32,8 +32,8 @@ X0 = RV(M=Dyn['M'],file=sample_filename)
 ############################
 
 # This will look like satellite tracks when plotted in 2D
-P  = 300
-jj = equi_spaced_integers(Dyn['M'],P)
+Ny  = 300
+jj = equi_spaced_integers(Dyn['M'],Ny)
 jj = jj-jj[0]
 
 # Want: random_offset(t1)==random_offset(t2) if t1==t2.
@@ -63,9 +63,9 @@ batch_shape = [3, 3] # width (in grid points) of each state batch.
 localizer = loc_setup(shape[::-1], batch_shape[::-1], obs_inds, periodic=False)
 
 Obs = {
-    'M'    : P,
+    'M'    : Ny,
     'model': hmod,
-    'noise': GaussRV(C=4*eye(P)),
+    'noise': GaussRV(C=4*eye(Ny)),
     'localizer': localizer,
     }
 

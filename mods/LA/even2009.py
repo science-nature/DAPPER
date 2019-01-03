@@ -12,13 +12,13 @@ from common import *
 from mods.LA.core import sinusoidal_sample, Fmat
 from mods.Lorenz95.liveplotting import LP_setup
 
-M = 1000
-P = 4
-jj = equi_spaced_integers(M,P)
+Nx = 1000
+Ny = 4
+jj = equi_spaced_integers(Nx,Ny)
 
 tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1)
 
-Fm = Fmat(M,c=-1,dx=1,dt=tseq.dt)
+Fm = Fmat(Nx,c=-1,dx=1,dt=tseq.dt)
 def step(x,t,dt):
   assert dt == tseq.dt
   return x @ Fm.T
@@ -27,7 +27,7 @@ def step(x,t,dt):
 # step = lambda x,t,dt: np.roll(x,1,axis=x.ndim-1)
 
 Dyn = {
-    'M'    : M,
+    'M'    : Nx,
     'model': step,
     'jacob': Fm,
     'noise': 0
@@ -38,9 +38,9 @@ Dyn = {
 # Yet this is not so implausible because sinusoidal_sample()
 # yields (multivariate) uniform (random numbers) -- not Gaussian.
 wnum  = 25
-X0 = RV(M=M, func = lambda N: sqrt(5)/10 * sinusoidal_sample(M,wnum,N))
+X0 = RV(M=Nx, func = lambda N: sqrt(5)/10 * sinusoidal_sample(Nx,wnum,N))
 
-Obs = partial_direct_obs_setup(M,jj)
+Obs = partial_direct_obs_setup(Nx,jj)
 Obs['noise'] = 0.01
 
 HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,

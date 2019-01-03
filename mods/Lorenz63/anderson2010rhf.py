@@ -7,23 +7,22 @@ from common import *
 from mods.Lorenz63.core import step, dfdx
 from tools.localization import no_localization
 
-M = 3
-P = M
+Nx = 3
 
 t = Chronology(0.01,dkObs=12,T=4**5,BurnIn=4)
 
 Dyn = {
-    'M'    : M,
+    'M'    : Nx,
     'model': step,
     'jacob': dfdx,
     'noise': 0
     }
 
-X0 = GaussRV(C=1,mu=ones(M))
+X0 = GaussRV(C=1,mu=ones(Nx))
 
-Obs = partial_direct_obs_setup(M,arange(M))
+Obs = partial_direct_obs_setup(Nx,arange(Nx))
 Obs['noise'] = 8.0
-Obs['localizer'] = no_localization([M],arange(M))
+Obs['localizer'] = no_localization([Nx],arange(Nx))
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 

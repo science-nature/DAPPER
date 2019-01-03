@@ -17,7 +17,7 @@
 # This can be shown to be equivalent to requiring that the state
 # component is equally resolved by each observation,
 # and moreover, that the magnitude (abs) of each element of H
-# be a constant (1/sqrt(M)).
+# be a constant (1/sqrt(Nx)).
 
 # Can such an H be constructed/found?
 # In the 2d case: H = [1, 1; 1, -1] / sqrt(2).
@@ -62,41 +62,38 @@
 # The question then remains (to be proven combinatorically?)
 # if the +/- 1 matrices exist for dim>4
 # Furthermore, experiments do not seem to indicate that I can push
-# P much lower than for the case H = Identity,
+# Ny much lower than for the case H = Identity,
 # even though the rmse is a lot lower with spectral H.
 # Am I missing something?
 
 
 from mods.Lorenz95.sak08 import *
 
-# The (M-P) highest frequency observation modes are
-# left out of H below.
-# If P>M, then H no longer has independent
-# (let alone orthogonal) columns,
-# yet more information is gained, since the
-# observations are noisy.
-P = 12
+# The (Nx-Ny) highest frequency observation modes are left out of H below.
+# If Ny>Nx, then H no longer has independent (let alone orthogonal) columns,
+# yet more information is gained, since the observations are noisy.
+Ny = 12
 
 
-X0 = GaussRV(M=M, C=0.001) 
+X0 = GaussRV(M=Nx, C=0.001) 
 
-def make_H(P,M):
-  xx = linspace(-1,1,M+1)[1:]
-  H = zeros((P,M))
+def make_H(Ny,Nx):
+  xx = linspace(-1,1,Nx+1)[1:]
+  H = zeros((Ny,Nx))
   H[0] = 1/sqrt(2)
-  for k in range(-(P//2),(P+1)//2):
+  for k in range(-(Ny//2),(Ny+1)//2):
     ind = 2*abs(k) - (k<0)
     H[ind] = sin(pi*k*xx + pi/4)
-  H /= sqrt(M/2)
+  H /= sqrt(Nx/2)
   return H
 
-H = make_H(P,M)
+H = make_H(Ny,Nx)
 # plt.figure(1).gca().matshow(H)
 # plt.figure(2).gca().matshow(H @ H.T)
 
 
 # "raw" obs plotting
-# if P<=M:
+# if Ny<=Nx:
   # Hinv = H.T
 # else:
   # Hinv = sla.pinv2(H)
@@ -105,18 +102,18 @@ H = make_H(P,M)
   # return lh
 
 # "implicit" (interpolated sine/cosine) obs plotting
-Hplot = make_H(P,max(P,201))
+Hplot = make_H(Ny,max(Ny,201))
 Hplot_inv = Hplot.T
 def yplot(y):
   x = y @ Hplot_inv.T
-  ii = linspace(0,M-1,len(x))
+  ii = linspace(0,Nx-1,len(x))
   lh = plt.plot(ii,x,'g')[0]
   return lh
 
 Obs = {
-    'M': P,
+    'M': Ny,
     'model': lambda x,t: x @ H.T,
-    'noise': GaussRV(C=0.01*eye(P)),
+    'noise': GaussRV(C=0.01*eye(Ny)),
     'plot' : yplot,
     }
 

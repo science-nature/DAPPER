@@ -4,11 +4,11 @@
 # "Levenberg-Marquardt forms of the iES for efficient history matching and UQ"
 # alias: CO13
 #
-# This is here generalized to M dimensions
+# This is here generalized to Nx dimensions
 # by repeating the problem independently for each dim.
 # However, sampling error will couple the dimensions somewhat.
 #
-# Setting M = P = 1 can be used to reproduce the results of the paper.
+# Setting Nx = Ny = 1 can be used to reproduce the results of the paper.
 #
 # This script has been used extensively to test the equivalence of various
 # forms of the matrix Y_k = H_k X_0.
@@ -25,30 +25,30 @@ def mean1(E):
   "Enables correct broadcasting for MxN shaped ensemble matrices"
   return mean(E,axis=1,keepdims=True)
 
-M  = 2       # State length
-P  = 2       # Obs length
+Nx = 2       # State length
+Ny = 2       # Obs length
 N  = 4       # Ens size
 N1 = N-1     #
 nbins = 150  # Histogram bins
 
 
 ## Prior ===================
-b  = -2*ones((M,1))
-B  = 1*eye(M)
-E0 = b + sqrtm(B)@randn((M,N))
+b  = -2*ones((Nx,1))
+B  = 1*eye(Nx)
+E0 = b + sqrtm(B)@randn((Nx,N))
 
 
 ## Obs  ===================
-jj = arange(P)
-y  = 48*ones((P,1))
-R  = 16*eye(P)
-#R  = 1*eye(P)
+jj = arange(Ny)
+y  = 48*ones((Ny,1))
+R  = 16*eye(Ny)
+#R  = 1*eye(Ny)
 if True:
   # == Non-Lin H == (as in CO13):
   def h1(x): return 7/12*x*x*x - 7/2*x*x + 8*x # A scalar fun...
   def  Obs(x): return h1(x) [jj,:]               # ...duplicated to obs dims.
   def hp(x):                                   # The tangent.
-    H = zeros((P,M))
+    H = zeros((Ny,Nx))
     for i,j in enumerate(jj):
       H[i,j] = 7/4*x[j]**2 - 7*x[j] + 8
     return H
@@ -56,7 +56,7 @@ else:
   # == Linear H == (not in CO13):
   def h1(x): return 5*x
   def  Obs(x): return h1(x) [jj,:]
-  def hp(x): return 5*ones((P,M))
+  def hp(x): return 5*ones((Ny,Nx))
 
 
 ## PDFs ===================
@@ -109,7 +109,7 @@ Pi1  = ones((N,N))/N
 AN   = eye(N) - Pi1
 
 # Obs perturbations
-D = sqrtm(R)@randn((P,N))
+D = sqrtm(R)@randn((Ny,N))
 D = mean0(D.T).T
 
 # Sqrt initialization matrix
@@ -143,8 +143,8 @@ for k in range(nIter):
   H  = Z@tinv(A)
 
   if FORM=='RML-GN':
-    dLkl = zeros((M,N))
-    dPri = zeros((M,N))
+    dLkl = zeros((Nx,N))
+    dPri = zeros((Nx,N))
     for n in range(N): 
       Hn        = hp(tp(E[:,n]))
       Pn        = inv( inv(B0) + Hn.T@inv(R)@Hn )
@@ -152,7 +152,7 @@ for k in range(nIter):
       dPri[:,n] = Pn@inv(B0)@(E0[:,n]-E[:,n])
 
   elif FORM=='MDA':
-    D     = sqrtm(R)@randn((P,N))
+    D     = sqrtm(R)@randn((Ny,N))
     D    -= mean1(D)
     D    *= sqrt(N/N1)
     K     = A@Z.T@inv(Z@Z.T + nIter*N1*R)
@@ -180,15 +180,15 @@ for k in range(nIter):
     C     = Y@Y.T + N1*R
     K     = A0@Y.T@inv(C)
     dLkl  = K@(y-D-Eo)
-    dPri  = (eye(M) - K@H)@(E0-E)
+    dPri  = (eye(Nx) - K@H)@(E0-E)
   elif FORM=='EnRML-GN-ens':
     Y     = H@A0
     Pw    = inv(Y.T@inv(R)@Y + N1*eye(N))
     K     = A0@Pw@Y.T@inv(R)
     dLkl  = K@(y-D-Eo)
-    dPri  = (eye(M) - K@H)@(E0-E)
+    dPri  = (eye(Nx) - K@H)@(E0-E)
   elif FORM=='EnRML-GN-state':
-    assert nla.matrix_rank(B0) == M # Not well-done by inv()
+    assert nla.matrix_rank(B0) == Nx # Not well-done by inv()
     P     = inv( inv(B0) + H.T@inv(R)@H )
     dLkl  = P@H.T@inv(R)@(y-D-Eo)
     dPri  = P@inv(B0)@(E0-E)

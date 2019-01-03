@@ -8,26 +8,26 @@ from mods.Lorenz95.liveplotting import LP_setup
 
 tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1)
 
-M = 100
+Nx = 100
 
 # def step(x,t,dt):
   # return np.roll(x,1,axis=x.ndim-1)
-Fm = Fmat(M,-1,1,tseq.dt)
+Fm = Fmat(Nx,-1,1,tseq.dt)
 def step(x,t,dt):
   assert dt == tseq.dt
   return x @ Fm.T
 
 Dyn = {
-    'M': M,
+    'M': Nx,
     'model': step,
     'noise': 0
     }
 
-X0 = GaussRV(C=homogeneous_1D_cov(M,M/8,kind='Gauss'))
+X0 = GaussRV(C=homogeneous_1D_cov(Nx,Nx/8,kind='Gauss'))
 
-P  = 4
-jj = equi_spaced_integers(M,P)
-Obs  = partial_direct_obs_setup(M,jj)
+Ny  = 4
+jj = equi_spaced_integers(Nx,Ny)
+Obs  = partial_direct_obs_setup(Nx,jj)
 Obs['noise'] = 0.01
 
  

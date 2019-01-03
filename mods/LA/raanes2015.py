@@ -78,7 +78,7 @@ HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,
 # where XXX is one of:
 # - Stoch
 # - Mult-1
-# - Mult-Nx
+# - Mult-M
 # - Sqrt-Core
 # - Sqrt-Add-Z
 # - Sqrt-Dep

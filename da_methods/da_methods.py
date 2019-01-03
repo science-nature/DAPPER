@@ -264,7 +264,7 @@ def add_noise(E, dt, noise, config):
     ratio  = (varE + dt*diag(Q).sum())/varE
     E      = mu + sqrt(ratio)*A
     E      = reconst(*tsvd(E,0.999)) # Explained in Datum
-  elif method == 'Mult-Nx':
+  elif method == 'Mult-M':
     varE   = np.var(E,axis=0)
     ratios = sqrt( (varE + dt*diag(Q))/varE )
     E      = mu + A*ratios

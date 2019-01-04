@@ -41,11 +41,11 @@ def LP_setup(
     ax3.set_title("Phase space trajectories")
     # Tune plots
     for s,i in zip("xyz",range(Nx)):
-      set_ilim(ax3,i,*fit_lim(xx[:,i],1.5))
-      axs[i].set_ylim(*stretch(*span(xx), 1.01))
-      eval("ax3.set_%slabel('%s')"%(s,s), {'ax3':ax3} )
       axs[i].set_ylabel(s)
-    axs[2].set_xlabel('t')
+      axs[i].set_ylim( *stretch(*span(xx[:,i]), 1.15) )
+      set_ilim(ax3,i,  *stretch(*span(xx[:,i]), 0.65) )
+      eval("ax3.set_%slabel('%s')"%(s,s), {'ax3':ax3} )
+    axs[-1].set_xlabel('t')
 
     #####################
     # 3d phase space trajectories
@@ -53,14 +53,14 @@ def LP_setup(
     if E is None: N = 0
     else:         N = len(E)
 
-    hist_EE = np.full((lag,N,Nx)    , nan)
-    hist_mu = np.full((lag,Nx)      , nan)
-    hist_ss = np.full((lag,2,Nx)    , nan)
-    hist_xx = np.full((lag,Nx)      , nan)
+    hist_EE = np.full((lag,N,Nx)   , nan)
+    hist_mu = np.full((lag,Nx)     , nan)
+    hist_ss = np.full((lag,2,Nx)   , nan)
+    hist_xx = np.full((lag,Nx)     , nan)
     hist_yy = np.full((lag,len(jj)), nan)
     hist_tt = np.copy(tt[:lag]) # using nan's would yield bugs.
 
-    PO =  list(jj)==[0,1,2] # PlotObs switch: only if obs operator is id.
+    PO = list(jj)==[0,1,2] # PlotObs switch: only if obs operator is id.
 
     if N : scat_ens =  ax3.scatter(*E.T [dims],s=3 **2, **ens_props)
     else : scat_mu  =  ax3.scatter(*mu[k,dims],s=8 **2, c='b')

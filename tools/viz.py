@@ -636,14 +636,6 @@ def set_ilim(ax,i,Min=None,Max=None):
   if i is 1: ax.set_ylim(Min,Max)
   if i is 2: ax.set_zlim(Min,Max)
 
-def fit_lim(data,zoom=1.0):
-  Min  = data.min()
-  Max  = data.max()
-  lims = round2sigfig([Min, Max])
-  lims = inflate_ens(lims,1/zoom)
-  return lims
-
-
 def estimate_good_plot_length(xx,chrono=None,mult=100):
   """
   Estimate good length for plotting stuff

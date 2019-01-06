@@ -260,3 +260,37 @@ class FAU_series(NestedPrint):
 
 
 
+class RollingArray:
+  """ND-Array that implements "rolling" along axis 0.
+  Used for data that gets plotted in sliding graphs."""
+  
+  def __init__(self, shape, fillval=nan):
+      self.array = np.full(shape, fillval)
+      self.k1 = 0 # previous k
+
+  def update(self,k,val):
+    dk = k-self.k1
+    self.k1 = k
+
+    # Old (more readable?) version:
+    # if dk in [0,1]: # case: forecast or analysis update
+      # self.array = np.roll(self.array, -1, axis=0)
+    # elif dk>1:      # case: user has skipped ahead (w/o liveplotting)
+      # self.array = np.roll(self.array, -dk, axis=0)
+      # self.array[-dk:] = nan
+    # self.array[-1] = val
+
+    dk = max(1,dk)
+    self.array = np.roll(self.array, -dk, axis=0)
+    self.array[-dk:] = nan
+    self.array[-1] = val
+
+  def __array__  (self,dtype=None): return self.array
+  def __len__    (self): return len(self.array)
+  def __getitem__(self,key): return self.array[key]
+  def __repr__   (self): return 'RollingArray:\n%s'%str(self.array)
+
+
+
+
+

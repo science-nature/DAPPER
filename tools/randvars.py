@@ -29,7 +29,7 @@ class RV(NestedPrint):
     self.M = M
     for key, value in kwargs.items():
       setattr(self, key, value)
-    
+
   def sample(self,N):
     if getattr(self,'is0',False):
       # Identically 0
@@ -85,6 +85,9 @@ class RV_with_mean_and_cov(RV):
   This class must be subclassed to provide sample(),
   i.e. its main purpose is provide a common convenience constructor.
   """
+
+  included = NestedPrint.included + ['M','mu','C']
+
   def __init__(self,mu=0,C=0,M=None):
     """Init allowing for shortcut notation."""
 

@@ -124,7 +124,7 @@ class FAU_series(NestedPrint):
       then you should use a simple np.array instead.
   """
 
-  # Used by NestedPrint
+  # Printing options (cf. NestedPrint)
   included = NestedPrint.included + ['f','a','store_u']
   aliases  = {
       'f':'Forecast (.f)',

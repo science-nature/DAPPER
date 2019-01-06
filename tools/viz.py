@@ -9,8 +9,6 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib import colors
 from matplotlib.ticker import MaxNLocator
 
-tri_corr = True
-
 class LivePlot:
   """
   Live plotting functionality.
@@ -53,78 +51,11 @@ class LivePlot:
     ii,wrap = setup_wrapping(Nx)
 
 
-    #####################
     # Correlation plot
-    #####################
     if 2 in only and Nx<1001:
-      GS = {'height_ratios':[4, 1],'hspace':0.09,'top':0.95}
-      fig_C, (ax_C,ax_AC) = freshfig(2, (5,6), nrows=2, gridspec_kw=GS)
-      win_title(fig_C, "Correlations")
+      self.C = correlation_plot(2,Nx,E,P)
       set_figpos('2311')
 
-      if Nx<=1003:
-        # Get cov matrix
-        if E is not None:
-          C = np.cov(E.T, ddof=1)
-        else:
-          assert P is not None
-          C = P.full if isinstance(P,CovMat) else P
-          C = C.copy()
-        # Compute corr from cov
-        std = sqrt(diag(C))
-        C  /= std[:,None]
-        C  /= std[None,:]
-        # Mask half
-        mask = np.zeros_like(C, dtype=np.bool)
-        mask   [np.tril_indices_from(mask)] = True
-        if tri_corr:
-          C  = np.ma.masked_where(mask, C)
-        # Make colormap. Log-transform cmap, but not internally in matplotlib,
-        # so as to avoid transforming the colorbar too.
-        cmap = plt.get_cmap('RdBu')
-        trfm = colors.SymLogNorm(linthresh=0.2,linscale=0.2,vmin=-1, vmax=1)
-        cmap = cmap(trfm(linspace(-0.6,0.6,cmap.N)))
-        cmap = colors.ListedColormap(cmap)
-        #
-        VM   = 1.0 # abs(np.percentile(C,[1,99])).max()
-        im_C = ax_C.imshow(C,cmap=cmap,vmin=-VM,vmax=VM)
-        #
-        cax = ax_C.figure.colorbar(im_C,ax=ax_C,shrink=0.8)
-        plt.box(False)
-        ax_C.set_facecolor('w') 
-        ax_C.grid(False)
-        ax_C.set_title("State correlation matrix:", y=1.07)
-        ax_C.xaxis.tick_top()
-        
-        # ax_AC = inset_axes(ax_C,width="30%",height="60%",loc=3)
-        ACF = circulant_ACF(C)
-        AAF = circulant_ACF(C,do_abs=True)
-        line_AC, = ax_AC.plot(arange(Nx), ACF, label='Correlation')
-        line_AA, = ax_AC.plot(arange(Nx), AAF, label='Abs. corr.')
-        _   = ax_AC.hlines(0,0,Nx-1,'k','dotted',lw=1)
-        # Align ax_AC with ax_C
-        bb_AC = ax_AC.get_position()
-        bb_C  = ax_C.get_position()
-        ax_AC.set_position([bb_C.x0, bb_AC.y0, bb_C.width, bb_AC.height])
-        # Tune plot
-        ax_AC.set_title("Auto-correlation:")
-        ax_AC.set_ylabel("Mean value")
-        ax_AC.set_xlabel("Distance (in state indices)")
-        ax_AC.set_xticklabels([])
-        ax_AC.set_yticks([0,1] + list(ax_AC.get_yticks()[[0,-1]]))
-        ax_AC.set_ylim(top=1)
-        ax_AC.legend(frameon=True,facecolor='w',
-            bbox_to_anchor=(1, 1), loc='upper left', borderaxespad=0.02)
-
-        self.fig_C   = fig_C
-        self.ax_C    = ax_C
-        self.ax_AC   = ax_AC
-        self.im_C    = im_C
-        self.line_AC = line_AC
-        self.line_AA = line_AA
-        self.mask    = mask
-      else:
-        not_available_text(ax_C)
       
 
     #####################
@@ -290,8 +221,11 @@ class LivePlot:
     # User-defined state
     #####################
     if 9 in only and hasattr(HMM,'liveplotting'):
-      self.fig_custom, self.custom = HMM.liveplotting(stats,key,E,P)
-      win_title(self.fig_custom,"Custom plot")
+      LPs = HMM.liveplotting
+      LPs = LPs if hasattr(LPs,'__len__') else [LPs]
+      self.custom = [LP(stats,key,E,P) for LP in LPs]
+      for i, (fig, _) in enumerate(self.custom):
+        win_title(fig,"Custom plot %d"%i)
       set_figpos('2322')
       plot_pause(0.01)
 
@@ -344,32 +278,13 @@ class LivePlot:
 
     ii,wrap = setup_wrapping(Nx)
     
-    #####################
     # Correlation plot
-    #####################
-    if hasattr(self, 'fig_C') and plt.fignum_exists(self.fig_C.number):
-      plt.figure(self.fig_C.number)
-
-      if E is not None:
-        C = np.cov(E,rowvar=False)
-      else:
-        assert P is not None
-        C = P.full if isinstance(P,CovMat) else P
-        C = C.copy()
-      std = sqrt(diag(C))
-      C  /= std[:,None]
-      C  /= std[None,:]
-      if tri_corr:
-        C = np.ma.masked_where(self.mask, C)
-      self.im_C.set_data(C)
-
-      # Auto-corr function
-      ACF = circulant_ACF(C)
-      AAF = circulant_ACF(C,do_abs=True)
-      self.line_AC.set_ydata(ACF)
-      self.line_AA.set_ydata(AAF)
-
-      plot_pause(0.01)
+    if hasattr(self, 'C'):
+      fignum = self.C.fig.number
+      if plt.fignum_exists(fignum):
+        plt.figure(fignum)
+        self.C.update(E,P)
+        plot_pause(0.01)
 
 
     #####################
@@ -491,15 +406,110 @@ class LivePlot:
     #####################
     # User-defined state
     #####################
-    if hasattr(self,'fig_custom') and plt.fignum_exists(self.fig_custom.number):
-      plt.figure(self.fig_custom.number)
-      self.custom(key,E,P)
-      plot_pause(0.01)
+    if hasattr(self,'custom'):
+      for fig, updator in self.custom:
+        if plt.fignum_exists(fig.number):
+          plt.figure(fig.number)
+          updator(key,E,P)
+          plot_pause(0.01)
 
     # Trackers
     self.prev_k = k
 
 
+tri_corr = True
+
+class correlation_plot:
+
+  def __init__(self,fignum,Nx,E,P):
+    GS = {'height_ratios':[4, 1],'hspace':0.09,'top':0.95}
+    fig, (ax,ax2) = freshfig(2, (5,6), fignum=fignum, nrows=2, gridspec_kw=GS)
+    win_title(fig, "Correlations")
+
+    if Nx<=1003:
+      # Get cov matrix
+      if E is not None:
+        C = np.cov(E.T, ddof=1)
+      else:
+        assert P is not None
+        C = P.full if isinstance(P,CovMat) else P
+        C = C.copy()
+      # Compute corr from cov
+      std = sqrt(diag(C))
+      C  /= std[:,None]
+      C  /= std[None,:]
+      # Mask half
+      mask = np.zeros_like(C, dtype=np.bool)
+      mask   [np.tril_indices_from(mask)] = True
+      if tri_corr:
+        C  = np.ma.masked_where(mask, C)
+      # Make colormap. Log-transform cmap, but not internally in matplotlib,
+      # so as to avoid transforming the colorbar too.
+      cmap = plt.get_cmap('RdBu')
+      trfm = colors.SymLogNorm(linthresh=0.2,linscale=0.2,vmin=-1, vmax=1)
+      cmap = cmap(trfm(linspace(-0.6,0.6,cmap.N)))
+      cmap = colors.ListedColormap(cmap)
+      #
+      VM   = 1.0 # abs(np.percentile(C,[1,99])).max()
+      im   = ax.imshow(C,cmap=cmap,vmin=-VM,vmax=VM)
+      #
+      cax = ax.figure.colorbar(im,ax=ax,shrink=0.8)
+      plt.box(False)
+      ax.set_facecolor('w') 
+      ax.grid(False)
+      ax.set_title("State correlation matrix:", y=1.07)
+      ax.xaxis.tick_top()
+      
+      # ax2 = inset_axes(ax,width="30%",height="60%",loc=3)
+      ACF = circulant_ACF(C)
+      AAF = circulant_ACF(C,do_abs=True)
+      line_AC, = ax2.plot(arange(Nx), ACF, label='Correlation')
+      line_AA, = ax2.plot(arange(Nx), AAF, label='Abs. corr.')
+      _   = ax2.hlines(0,0,Nx-1,'k','dotted',lw=1)
+      # Align ax2 with ax
+      bb_AC = ax2.get_position()
+      bb_C  = ax.get_position()
+      ax2.set_position([bb_C.x0, bb_AC.y0, bb_C.width, bb_AC.height])
+      # Tune plot
+      ax2.set_title("Auto-correlation:")
+      ax2.set_ylabel("Mean value")
+      ax2.set_xlabel("Distance (in state indices)")
+      ax2.set_xticklabels([])
+      ax2.set_yticks([0,1] + list(ax2.get_yticks()[[0,-1]]))
+      ax2.set_ylim(top=1)
+      ax2.legend(frameon=True,facecolor='w',
+          bbox_to_anchor=(1, 1), loc='upper left', borderaxespad=0.02)
+
+      self.fig     = fig
+      self.ax      = ax
+      self.ax2     = ax2
+      self.im      = im
+      self.line_AC = line_AC
+      self.line_AA = line_AA
+      self.mask    = mask
+
+    else:
+      not_available_text(ax)
+
+  def update(self,E,P):
+    if E is not None:
+      C = np.cov(E,rowvar=False)
+    else:
+      assert P is not None
+      C = P.full if isinstance(P,CovMat) else P
+      C = C.copy()
+    std = sqrt(diag(C))
+    C  /= std[:,None]
+    C  /= std[None,:]
+    if tri_corr:
+      C = np.ma.masked_where(self.mask, C)
+    self.im.set_data(C)
+
+    # Auto-corr function
+    ACF = circulant_ACF(C)
+    AAF = circulant_ACF(C,do_abs=True)
+    self.line_AC.set_ydata(ACF)
+    self.line_AA.set_ydata(AAF)
 
 
 def plot_pause(duration):
@@ -553,7 +563,6 @@ def adjust_position(ax,adjust_extent=False,**kwargs):
   # Set
   ax.set_position(d.values())
 
-# TODO: rename "xtrma"
 def span(xx,axis=None):
   a = xx.min(axis)
   b = xx.max(axis)

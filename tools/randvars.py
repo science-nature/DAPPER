@@ -86,8 +86,6 @@ class RV_with_mean_and_cov(RV):
   i.e. its main purpose is provide a common convenience constructor.
   """
 
-  included = NestedPrint.included + ['M','mu','C']
-
   def __init__(self,mu=0,C=0,M=None):
     """Init allowing for shortcut notation."""
 

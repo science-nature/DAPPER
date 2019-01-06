@@ -132,17 +132,19 @@ Quasi-Geost | No      | 2d        | 129²≈17k  | ≈140     | Sakov
 *: flexible; set as necessary
 
 **To add a new model:**
-* Make a new dir: `DAPPER/mods/your_model`. Add the following files:
-* `core.py` to define the core functionality and documentation of your model.
-  The model must (and obs operator) support
-  2D-array (i.e. ensemble) and 1D-array (single realization) input.
-  See the `core.py` file in `mods/Lorenz63` and `mods/Lorenz95` for typical
-  implementations, and `mods/QG` for how to parallelize the ensemble simulations.
+Make a new dir: `DAPPER/mods/your_model`. Add the following files:
+* `core.py` to define the core functionality and documentation of your dynamical model. Typically this culminates in a `step(x, t, dt)` function.
+  * The model step operator (and the obs operator) must support
+    2D-array (i.e. ensemble) and 1D-array (single realization) input.
+    See the `core.py` file in `mods/Lorenz63` and `mods/Lorenz95` for typical
+    implementations, and `mods/QG` for how to parallelize the ensemble simulations.
+  * Optional: To use the (extended) Kalman filter,
+    you will need to define the model linearization.
+    Note: this only needs to support 1D input (single realization).
 * `demo.py` to visually showcase a simulation of the model.
 * `liveplotting.py` (optional) to define how
   the assimilation process should be visualized on-line.
-* Files that define a complete Hidden Markov Model ready for a twin experiment (OSSE).
-  See for example `DAPPER/mods/Lorenz63/{sak12,boc12}.py`.
+* Files that define a complete Hidden Markov Model ready for a twin experiment (OSSE). For example, this will plug in the `step`function you made previously as in `Dyn['model'] = step`. For further details, see examples such as `DAPPER/mods/Lorenz63/{sak12,boc12}.py`.
 
 
 <!--
@@ -352,6 +354,13 @@ Conventions:
 <!--
 TODO
 ------------------------------------------------
+* Make changes to L63.core and sak12 in the rest
+* Allocate fignum from viz
+* TODO: rename viz.py:span to "xtrma". Or rm?
+* Rename partial_direct_Obs --> partial_Id_Obs
+* Rename TLM --> d2x_dtdx
+* Rename dfdx --> dstep_dx
+
 * Bugs:
     * On Windows: key listening for liveplotting: ncurses?
     * __name__ for HMM via inspect fails when running a 2nd, ≠ script.

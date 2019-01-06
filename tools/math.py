@@ -35,10 +35,10 @@ def ccat(*args,axis=0):
 def roll_n_sub(arr,item,i_repl=0):
   """
   Example:
-  In:  roll_n_sub(arange(4),99,0)
-  Out: array([99,  0,  1,  2])
-  In:  roll_n_sub(arange(4),99,-1)
-  Out: array([ 1,  2,  3, 99])
+  >>> roll_n_sub(arange(4),99,0)
+  array([99,  0,  1,  2])
+  >>> roll_n_sub(arange(4),99,-1)
+  array([ 1,  2,  3, 99])
   """
   shift       = i_repl if i_repl<0 else (i_repl+1)
   arr         = np.roll(arr,shift,axis=0)

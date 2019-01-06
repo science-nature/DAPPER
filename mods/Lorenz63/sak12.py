@@ -4,10 +4,11 @@
 
 from common import *
 
-from mods.Lorenz63.core import step, dfdx, Nx
-from mods.Lorenz63.liveplotting import LP_setup
+from mods.Lorenz63.core import step, dfdx, x0, Tplot, LP
 
-t = Chronology(0.01,dkObs=25,T=4**5,BurnIn=4)
+t = Chronology(0.01, dkObs=25, T=250*Tplot, BurnIn=4*Tplot)
+
+Nx = len(x0)
 
 Dyn = {
     'M'    : Nx,
@@ -16,14 +17,15 @@ Dyn = {
     'noise': 0
     }
 
-mu0 = array([1.509, -1.531, 25.46])
-X0 = GaussRV(C=2,mu=mu0)
+X0 = GaussRV(C=2,mu=x0)
 
 jj = arange(Nx) # obs_inds
 Obs = partial_direct_Obs(Nx, jj)
 Obs['noise'] = 2 # GaussRV(C=CovMat(2*eye(Nx)))
 
-HMM = HiddenMarkovModel(Dyn,Obs,t,X0,liveplotting=LP_setup(jj))
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0)
+
+HMM.liveplotting = LP(t.dt,jj)
 
 
 ####################

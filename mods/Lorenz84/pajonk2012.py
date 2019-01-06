@@ -7,12 +7,10 @@
 
 from common import *
 
-from mods.Lorenz84.core import step, dfdx
+from mods.Lorenz84.core import step, dfdx, Nx
 from mods.Lorenz63.liveplotting import LP_setup
 
-Nx = 3
 Ny = Nx
-
 
 day = 0.05/6 * 24 # coz dt=0.05 <--> 6h in "model time scale"
 t = Chronology(0.05,dkObs=1,T=200*day,BurnIn=10*day)

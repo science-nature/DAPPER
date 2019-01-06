@@ -12,6 +12,8 @@ import numpy as np
 from tools.math import with_rk4, is1d
 from common import ens_compatible, integrate_TLM
 
+Nx = 3
+
 # Constants
 a = 0.25;  b = 4; F = 8.0; G = 1.23;
 #G = 1.0
@@ -29,8 +31,6 @@ step = with_rk4(dxdt,autonom=True)
   
 
 def TLM(x):
-  """Tangent linear model"""
-  assert is1d(x)
   x,y,z = x
   TLM=np.array(
       [[-a   , -2*y , -2*z],
@@ -39,7 +39,6 @@ def TLM(x):
   return TLM
 
 def dfdx(x,t,dt):
-  """Integral of TLM. Jacobian of step."""
   return integrate_TLM(TLM(x),dt,method='approx')
 
 

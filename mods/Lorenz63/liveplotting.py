@@ -2,6 +2,7 @@
 from common import *
 
 
+#TODO
 # Note: the usage of 'dims' in this module is rather unnecessary
 # (repleable by [:3], [:], or simply no indexing). 
 # It's left for generality, but is probably buggy for systems where Nx!=3.
@@ -9,10 +10,11 @@ Nx = 3
 dims = arange(Nx)
 
 
-def LP_setup(
-    obs_inds     = None,
+def phase3D(
+    obs_inds     = [],
+    lag          = 100,
     ens_props    = {'alpha':0.3},
-    lag          = 40,
+    zoom_3d      = 1.5,
     pause_f      = 0.0,
     pause_a      = 0.7,
     weight_alpha = False,
@@ -30,22 +32,16 @@ def LP_setup(
     #####################
     # Set up figure, axes
     #####################
-    fig, axs = freshfig(9, (9,5), nrows=Nx, sharex=True)
-    axs[0].set_title("Marginal time series.")
+    fig = plt.figure(8, figsize=(5,5))
     # Add 3d axes
-    fig.subplots_adjust(right=0.45, left=0.1, hspace=0.05)
-    bb0 = axs[0].get_position()
-    bb2 = axs[2].get_position()
-    ax3 = fig.add_axes([0.48, bb2.y0, 0.5, bb0.y1-bb2.y0], projection='3d')
+    # ax3 = fig.add_axes(projection='3d')
+    ax3 = plt.subplot(111, projection='3d')
     ax3.set_facecolor('w')
     ax3.set_title("Phase space trajectories")
     # Tune plots
     for s,i in zip("xyz",range(Nx)):
-      axs[i].set_ylabel(s)
-      axs[i].set_ylim( *stretch(*span(xx[:,i]), 1.15) )
-      set_ilim(ax3,i,  *stretch(*span(xx[:,i]), 0.65) )
+      set_ilim(ax3,i,  *stretch(*span(xx[:,i]), 1/zoom_3d) )
       eval("ax3.set_%slabel('%s')"%(s,s), {'ax3':ax3} )
-    axs[-1].set_xlabel('t')
 
     #####################
     # 3d phase space trajectories
@@ -71,22 +67,6 @@ def LP_setup(
     if 1 : tail_xx, =  ax3.plot(*hist_xx       .T, 'k' ,lw=4)
     if PO: tail_yy, =  ax3.plot(*hist_yy       .T, 'g*',ms=14)
 
-    #####################
-    # Marginal time series
-    #####################
-    line_y  = []
-    line_x  = []
-    line_mu = []
-    lines_s = []
-    lines_E = []
-    for i, ax in enumerate(axs):
-      if N: lines_E += [ax.plot(hist_tt, hist_EE[:,:,i], **ens_props)]
-      else:
-            line_mu +=  ax.plot(hist_tt, hist_mu  [:,i], 'b')
-            lines_s += [ax.plot(hist_tt, hist_ss[:,:,i], 'b--',lw=1)]
-      if 1: line_x  +=  ax.plot(hist_tt, hist_xx  [:,i], 'k')
-    for i,j in enumerate(jj):
-      line_y +=     axs[j].plot(hist_tt, hist_yy  [:,i] ,'g*', ms=10)
 
     def update(key,E,P):
       nonlocal hist_xx, hist_yy, hist_EE, hist_mu, hist_ss, prev_k, hist_tt, len_roll
@@ -95,7 +75,7 @@ def LP_setup(
       #####################
       # Update rolling data array
       #####################
-      a = kObs is not None
+      a = PO and kObs is not None
 
       # In case of plot restarting
       if prev_k not in [k, k-1]:
@@ -137,19 +117,6 @@ def LP_setup(
         else:
               hist_mu = roll_n_sub(hist_mu, _mu, -1)
               hist_ss = roll_n_sub(hist_ss, _ss, -1)
-
-      #####################
-      # Marginal time series
-      #####################
-      for i, ax in enumerate(axs):
-        interval = hist_tt[-1] - hist_tt[0]
-        ax.set_xlim(hist_tt[0], hist_tt[-1] + interval/20)
-        for n in range(N):      lines_E[i][n] .set_data(hist_tt, hist_EE[:,n,i])
-        if not N:
-                                line_mu[i]    .set_data(hist_tt, hist_mu[:,i])
-                                [lines_s[i][b].set_data(hist_tt, hist_ss[:,b,i]) for b in [0,1]]
-        if 1:                   line_x[i]     .set_data(hist_tt, hist_xx[:,i])
-      for i,j in enumerate(jj): line_y[i]     .set_data(hist_tt, hist_yy[:,j])
 
       if 'a' in f_a_u:
         if pause_a: plt.pause(pause_a)

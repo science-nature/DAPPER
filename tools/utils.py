@@ -222,8 +222,9 @@ class NestedPrint:
   excluded.append(re.compile('^_')) # "Private"
   excluded.append('name') # Treated separately
 
-  included = []
-  aliases  = {}
+  included = [] # Only print these (also determines ordering).
+  ordering = [] # Determine ordering (with precedence over included).
+  aliases  = {} # Rename attributes (vars)
 
   def __repr__(self):
     with printoptions(threshold=self.threshold,precision=self.precision):
@@ -247,16 +248,22 @@ class NestedPrint:
         t = repr(getattr(self,key)) # sub-repr
         if '\n' in t:
           # Activate multi-line printing
-          t = t.replace('\n',NL+' '*self.indent) # other lines
-          t = NL+' '*self.indent + t             # first line
+          t = t.replace('\n',NL+' '*self.indent)      # other lines
+          t = NL+' '*self.indent + t                  # first line
         t = NL + self.aliases.get(key,key) + ': ' + t # key-name
         txts[key] = t
 
       def sortr(x):
-        if self.ordr_by_linenum:
-          return self.ordr_by_linenum*txts[x].count('\n')
+        if x in self.ordering:
+          key = -1000 + self.ordering.index(x)
         else:
-          return x.lower()
+          if self.ordr_by_linenum:
+            key = self.ordr_by_linenum*txts[x].count('\n')
+          else:
+            key = x.lower()
+            # Convert str to int (assuming ASCII) for comparison with above cases
+            key = sum( ord(x)*128**i for i,x in enumerate(x[::-1]) )
+        return key
 
       # Assemble string
       s = repr_type_and_name(self)

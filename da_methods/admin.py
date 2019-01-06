@@ -5,6 +5,7 @@ class HiddenMarkovModel(NestedPrint):
   Container for attributes of a Hidden Markov Model (HMM), to run a
   "twin experiment", i.e. an "OSSE (observing system simulation experiment)".
   """
+
   def __init__(self,Dyn,Obs,t,X0,**kwargs):
     self.Dyn = Dyn if isinstance(Dyn, Operator)   else Operator  (**Dyn)
     self.Obs = Obs if isinstance(Obs, Operator)   else Operator  (**Obs)
@@ -26,6 +27,10 @@ class HiddenMarkovModel(NestedPrint):
   def Nx(self): return self.Dyn.M
   @property
   def Ny(self): return self.Obs.M
+
+  # Print options
+  ordering = ['Dyn','Obs','t','X0']
+
 
 class Operator(NestedPrint):
   """
@@ -56,6 +61,9 @@ class Operator(NestedPrint):
   
   def __call__(self,*args,**kwargs):
     return self.model(*args,**kwargs)
+
+  # Print options
+  ordering = ['M','model','noise']
 
 
 

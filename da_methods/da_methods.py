@@ -1244,8 +1244,7 @@ def PartFilt(N,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,wroot=1.0,**kwargs
         innovs = (yy[kObs] - Obs(E,t)) @ Rm12.T
         w      = reweight(w,innovs=innovs)
 
-        stats.assess(k,kObs,'a',E=E,w=w)
-        if trigger_resampling(w,NER,stats,kObs):
+        if trigger_resampling(w, NER, [stats,E,k,kObs]):
           C12    = reg*bandw(N,Nx)*raw_C12(E,w)
           #C12  *= sqrt(rroot) # Re-include?
           idx,w  = resample(w, resampl, wroot=wroot)
@@ -1314,8 +1313,7 @@ def OptPF(N,Qs,NER=1.0,resampl='Sys',reg=0,nuj=True,wroot=1.0,**kwargs):
         w      = reweight(w,logL=logL)
         
         # Resampling
-        stats.assess(k,kObs,'a',E=E,w=w)
-        if trigger_resampling(w,NER,stats,kObs):
+        if trigger_resampling(w, NER, [stats,E,k,kObs]):
           C12    = reg*bandw(N,Nx)*raw_C12(E,w)
           idx,w  = resample(w, resampl, wroot=wroot)
           E,_    = regularize(C12,E,idx,nuj)
@@ -1369,8 +1367,7 @@ def PFa(N,alpha,NER=1.0,resampl='Sys',reg=0,nuj=True,qroot=1.0,**kwargs):
         innovs = (yy[kObs] - Obs(E,t)) @ Rm12.T
         w      = reweight(w,innovs=innovs)
 
-        stats.assess(k,kObs,'a',E=E,w=w)
-        if trigger_resampling(w,NER,stats,kObs):
+        if trigger_resampling(w, NER, [stats,E,k,kObs]):
           C12    = reg*bandw(N,Nx)*raw_C12(E,w)
           #C12  *= sqrt(rroot) # Re-include?
 
@@ -1440,8 +1437,7 @@ def PFxN_EnKF(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
         w      = reweight(w,innovs=innovs)
         
         # Resampling
-        stats.assess(k,kObs,'a',E=E,w=w)
-        if trigger_resampling(w,NER,stats,kObs):
+        if trigger_resampling(w, NER, [stats,E,k,kObs]):
           # Weighted covariance factors
           Aw = raw_C12(E,wD)
           Yw = raw_C12(Eo,wD)
@@ -1544,8 +1540,7 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
         innovs = (y - Obs(E,t)) @ Rm12.T
         w      = reweight(w,innovs=innovs)
 
-        stats.assess(k,kObs,'a',E=E,w=w)
-        if trigger_resampling(w,NER,stats,kObs):
+        if trigger_resampling(w, NER, [stats,E,k,kObs]):
           # Compute kernel colouring matrix
           cholR = Qs*bandw(N,Nx)*raw_C12(E,wD)
           cholR = chol_reduce(cholR)
@@ -1578,13 +1573,25 @@ def PFxN(N,Qs,xN,re_use=True,NER=1.0,resampl='Sys',wroot_max=5,**kwargs):
 
 
 
-def trigger_resampling(w,NER,stats,kObs):
+def trigger_resampling(w,NER,stat_args):
   "Return boolean: N_effective <= threshold. Also write stats."
-  N_eff              = 1/(w@w)
-  do_resample        = N_eff <= len(w)*NER
-  stats.N_eff[kObs]  = N_eff
+
+  N_eff       = 1/(w@w)
+  do_resample = N_eff <= len(w)*NER
+
+  # Unpack stat args
+  stats, E, k, kObs = stat_args
+
+  stats.N_eff [kObs] = N_eff
   stats.resmpl[kObs] = 1 if do_resample else 0
+
+  # Why have we put stats.assess() here?
+  # Because we need to write stats.N_eff and stats.resmpl before calling assess()
+  # so that the liveplotting does not eliminate these curves (as inactive).
+  stats.assess(k,kObs,'a',E=E,w=w)
+
   return do_resample
+
 
 
 def reweight(w,lklhd=None,logL=None,innovs=None):

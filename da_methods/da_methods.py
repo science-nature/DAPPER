@@ -1028,11 +1028,11 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
             # at the end of the last iteration or during first iteration (after the shift), which would yield
             # different results in the non-linear case. The definition used here has the
             # advantage of being simple and not breaking in the special cases of L=0 and/or nIter=1.
-            stats.assess(k,DAW_right,'f', E = w2x_right(eye(N)) )
-            stats.assess(k,DAW_right,'a', E = w2x_right(w+T) )
-            stats.iters   [DAW_right]       = iteration+1
-            stats.infl    [DAW_right]       = sqrt(N1/za)
-            stats.trHK    [DAW_right]       = trace(Y0.T @ Pw @ Y0)/HMM.Ny # TODO mda
+            stats.assess(k,   DAW_right, 'f', E = w2x_right(eye(N)) )
+            stats.assess(k,   DAW_right, 'a', E = w2x_right(w+T) )
+            stats.iters      [DAW_right] = iteration+1
+            if xN: stats.infl[DAW_right] = sqrt(N1/za)
+            stats.trHK       [DAW_right] = trace(Y0.T @ Pw @ Y0)/HMM.Ny # TODO mda
 
             # Final estimate of E at [DAW_left-1]
             E = w2x_left(w+T)
@@ -1583,8 +1583,9 @@ def trigger_resampling(w,NER,stats,kObs):
   N_eff              = 1/(w@w)
   do_resample        = N_eff <= len(w)*NER
   stats.N_eff[kObs]  = N_eff
-  stats.resmpl[kObs] = do_resample
+  stats.resmpl[kObs] = 1 if do_resample else 0
   return do_resample
+
 
 def reweight(w,lklhd=None,logL=None,innovs=None):
   """

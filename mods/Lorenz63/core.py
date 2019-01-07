@@ -21,7 +21,7 @@ def dxdt(x):
 # Dynamics: time step integration.
 step = with_rk4(dxdt,autonom=True)
 
-# Time scale of system. Used as default plotting length.
+# Time span of a typical plot. Similar to a "system time scale".
 Tplot = 4.0
 
 # Example initial state.
@@ -49,9 +49,9 @@ def dfdx(x,t,dt):
   return integrate_TLM(TLM(x),dt,method='approx')
 
 
+# Liveplotting configuration
 from mods.LotkaVolterra.liveplotting import sliding_marginals
 from mods.Lorenz63     .liveplotting import phase3D
-
 def LP(dt,jj=None):
   LP1 = sliding_marginals(jj, lag=int(Tplot/dt), labels='xyz')
   LP2 = phase3D(jj)

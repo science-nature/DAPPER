@@ -291,8 +291,7 @@ class sliding_diagnostics_LP:
           # Rm lines that only contain NaNs
           for name in list(plotted_lines):
             ln = plotted_lines[name]
-            unstyled_data = ln['data'][1::3] if ln['shape']=='dirac' else ln['data']
-            if not np.any(np.isfinite(unstyled_data)):
+            if not np.any(np.isfinite(ln['data'])):
               ln['handle'].remove()
               del plotted_lines[name]
           # Add legends

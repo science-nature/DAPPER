@@ -261,16 +261,16 @@ class FAU_series(NestedPrint):
 
 
 class RollingArray:
-  """ND-Array that implements "rolling" along axis 0.
+  """ND-Array that implements "leftward rolling" along axis 0.
   Used for data that gets plotted in sliding graphs."""
   
   def __init__(self, shape, fillval=nan):
       self.array = np.full(shape, fillval)
-      self.k1 = 0 # previous k
+      self.k1 = 0      # previous k
+      self.nFilled = 0 # 
 
   def update(self,k,val):
     dk = k-self.k1
-    self.k1 = k
 
     # Old (more readable?) version:
     # if dk in [0,1]: # case: forecast or analysis update
@@ -285,10 +285,21 @@ class RollingArray:
     self.array[-dk:] = nan
     self.array[-1] = val
 
+    self.k1 = k
+    self.nFilled = min(len(self), self.nFilled+1)
+
+  def leftmost(self):
+    return self[len(self)-self.nFilled]
+
   def __array__  (self,dtype=None): return self.array
-  def __len__    (self): return len(self.array)
-  def __getitem__(self,key): return self.array[key]
-  def __repr__   (self): return 'RollingArray:\n%s'%str(self.array)
+  def __len__    (self):            return len(self.array)
+  def __repr__   (self):            return 'RollingArray:\n%s'%str(self.array)
+  def __getitem__(self,key):        return self.array[key]
+  def __setitem__(self,key,val):
+    # Don't implement __setitem__ coz leftmost() is then
+    # not generally meaningful (i.e. if an element is set in the middle).
+    # Of course self.array can still be messed with.
+    raise AttributeError("Values should be set with update()")
 
 
 

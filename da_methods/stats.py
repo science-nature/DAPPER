@@ -41,7 +41,10 @@ class Stats(NestedPrint):
     ######################################
     # Declare time series of various stats
     ######################################
-    # time-series (FAU type) constructor alias
+    # NB: The diagnostic liveplotting relies on detecting nan's to avoid
+    #     plotting stats that are not being used.
+    #     => Cannot use dtype bool or int for those that may be plotted.
+
     new_series = self.new_FAU_series
 
     self.mu     = new_series(Nx) # Mean
@@ -80,9 +83,9 @@ class Stats(NestedPrint):
     self.iters  = np.full (KObs+1, nan)
 
     # Weight-related
-    self.resmpl = np.zeros(KObs+1, dtype=bool)
     self.N_eff  = np.full (KObs+1, nan)
     self.wroot  = np.full (KObs+1, nan)
+    self.resmpl = np.full (KObs+1, nan)
 
 
   def assess(self,k,kObs=None,f_a_u=None,
@@ -326,24 +329,6 @@ class Stats(NestedPrint):
     "Convenience FAU_series constructor."
     store_u = self.config.store_u
     return FAU_series(self.HMM.t, M, store_u=store_u, **kwargs)
-
-  # TODO: Provide frontend initializer 
-
-  # Better to initialize manually (np.full...)
-  # def new_array(self,f_a_u,M,**kwargs):
-  #   "Convenience array constructor."
-  #   t = self.HMM.t
-  #   # Convert int-len to shape-tuple
-  #   if is_int(M):
-  #     if M==1: M = ()
-  #     else:    M = (M,)
-  #   # Set length
-  #   if f_a_u=='a':
-  #     K = t.KObs
-  #   elif f_a_u=='u':
-  #     K = t.K
-  #   #
-  #   return np.full((K+1,)+M,**kwargs)
 
 
 

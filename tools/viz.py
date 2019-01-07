@@ -162,8 +162,9 @@ class LivePlot:
 # - rm estimate_good_plot_length in favour of Tplot
 # - clean up HMM, stats, passing-around
 # - iEnKS diagnostics don't work at all when store_u=False
-# - mv label and style to stats.py
+# - mv label and shape to stats.py
 # - re-use settings with plot_time_series
+# - make set_limits for t-axis the same here and in LV
 star = "${}^*$"
 class sliding_diagnostics_LP:
 
@@ -188,7 +189,7 @@ class sliding_diagnostics_LP:
           'rmv'     : [Id          , None   , dict(c='b'      , label='Spread', alpha=0.6)],
         }
 
-      # OTHER         transf       , style  , plt kwargs
+      # OTHER         transf       , shape  , plt kwargs
       d2 = OrderedDict([
           ('skew'   , [Id          , None   , dict(c=     'g' , label=star+'Skew/$\sigma^3$'        )]),
           ('kurt'   , [Id          , None   , dict(c=     'r' , label=star+'Kurt$/\sigma^4$'        )]),
@@ -213,7 +214,7 @@ class sliding_diagnostics_LP:
 
             ln = {}
             ln['transf'] = style_table[name][0]
-            ln['style']  = style_table[name][1]
+            ln['shape']  = style_table[name][1]
             ln['plt']    = style_table[name][2]
 
             # Create series
@@ -232,7 +233,7 @@ class sliding_diagnostics_LP:
       K_lag = estimate_good_plot_length(stats.xx,t,mult = 80)
       a_lag = int(K_lag/ t.dkObs)
 
-      self.dt_margin = (t.tt[-1] - t.tt[-K_lag]) / 20
+      self.dt_margin = (t.tt[-1] - t.tt[-min(K_lag,len(t.tt))]) / 20
       self.chrono    = t
 
       self.d1        = init_ax(self.ax1, d1);
@@ -260,13 +261,13 @@ class sliding_diagnostics_LP:
 
       def update_plots(ax,plotted_lines):
 
-        def bend_into(style, xx, yy):
+        def bend_into(shape, xx, yy):
           # Get arrays. Repeat (to use for intermediate nodes). 
           yy = yy.array.repeat(3)
           xx = xx.array.repeat(3)
-          if style == 'step':
+          if shape == 'step':
             yy = np.hstack([yy[1:], nan]) # roll leftward
-          elif style == 'dirac':
+          elif shape == 'dirac':
             nonlocal nDirac
             axW      = np.diff(ax.get_xlim())
             yy[0::3] = False          # set "curve" to 0
@@ -277,7 +278,7 @@ class sliding_diagnostics_LP:
 
         nDirac = 0
         for name, ln in plotted_lines.items():
-          ln['handle'].set_data(*bend_into(ln['style'], ln['tt'], ln['data']))
+          ln['handle'].set_data(*bend_into(ln['shape'], ln['tt'], ln['data']))
 
 
       def adjust_ax(ax,reference_line):
@@ -290,7 +291,7 @@ class sliding_diagnostics_LP:
           # Rm lines that only contain NaNs
           for name in list(plotted_lines):
             ln = plotted_lines[name]
-            unstyled_data = ln['data'][1::3] if ln['style']=='dirac' else ln['data']
+            unstyled_data = ln['data'][1::3] if ln['shape']=='dirac' else ln['data']
             if not np.any(np.isfinite(unstyled_data)):
               ln['handle'].remove()
               del plotted_lines[name]
@@ -308,11 +309,13 @@ class sliding_diagnostics_LP:
       update_plots(ax1, self.d1)
       update_plots(ax2, self.d2)
 
+      # Set x-limits (time) 
       adjust_ax(ax1, self.d1['rmse'])
-
-      update_ylim([ln['data'].array for ln in self.d1.values()], ax1, bottom=0,      cC=0.2,cE=0.9)
-      update_ylim([ln['data'].array for ln in self.d2.values()], ax2, Max=4, Min=-4, cC=0.3,cE=0.9)
-      # TODO make update_ylim return limits; rm bottom/top args; apply stretch;
+      # Set y-limits
+      data1 = [ln['data'].array for ln in self.d1.values()]
+      data2 = [ln['data'].array for ln in self.d2.values()]
+      ax1.set_ylim(0, d_ylim(data1, ax1,                cC=0.2,cE=0.9)[1])
+      ax2.set_ylim(  *d_ylim(data2, ax2, Max=4, Min=-4, cC=0.3,cE=0.9))
 
       # Init legend. Rm nan lines. 
       if  self.legend_not_yet_created and k>t.kkObs[0]: # Don't use == (fails if user skipped)
@@ -365,7 +368,7 @@ class weight_histogram_LP:
     #thresh   = '#(w<$10^{'+ str(int(log10(bins[0]*N))) + '}/N$ )'
     ax.set_title('N: {:d}.   N_eff: {:.4g}.   Not shown: {:d}. '.\
         format(N, 1/(w@w), N-nC))
-    update_ylim([nn], ax, cC=True)
+    ax.set_ylim(*d_ylim([nn]))
 
 
 class spectral_errors_LP:
@@ -408,7 +411,7 @@ class spectral_errors_LP:
     sprd =     self.sprd[k]
     self.line_sprd.set_ydata(sprd)
     self.line_msft.set_ydata(msft)
-    update_ylim(msft, self.ax)
+    self.ax.set_ylim(*d_ylim(msft))
 
 
 class correlations_LP:
@@ -570,31 +573,26 @@ def stretch(a,b,factor=1,int=False):
 
 
 
-def update_ylim(data,ax,bottom=None,top=None,Min=-1e20,Max=+1e20,cC=0,cE=1,pp=(1,99)):
+def d_ylim(data,ax=None,cC=0,cE=1,pp=(1,99),Min=-1e20,Max=+1e20):
   """
-  Update ylim's intelligently, mainly by computing
-  the low/high percentiles of the data.
+  Provide new ylim's intelligently,
+  computed from percentiles of the data.
   - data: iterable of arrays for computing percentiles.
-  - bottom/top: override values.
-  - Max/Min: bounds.
-  - cE: exansion (widenting) rate ∈ [0,1].
-      Default: 1, which immediately expands to percentile.
-  - cC: compression (narrowing) rate ∈ [0,1].
-      Default: 0, which does not allow compression.
   - pp: percentiles
+
+  - ax: If present, then the delta_zoom in/out is also considered.
+    - cE: exansion (widenting) rate ∈ [0,1].
+        Default: 1, which immediately expands to percentile.
+    - cC: compression (narrowing) rate ∈ [0,1].
+        Default: 0, which does not allow compression.
+  
+  - Min/Max: bounds
+
   Despite being a little involved,
-  the cost of this subroutine is typically not substantial.
+  the cost of this subroutine is typically not substantial
+  because there's usually not that much data to sort through.
   """
 
-  #
-  def worth_updating(a,b,curr):
-    # Note: should depend on cC and cE
-    d = abs(curr[1]-curr[0])
-    lower = abs(a-curr[0]) > 0.002*d
-    upper = abs(b-curr[1]) > 0.002*d
-    return lower and upper
-  #
-  current = ax.get_ylim()
   # Find "reasonable" limits (by percentiles), looping over data
   maxv = minv = -np.inf # init
   for d in data:
@@ -603,27 +601,37 @@ def update_ylim(data,ax,bottom=None,top=None,Min=-1e20,Max=+1e20,cC=0,cE=1,pp=(1
       minv, maxv = np.maximum([minv, maxv], \
           array([-1, 1]) * np.percentile(d,pp))
   minv *= -1
-  minv, maxv = stretch(minv,maxv,1.02)
+
   # Pry apart equal values
   if np.isclose(minv,maxv):
     maxv += 0.5
     minv -= 0.5
-  # Set rate factor as compress or expand factor. 
-  c0 = cC if minv>current[0] else cE
-  c1 = cC if maxv<current[1] else cE
-  # Adjust
-  minv = np.interp(c0, (0,1), (current[0], minv))
-  maxv = np.interp(c1, (0,1), (current[1], maxv))
-  # Bounds
+
+  # Make the zooming transition smooth
+  if ax is not None:
+    current = ax.get_ylim()
+    # Set rate factor as compress or expand factor. 
+    c0 = cC if minv>current[0] else cE
+    c1 = cC if maxv<current[1] else cE
+    # Adjust
+    minv = np.interp(c0, (0,1), (current[0], minv))
+    maxv = np.interp(c1, (0,1), (current[1], maxv))
+
+  # Bounds 
   maxv = min(Max,maxv)
   minv = max(Min,minv)
-  # Overrides
-  if top    is not None: maxv = top
-  if bottom is not None: minv = bottom
+
   # Set (if anything's changed)
+  def worth_updating(a,b,curr):
+    # Note: should depend on cC and cE
+    d = abs(curr[1]-curr[0])
+    lower = abs(a-curr[0]) > 0.002*d
+    upper = abs(b-curr[1]) > 0.002*d
+    return lower and upper
   #if worth_updating(minv,maxv,current):
     #ax.set_ylim(minv,maxv)
-  ax.set_ylim(minv,maxv)
+
+  return minv, maxv
 
 
 def set_ilim(ax,i,Min=None,Max=None):

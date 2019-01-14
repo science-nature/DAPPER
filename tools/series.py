@@ -204,15 +204,18 @@ class FAU_series(NestedPrint):
 
   def __getitem__(self,key):
     k,kObs,fau = self.validate_key(key)
-    # Check consistency. NB: Somewhat time-consuming.
-    for sub in fau[1:]:
-      i1 = self[k,kObs,sub]
-      i2 = self[k,kObs,fau[0]]
-      if np.any(i1!=i2):
-        if not (np.all(np.isnan(i1)) and np.all(np.isnan(i2))):
-          raise RuntimeError(
-            "Requested item from multiple ('."+fau+"') series, " +\
-            "But the items are not equal.")
+
+    if len(fau)>1:
+      # Check consistency. NB: Somewhat time-consuming.
+      for sub in fau[1:]:
+        i1 = self[k,kObs,sub]
+        i2 = self[k,kObs,fau[0]]
+        if np.any(i1!=i2):
+          if not (np.all(np.isnan(i1)) and np.all(np.isnan(i2))):
+            raise RuntimeError(
+              "Requested item corresponding to multiple arrays ('%s'), "%fau +\
+              "But the items are not equal.")
+
     if 'f' in fau:
       return self.f[kObs]
     elif 'a' in fau:

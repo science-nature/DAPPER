@@ -170,8 +170,10 @@ class FAU_series(NestedPrint):
         for ltr in 'af':
           if ltr in fau:
             raise KeyError("Accessing ."+ltr+" series, but kObs is None.")
-      elif k != self.chrono.kkObs[kObs]:
-        raise KeyError("kObs indicated, but k!=kkObs[kObs]")
+      # The following check has been disabled, because
+      # it is actually very time consuming when kkObs is long (e.g. 10**4):
+      # elif k != self.chrono.kkObs[kObs]:
+        # raise KeyError("kObs indicated, but k!=kkObs[kObs]")
     except ValueError:
       # Assume key = k
       key = (key,None,'u')

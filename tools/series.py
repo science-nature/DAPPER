@@ -204,7 +204,6 @@ class FAU_series(NestedPrint):
 
   def __getitem__(self,key):
     k,kObs,fau = self.validate_key(key)
-
     # Check consistency. NB: Somewhat time-consuming.
     for sub in fau[1:]:
       i1 = self[k,kObs,sub]
@@ -269,7 +268,7 @@ class RollingArray:
       self.k1 = 0      # previous k
       self.nFilled = 0 # 
 
-  def update(self,k,val):
+  def insert(self,k,val):
     dk = k-self.k1
 
     # Old (more readable?) version:
@@ -286,10 +285,13 @@ class RollingArray:
     self.array[-1] = val
 
     self.k1 = k
-    self.nFilled = min(len(self), self.nFilled+1)
+    self.nFilled = min(len(self), self.nFilled+dk)
 
   def leftmost(self):
     return self[len(self)-self.nFilled]
+
+  def span(self):
+    return (self.leftmost(),  self[-1])
 
   def __array__  (self,dtype=None): return self.array
   def __len__    (self):            return len(self.array)

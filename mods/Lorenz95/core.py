@@ -17,6 +17,10 @@ Force = 8.0
 #  - stupidly crop amplitudes, as is done here:
 prevent_blow_up = False
 
+Tplot = 10
+
+x0 = lambda M: 2.3*np.ones(M)
+
 def dxdt(x):
   a = x.ndim-1
   s = lambda x,n: np.roll(x,-n,axis=a)
@@ -29,7 +33,6 @@ def step(x0, t, dt):
     x0[clip] *= 0.1
 
   return rk4(lambda t,x: dxdt(x), x0, np.nan, dt)
-
 
 def TLM(x):
   """Tangent linear model"""
@@ -49,5 +52,10 @@ def dfdx(x,t,dt):
   # method='analytic' is a substantial upgrade for Lor95 
   return integrate_TLM(TLM(x),dt,method='analytic')
 
+
+from tools.liveplotting import sliding_marginals
+def LP(jj=None): return dict(
+      sliding_marginals   = (11, 1, sliding_marginals(jj, dims=arange(5), T_lag=2)) ,
+      )
 
 

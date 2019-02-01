@@ -1,8 +1,12 @@
 # Settings from
 # Pajonk, Oliver, et al. 
-#   "A deterministic filter for non-Gaussian Bayesian estimation—applications to dynamical system estimation with noisy measurements."
+#   "A deterministic filter for non-Gaussian Bayesian estimation—applications
+#    to dynamical system estimation with noisy measurements."
 #   Physica D: Nonlinear Phenomena 241.7 (2012): 775-788.
 #
+# There is nothing to reproduce from the paper as there are no
+# statistically converged numbers.
+
 # More interesting settings: mods.Lorenz84.harder
 
 from common import *
@@ -35,7 +39,7 @@ other = {'name': os.path.relpath(__file__,'mods/')}
 
 HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
-HMM.liveplotting = LP_setup(arange(Nx))
+HMM.liveplotters = LP_setup(arange(Nx))
 
 ####################
 # Suggested tuning

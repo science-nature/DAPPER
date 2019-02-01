@@ -2,7 +2,7 @@
 
 from common import *
 
-class Chronology:
+class Chronology():
   """
   Time schedules with consistency checks.
   Uses int records => tt[k] == k*dt.
@@ -35,7 +35,7 @@ class Chronology:
   """
 
   def __init__(self,dt=None,dtObs=None,T=None,BurnIn=-1, \
-      dkObs=None,KObs=None,K=None):
+      dkObs=None,KObs=None,K=None,Tplot=None):
 
     assert 3 == [dt,dtObs,T,dkObs,KObs,K].count(None) , \
         'Chronology is specified using exactly 3 parameters.'
@@ -69,11 +69,16 @@ class Chronology:
     self._dkObs   = dkObs
     self._K       = K
 
-    if self.T <= BurnIn:
-      raise ValueError('BurnIn > T')
+    # BurnIn, Tplot
+    assert self.T >= BurnIn, "Experiment duration < BurnIn time"
     self.BurnIn = BurnIn
+    if Tplot is None:
+      Tplot = BurnIn
+    self.Tplot = Tplot # don't enforce <T here
 
     assert len(self.kkObs) == self.KObs+1
+
+
 
   ######################################
   # "State vars". Can be set (changed).
@@ -87,20 +92,20 @@ class Chronology:
     if not np.isclose(int(dkObs_new), dkObs_new):
       raise ValueError('New value is amgiguous with respect to dkObs')
     dkObs_new = int(dkObs_new)
-    self.__init__(dt=value,dkObs=dkObs_new,T=self.T,BurnIn=self.BurnIn)
+    self.__init__(dt=value,dkObs=dkObs_new,T=self.T,BurnIn=self.BurnIn,Tplot=self.Tplot)
   @property
   def dkObs(self):
     return self._dkObs
   @dkObs.setter
   def dkObs(self,value):
     ratio = value/self.dkObs
-    self.__init__(dt=self.dt,dkObs=value,T=ratio*self.T,BurnIn=self.BurnIn)
+    self.__init__(dt=self.dt,dkObs=value,T=ratio*self.T,BurnIn=self.BurnIn,Tplot=self.Tplot)
   @property
   def K(self):
     return self._K
   @K.setter
   def K(self,value):
-    self.__init__(dt=self.dt,dkObs=self.dkObs,K=value,BurnIn=self.BurnIn)
+    self.__init__(dt=self.dt,dkObs=self.dkObs,K=value,BurnIn=self.BurnIn,Tplot=self.Tplot)
 
   ######################################
   # Read/write (though not state var)
@@ -110,14 +115,14 @@ class Chronology:
     return self.dt*self.K
   @T.setter
   def T(self,value):
-    self.__init__(dt=self.dt,dkObs=self.dkObs,T=value,BurnIn=self.BurnIn)
+    self.__init__(dt=self.dt,dkObs=self.dkObs,T=value,BurnIn=self.BurnIn,Tplot=self.Tplot)
 
   @property
   def KObs(self):
     return int(self.K/self.dkObs)-1
   @KObs.setter
   def KObs(self,value):
-    self.__init__(dt=self.dt,dkObs=self.dkObs,KObs=value,BurnIn=self.BurnIn)
+    self.__init__(dt=self.dt,dkObs=self.dkObs,KObs=value,BurnIn=self.BurnIn,Tplot=self.Tplot)
 
   ######################################
   # Read-only

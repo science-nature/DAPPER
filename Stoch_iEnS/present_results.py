@@ -78,7 +78,7 @@ FRMT = [
     ( ['PertObs','MDA:1','nIter:3' ] , 'Stoch. MDA 3'     , (0 , 0) ),
     ( ['PertObs','MDA:0','nIter:3' ] , 'EnRML 3'          , (1 , 0) ),
     ( ['Sqrt'   ,'MDA:1','nIter:3' ] , 'Determ. MDA 3'    , (2 , 0) ),
-    ( ['Sqrt'   ,'MDA:0','nIter:3' ] , 'iEnKS 3'          , (3 , 0) ),
+    ( ['Sqrt'   ,'MDA:0','nIter:3' ] , 'IEnKS 3'          , (3 , 0) ),
     #
     ( ['PertObs','MDA:1','nIter:10'] , '10'               , (0 , 1) ),
     ( ['PertObs','MDA:0','nIter:10'] , '10'               , (1 , 1) ),
@@ -90,7 +90,7 @@ FRMT = [
 
 ##
 R = ResultsTable("data/Stoch_iEnS/bench_L95/P2720L/N_run8"); LAG=2           # dkObs=4
-# R = ResultsTable("data/Stoch_iEnS/bench_L95/P2724L/N_run2"); LAG=1            # dkObs=8
+# R = ResultsTable("data/Stoch_iEnS/bench_L95/P2724L/N_run2"); LAG=1           # dkObs=8
 
 # with coloring(): print("Averages over experiment repetition:")
 # R.print_mean_field('rmse_a',1,1,cols=slice(0,2))
@@ -155,9 +155,11 @@ ax0.set_zorder(9) # raise legend above ax1
 ax1.grid(True,'minor')
 ax1.set_xscale('log')
 xl = ax1.set_xlabel("Ensemble size ($N$)")
-fig.text(0.04, 0.5, "Average RMS error", # "analysis RMSE"
+yl = fig.text(0.04, 0.5, "Average RMS error", # "analysis RMSE"
     va='center', rotation='vertical',fontsize=xl.get_fontsize())
-
+dtObs = ax1.text(0.98, 0.78,"$\Delta t_{\mathrm{obs}} = %.1f$"%(0.05*R.meta['dkObs']),
+    fontsize=xl.get_fontsize(), transform=ax.transAxes,horizontalalignment="right",
+    bbox=dict(facecolor='w', alpha=1, edgecolor='w'))
 
 # xticks
 # ax1.xaxis.set_minor_formatter(mpl.ticker.LogFormatter())
@@ -173,6 +175,17 @@ ax1.set_xticks(xt); ax1.set_xticklabels(xt)
 ax1.xaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
 ax1.xaxis.set_minor_formatter(mpl.ticker.NullFormatter())
 
+
+## Save figure
+
+# Remove info (used for 2nd fig in a latex subfloat)
+if R.meta['dkObs']==8:
+  yl.set_color('w')
+  ax0.tick_params(axis='y', colors='w')
+  ax1.tick_params(axis='y', colors='w')
+  leg.remove()
+
+plt.savefig('data/Stoch_iEnS/figs/'+R.xlabel+'_dkObs_%d'%R.meta['dkObs']+'.eps')
 
 
 ## Populate plot frame-by-frame for animation effects.

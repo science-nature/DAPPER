@@ -41,10 +41,6 @@ class Stats(NestedPrint):
     ######################################
     # Declare time series of various stats
     ######################################
-    # NB: The diagnostic liveplotting relies on detecting nan's to avoid
-    #     plotting stats that are not being used.
-    #     => Cannot use dtype bool or int for those that may be plotted.
-
     new_series = self.new_FAU_series
 
     self.mu     = new_series(Nx) # Mean
@@ -65,7 +61,6 @@ class Stats(NestedPrint):
       minN         = min(Nx,N)
       self.w       = new_series(N)            # Importance weights
       self.rh      = new_series(Nx,dtype=int) # Rank histogram
-      #self.N      = N                        # Use w.shape[1] instead
     else:
       # Linear-Gaussian assessment
       self._is_ens = False
@@ -88,6 +83,35 @@ class Stats(NestedPrint):
     self.resmpl = np.full (KObs+1, nan)
 
 
+    ######################################
+    # Define which stats get plotted as diagnostics in liveplotting, and how.
+    ######################################
+    # NB: The diagnostic liveplotting relies on detecting nan's to avoid
+    #     plotting stats that are not being used.
+    #     => Cannot use dtype bool or int for those that may be plotted.
+
+    def lin(a,b): return lambda x: a + b*x
+    def divN()  : return lambda x: x/N
+    def Id(x)   : return x
+
+    # RMS
+    self.style1 = {
+        'rmse'    : [Id          , None   , dict(c='k'      , label='Error'            )],
+        'rmv'     : [Id          , None   , dict(c='b'      , label='Spread', alpha=0.6)],
+      }
+
+    # OTHER         transf       , shape  , plt kwargs
+    self.style2 = OrderedDict([
+        ('skew'   , [Id          , None   , dict(c=     'g' , label=star+'Skew/$\sigma^3$'        )]),
+        ('kurt'   , [Id          , None   , dict(c=     'r' , label=star+'Kurt$/\sigma^4{-}3$'    )]),
+        ('trHK'   , [Id          , None   , dict(c=     'k' , label=star+'HK'                     )]),
+        ('infl'   , [lin(-10,10) , 'step' , dict(c=     'c' , label='10(infl-1)'                  )]),
+        ('N_eff'  , [divN()      , 'dirac', dict(c=RGBs['y'], label='N_eff/N'             ,lw=3   )]),
+        ('iters'  , [lin(0,.1)   , 'dirac', dict(c=     'm' , label='iters/10'                    )]),
+        ('resmpl' , [Id          , 'dirac', dict(c=     'k' , label='resampled?'                  )]),
+      ])
+
+
   def assess(self,k,kObs=None,f_a_u=None,
       E=None,w=None,mu=None,Cov=None):
     """
@@ -96,14 +120,15 @@ class Stats(NestedPrint):
     f_a_u: One or more of ['f',' a', 'u'], indicating
            that the result should be stored in (respectively)
            the forecast/analysis/universal attribute.
-
-    f_a_u has intelligent defaults. See source code. 
+           Default: 'u' if kObs is None else 'au' ('a' and 'u').
     """
 
     # Initial consistency checks.
     if k==0:
       if kObs is not None:
         raise KeyError("DAPPER convention: no obs at t=0. Helps avoid bugs.")
+      if f_a_u is None:
+        f_a_u = 'u'
       if self._is_ens==True:
         def rze(a,b,c):
           raise TypeError("Expected "+a+" input, but "+b+" is "+c+" None")
@@ -113,31 +138,31 @@ class Stats(NestedPrint):
         if E is not None:  rze("mu/Cov","E","not")
         if mu is None:     rze("mu/Cov","mu","")
 
-    # Intelligent defaults: f_a_u 
-    if   f_a_u is None : f_a_u = 'au' if (kObs is not None) else 'u'
-    elif f_a_u == 'a'  : f_a_u = 'au'
-    elif f_a_u == 'f'  : f_a_u = 'fu'
-    elif f_a_u == 'fau': # as used by Climatology()
-      if kObs is None:   f_a_u = 'u'
+    # Default. Don't add more defaults. It just gets confusing.
+    if f_a_u is None:
+      f_a_u = 'u' if kObs is None else 'au'
 
-    # Assemble key
-    key = (k,kObs,f_a_u)
-
-    LP      = self.config.liveplotting
-    store_u = self.config.store_u
-
-    if not (LP or store_u) and kObs==None:
-      pass # Skip assessment
+    # Prepare assessment call and arguments
+    if self._is_ens:
+      # Ensemble assessment
+      alias = self.assess_ens
+      state_prms = {'E':E,'w':w}
     else:
-      # Prepare assessment call and arguments
-      if self._is_ens:
-        # Ensemble assessment
-        alias = self.assess_ens
-        state_prms = {'E':E,'w':w}
-      else:
-        # Moment assessment
-        alias = self.assess_ext
-        state_prms = {'mu':mu,'P':Cov}
+      # Moment assessment
+      alias = self.assess_ext
+      state_prms = {'mu':mu,'P':Cov}
+
+    for fau in f_a_u:
+      # Assemble key
+      key = (k,kObs,fau)
+
+      # Skip assessment?
+      if kObs==None and not self.config.store_u:
+        try:
+          if not self.LP_instance.any_figs:
+            continue
+        except AttributeError:
+          pass # LP_instance not yet created
 
       # Call assessment
       with np.errstate(divide='ignore',invalid='ignore'):
@@ -154,13 +179,11 @@ class Stats(NestedPrint):
         self._had_0v = True
         warnings.warn("Sample variance was 0 at (k,kObs,fau) = " + str(key))
 
-
-      # LivePlot -- called if ('u' in f_a_u)
-      if LP and 'u' in f_a_u:
-        if hasattr(self,'lplot'):
-          self.lplot.update(key,**state_prms)
-        else:
-          self.lplot = LivePlot(self,key,**state_prms,only=LP)
+      # LivePlot -- Both initiation and update must come after the assessment.
+      if not hasattr(self,'LP_instance'):
+        self.LP_instance = LivePlot(self, self.config.liveplotting, key,E,Cov)
+      else:
+        self.LP_instance.update(key,E,Cov)
 
 
   def assess_ens(self,k,E,w=None):
@@ -169,21 +192,21 @@ class Stats(NestedPrint):
     N,Nx = E.shape
     x = self.xx[k[0]]
 
-    # Process weights
+    # Validate weights
     if w is None: 
-      self._has_w = False
-      w           = 1/N
-    else:
-      self._has_w = True
+      try:                    delattr(self,'w')
+      except AttributeError:  pass
+      finally:                w = 1/N
     if np.isscalar(w):
-      assert w   != 0
-      w           = w*ones(N)
+      assert w != 0
+      w = w*ones(N)
+    if hasattr(self,'w'):
+      self.w[k] = w
 
     if abs(w.sum()-1) > 1e-5:      raise_AFE("Weights did not sum to one.",k)
     if not np.all(np.isfinite(E)): raise_AFE("Ensemble not finite.",k)
     if not np.all(np.isreal(E)):   raise_AFE("Ensemble not Real.",k)
 
-    self.w[k]    = w
     self.mu[k]   = w @ E
     A            = E - self.mu[k]
 

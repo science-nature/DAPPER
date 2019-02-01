@@ -232,7 +232,6 @@ for k in range(nIter):
 
   # Animation
   if not (k+1)%nIter:
-  #if not k%1:
     ax1.set_title(FORM+', k = '+str(k)+'. Plotting for state index [0]')
     if 'hist' in locals():
       for patch in hist:

@@ -15,7 +15,7 @@ class HiddenMarkovModel(NestedPrint):
     name = inspect.getfile(inspect.stack()[1][0])
     self.name = os.path.relpath(name,'mods/')
     # Write the rest of parameters
-    de_abbreviate(kwargs, [('LP','liveplotting')])
+    de_abbreviate(kwargs, [('LP','liveplotters')])
     for key, value in kwargs.items():
       setattr(self, key, value)
     # Validation
@@ -184,24 +184,6 @@ def DA_Config(da_method):
       return cfg
   return wrapr
 
-
-# Adapted from stackoverflow.com/a/3603824
-class ImmutableAttributes():
-  """
-  Freeze (make immutable) attributes of class instance.
-  Applies to 
-  """
-  __isfrozen = False
-  __keys     = None
-  def __setattr__(self, key, value):
-    #if self.__isfrozen and hasattr(self, key):
-    if self.__isfrozen and key in self.__keys:
-      raise AttributeError(
-          "The attribute %r of %r has been frozen."%(key,type(self)))
-    object.__setattr__(self, key, value)
-  def _freeze(self,keys):
-    self.__keys     = keys
-    self.__isfrozen = True
 
 
 class DAC(ImmutableAttributes):

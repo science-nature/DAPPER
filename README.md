@@ -116,7 +116,6 @@ do not hesitate make your own scripts and functions
 
 
 
-
 Models
 ------------
 
@@ -162,6 +161,20 @@ Make a new dir: `DAPPER/mods/your_model`. Add the following files:
     * or very small observation noise (perfectly observed system)
 -->
 
+
+Other reproductions
+------------
+As mentioned [above](#Methods),
+DAPPER reproduces literature results.
+There are also plenty of results in the literature that DAPPER does not reproduce.
+Typically, this means that the published results are incorrect.
+
+A list of experimental settings that can be compared with literature papers
+can be obtained using gnu's `find`:
+
+      $ find -iregex "./mods/.*[0-9]\{1,4\}\.py"
+
+Some of these files contain settings that have been used in several papers.
 
 
 
@@ -355,11 +368,16 @@ Conventions:
 TODO
 ------------------------------------------------
 * Make changes to L63.core and sak12 in the rest
-* Allocate fignum from viz
-* TODO: rename viz.py:span to "xtrma". Or rm?
+* rename viz.py:span to "xtrma". Or rm?
 * Rename partial_direct_Obs --> partial_Id_Obs
-* Rename TLM --> d2x_dtdx
 * Rename dfdx --> dstep_dx
+* Rename TLM --> d2x_dtdx
+* Rename jacob --> linearization
+* Ensure plot_pause is used for all liveplotting
+* Is this why ctrl-c fails so often (from https://docs.python.org/3.5/library/select.html ):
+    "Changed in version 3.5: The function is now retried with a recomputed timeout when interrupted by a signal, except if the signal handler raises an exception (see PEP 475 for the rationale), instead of raising InterruptedError."
+* avoid tqdm multiline (https://stackoverflow.com/a/38345993/38281) ???
+  No, INSTEAD: capture key press and don't send to stdout
 
 * Bugs:
     * On Windows: key listening for liveplotting: ncurses?
@@ -380,7 +398,7 @@ TODO
 * Reorg file structure: Turn into package?
 * Rename common to DAPPER_workspace.
 * Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
-* Defaults file (fail_gently, liveplotting, store_u mkl.set_num_threads, print options in NestedPrint)
+* Defaults file (fail_gently, liveplotting, store_u mkl.set_num_threads, print options in NestedPrint, computational_threshold)
 * Requirements
 * Post version on norce, nersc and link from enkf.nersc
 

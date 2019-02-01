@@ -287,7 +287,7 @@ class RollingArray:
     dk = max(1,dk)
     self.array = np.roll(self.array, -dk, axis=0)
     self.array[-dk:] = nan
-    self.array[-1] = val
+    self.array[-1 :] = val
 
     self.k1 = k
     self.nFilled = min(len(self), self.nFilled+dk)

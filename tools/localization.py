@@ -211,7 +211,7 @@ def no_localization(shape,obs_inds):
 
     M = np.prod(shape)
     batches = [arange(M)]
-    jj = obs_inds_t(obs_inds,t)
+    jj = obs_inds_safe(obs_inds,t)
 
     if direction is 'x2y':
       obs_localizer = lambda batch: ( jj, ones(len(jj)) )

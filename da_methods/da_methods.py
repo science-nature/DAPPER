@@ -882,7 +882,7 @@ def EnKF_N(N,dual=True,Hess=False,g=0,xN=1.0,infl=1.0,rot=False,**kwargs):
 
 
 @DA_Config
-def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,rot=False,**kwargs):
+def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,step=False,bundle=False,xN=None,infl=1.0,rot=False,**kwargs):
   """
   Iterative EnKS.
 
@@ -985,6 +985,14 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
                 else         : za  = zeta_a(*hyperprior_coeffs(s,N,xN), w)
                 if MDA       : za *= nIter # inflation (factor: nIter) of the ObsErrCov
 
+                # TODO
+                # if step and MDA==False:
+                  # if iteration==0 and kObs==0:
+                    # warnings.warn("Using step length")
+                  # step_length = sin((iteration+1)/(nIter+1)*pi) # smaller => shorter steps
+                  # max_length  = max(sin((arange(nIter)+1)/(nIter+1)*pi))
+                  # step_length /= max_length # normalize => always one occurance of 1
+
                 # Post. cov (approx) of w, estimated at current iteration, raised to power.
                 Pw_pwr = lambda expo: (V * (pad0(s**2,N) + za)**-expo) @ V.T
                 Pw     = Pw_pwr(1.0)
@@ -992,27 +1000,27 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
                 if MDA: # Frame update using annealing (progressive assimilation).
                     Pw = Pw @ T # apply previous update
                     w += dy @ Y.T @ Pw
-                    if 'PertObs' in upd_a:   ### "ES-MDA". By Emerick/Reynolds.
+                    if 'PertObs' in upd_a:   #== "ES-MDA". By Emerick/Reynolds.
                       D     = mean0(randn(Y.shape)) * sqrt(nIter)
                       T    -= (Y + D) @ Y.T @ Pw
-                    elif 'Sqrt' in upd_a:    ### "ETKF-ish". By Raanes.
+                    elif 'Sqrt' in upd_a:    #== "ETKF-ish". By Raanes.
                       T     = Pw_pwr(0.5) * sqrt(za) @ T
-                    elif 'Order1' in upd_a:  ### "DEnKF-ish". By Emerick.
+                    elif 'Order1' in upd_a:  #== "DEnKF-ish". By Emerick.
                       T    -= 0.5 * Y @ Y.T @ Pw
                     # Tinv = eye(N) [as initialized] coz MDA does not de-condition.
 
                 else: # Frame update as Gauss-Newton optimzt. of log-posterior.
                     grad  = Y0@dy - w*za # Cost function gradient
                     w     = w + grad@Pw  # Gauss-Newton step
-                    if 'Sqrt' in upd_a:      ### "ETKF-ish". By Bocquet/Sakov.
+                    if 'Sqrt' in upd_a:      #== "ETKF-ish". By Bocquet/Sakov.
                       T     = Pw_pwr(0.5) * sqrt(N1) # Sqrt-transforms
                       Tinv  = Pw_pwr(-.5) / sqrt(N1) # Saves time [vs tinv(T)] when Nx<N
-                    elif 'PertObs' in upd_a: ### "EnRML". By Oliver/Chen/Raanes/Evensen/Stordal.
+                    elif 'PertObs' in upd_a: #== "EnRML". By Oliver/Chen/Raanes/Evensen/Stordal.
                       D     = mean0(randn(Y.shape)) if iteration==0 else D
                       gradT = -(Y+D)@Y0.T + N1*(eye(N) - T)
                       T     = T + gradT@Pw
                       Tinv  = tinv(T)
-                    elif 'Order1' in upd_a:  ### "DEnKF-ish". By Raanes.
+                    elif 'Order1' in upd_a:  #== "DEnKF-ish". By Raanes.
                       # Included for completeness; a non-MDA Order1 version does not make much sense.
                       gradT = -0.5*Y@Y0.T + N1*(eye(N) - T)
                       T     = T + gradT@Pw
@@ -1045,6 +1053,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,bundle=False,xN=None,infl=1.0,
             stats.assess(k-1,None,'u',E=E)
             E = Dyn(E,t-dt,dt)
     # END loop DAW_right
+    stats.assess(k,None,'u',E=E)
   return assimilator
 
 
@@ -1806,47 +1815,12 @@ def sample_quickly_with(C12,N=None):
 
 
 
-
 @DA_Config
-def EnCheat(upd_a,N,infl=1.0,rot=False,**kwargs):
-  """
-  A baseline/reference method.
-  Ensemble method that cheats: it knows the truth.
-  Nevertheless, its error will not necessarily be 0,
-  because the truth may be outside of the ensemble subspace.
-  This method is just to provide a baseline for comparison with other methods.
-  It may very well beat the particle filter with N=infinty.
-  NB: The forecasts (and their rmse) are given by the standard EnKF.
-  """
-  def assimilator(stats,HMM,xx,yy):
-    Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
-
-    E = X0.sample(N)
-    stats.assess(0,E=E)
-
-    for k,kObs,t,dt in progbar(chrono.ticker):
-      E = Dyn(E,t-dt,dt)
-      E = add_noise(E, dt, Dyn.noise, kwargs)
-
-      if kObs is not None:
-        # Standard EnKF analysis
-        Eo = Obs(E,t)
-        y  = yy[kObs]
-        E  = EnKF_analysis(E,Eo,Obs.noise,y,upd_a,stats,kObs)
-        E  = post_process(E,infl,rot)
-
-        # Cheating (only used for stats)
-        w,res,_,_ = sla.lstsq(E.T, xx[k])
-        if not res.size:
-          res = 0
-        res = diag((res/HMM.Nx) * ones(HMM.Nx))
-        opt = w @ E
-        # NB: Center on the optimal solution?
-        #E += opt - mean(E,0)
-
-      stats.assess(k,kObs,mu=opt,Cov=res)
+def EnCheat(**kwargs):
+  """A baseline/reference method.
+  Should be implemented as part of Stats instead."""
+  def assimilator(stats,HMM,xx,yy): pass
   return assimilator
-
 
 
 @DA_Config
@@ -1867,7 +1841,8 @@ def Climatology(**kwargs):
     stats.trHK[:] = 0
 
     for k,kObs,_,_ in progbar(chrono.ticker):
-      stats.assess(k,kObs,'fau',mu=muC,Cov=PC)
+      fau = 'u' if kObs is None else 'fau'
+      stats.assess(k,kObs,fau,mu=muC,Cov=PC)
   return assimilator
 
 

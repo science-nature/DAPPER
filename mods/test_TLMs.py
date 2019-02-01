@@ -4,49 +4,55 @@
 from common import *
 
 eps = 1e-6
-def TLM_approx(dxdt,x):
-  "Finite-diff TLM"
+def approx_jacob(fun, x, colwise=False):
+  """Finite-diff.
+  If colwise: fun(E) operates col-wise.
+  else      : fun(E) operates row-wise.
+  Anyways: return value has shape P-by-M.
+  """
   E = x + eps*eye(len(x))
-  return ( dxdt(E) - dxdt(x) ).T   @   inv(E-x).T
+  if colwise: F = ( fun(E.T) - fun(x)[:,None] )   @ inv( (E-x).T )
+  else      : F = ( fun(E)   - fun(x)         ).T @ inv(  E-x    ).T
+  return F
 
 # Transpose explanation:
-# Let A be matrix whose cols are realizations. Abbrev: f=dxdt.
+# Let A be matrix whose cols are realizations. Abbrev: f=fun.
 # Assume: f(A)-f(x) ≈ F @ (A-x).
 # Then  : F ≈ [f(A)-f(x)] @ inv(A-x)         (v1)
 #           = [f(A')-f(x')]' @ inv(A'-x')'.  (v2)
 # Since DAPPER uses dxdt that is made for A', it's easier to apply v2.
 # However, TLM should compute F (not F').
 
-def compare(TLM, dxdt, x):
-  F1 = TLM(x)
-  F2 = TLM_approx(dxdt,x)
+def compare(fun, Jacob, x):
+  F1 = Jacob(x)
+  F2 = approx_jacob(fun,x)
   # rtol=0 => only atol matters.
   return np.allclose(F1, F2, atol=10*eps, rtol=0)
 
 
 ##
 from mods.LotkaVolterra.core import dxdt, TLM, Nx
-x = 0.5 + 0.1*randn(Nx)
-def test_LV(TLM=TLM,dxdt=dxdt,x=x): # capture current values
-  assert compare(TLM, dxdt, x)
+x = 0.5 + 0.1*randn(Nx) # TODO replace with imported x0
+def test_LV(fun=dxdt,Jacob=TLM,x=x): # capture current values
+  assert compare(dxdt, TLM, x)
 
 ##
-from mods.Lorenz63.core import dxdt, TLM, Nx
-x = 10*randn(Nx)
-def test_L63(TLM=TLM,dxdt=dxdt,x=x): # capture current values
-  assert compare(TLM, dxdt, x)
+from mods.Lorenz63.core import dxdt, TLM, x0
+x = x0 + randn(len(x0))
+def test_L63(fun=dxdt,Jacob=TLM,x=x): # capture current values
+  assert compare(dxdt, TLM, x)
 
 ##
 from mods.Lorenz84.core import dxdt, TLM, Nx
-x = 10*randn(Nx) # ?
-def test_L84(TLM=TLM,dxdt=dxdt,x=x): # capture current values
-  assert compare(TLM, dxdt, x)
+x = 10*randn(Nx) # ? # TODO replace with imported x0
+def test_L84(fun=dxdt,Jacob=TLM,x=x): # capture current values
+  assert compare(dxdt, TLM, x)
 
 ##
 from mods.Lorenz95.core import dxdt, TLM
-x = 5 + randn(10)
-def test_L95(TLM=TLM,dxdt=dxdt,x=x): # capture current values
-  assert compare(TLM, dxdt, x)
+x = 5 + randn(10) # TODO replace with imported x0
+def test_L95(fun=dxdt,Jacob=TLM,x=x): # capture current values
+  assert compare(dxdt, TLM, x)
 
 ##
 # TODO
@@ -54,8 +60,14 @@ def test_L95(TLM=TLM,dxdt=dxdt,x=x): # capture current values
 # LUV = model_instance(nU=10,J=4,F=10)
 # x = 5 + randn(LUV.M)
 # LUV.dfdt
-# def test_LUV(TLM=,dxdt=,x=): # capture current values
-  # assert compare(TLM, dxdt, x)
+# def test_LUV(fun=,Jacob=,x=): # capture current values
+  # assert compare(dxdt, TLM, x)
+
+##
+# test_LV()
+# test_L63()
+# test_L84()
+# test_L95()
 
 ##
 

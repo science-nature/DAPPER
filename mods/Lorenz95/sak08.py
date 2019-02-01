@@ -1,16 +1,18 @@
-# Reproduce results from Table 1 of Sakov et al "DEnKF" (2008).
-# This HMM is also used (with small variations) in many other DA papers.
-
+# This HMM is also used (with small variations) in many DA papers.
+# First (exact) use: Ott et al (2004) "A local EnKF for atmospheric DA" ?
+# See list below of other papers that use it.
 
 from common import *
 
 from mods.Lorenz95.core import step, dfdx
 from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
-from mods.Lorenz95.liveplotting import LP_setup
+from mods.Lorenz95.core import step, dfdx, x0, Tplot, LP
 
-t = Chronology(0.05,dkObs=1,T=4**5,BurnIn=20)
+t = Chronology(0.05, dkObs=1, KObs=1000, Tplot=Tplot, BurnIn=2*Tplot)
 
 Nx = 40
+x0 = x0(Nx)
+
 Dyn = {
     'M'    : Nx,
     'model': step,
@@ -18,22 +20,21 @@ Dyn = {
     'noise': 0
     }
 
-X0 = GaussRV(M=Nx, C=0.001) 
+X0 = GaussRV(mu=x0, C=0.001) 
 
 jj = arange(Nx) # obs_inds
 Obs = partial_direct_Obs(Nx, jj)
 Obs['noise'] = 1
 Obs['localizer'] = loc_setup( (Nx,), (2,), jj, periodic=True )
 
-
-HMM = HiddenMarkovModel(Dyn,Obs,t,X0, LP=LP_setup(jj))
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0)
 
 
 ####################
 # Suggested tuning
 ####################
 
-# Reproduce Sakov'2008 "deterministic"                          # Expected RMSE_a:
+# Reproduce Table1 of Sakov'2008 "deterministic"                # Expected RMSE_a:
 # --------------------------------------------------------------------------------
 # cfgs += EnKF('PertObs'        ,N=40, infl=1.06)               # 0.22
 # cfgs += EnKF('DEnKF'          ,N=40, infl=1.01)               # 0.18

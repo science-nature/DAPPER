@@ -387,17 +387,14 @@ def truncate_rank(s,threshold,avoid_pathological):
   return r
 
 def tsvd(A, threshold=0.99999, avoid_pathological=True):
-  """
-  Truncated svd.
+  """Truncated svd.
   Also automates 'full_matrices' flag.
-  threshold: if
-   - float, < 1.0 then "rank" = lowest number such that the
-                                "energy" retained >= threshold
-   - int,  >= 1   then "rank" = threshold
-  avoid_pathological: avoid truncating (e.g.) the identity matrix.
-                      NB: only applies for float threshold.
-  """
-
+  - threshold: if
+    * float, < 1.0 then "rank" = lowest number such that the
+                                 "energy" retained >= threshold
+    * int,  >= 1   then "rank" = threshold
+  - avoid_pathological: avoid truncating (e.g.) the identity matrix.
+                        NB: only applies for float threshold."""
   M,N = A.shape
   full_matrices = False
 
@@ -407,6 +404,8 @@ def tsvd(A, threshold=0.99999, avoid_pathological=True):
     assert 1 <= r <= max(M,N)
     if r > min(M,N):
       full_matrices = True
+      r = min(M,N)
+
 
   # SVD
   U,s,VT = sla.svd(A, full_matrices)
@@ -480,7 +479,7 @@ def linear_model_setup(ModelMatrix):
       'model': model,
       'jacob': jacob,
       }
-  return f
+  return Dyn
 
 
 def equi_spaced_integers(Nx,Ny):

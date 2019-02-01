@@ -10,12 +10,9 @@ sd0 = seed(5)
 ##############################
 # Setup
 ##############################
-# Model is pathololgical: x(k+1) <-- a*x(k), with a>1.
-# Hence, x(k) --> infinity, unless started at exactly 0.
-# Therefore, you probably want to set the truth trajectory explicitly to 0
-# (or let it be a random walk, or something else).
 
-t = Chronology(dt=1,dkObs=5,T=600,BurnIn=500)
+# Huge BurnIn
+t = Chronology(dt=1,dkObs=5,T=600,BurnIn=500,Tplot=10)
 
 Nx = 5;
 Ny = Nx;
@@ -24,12 +21,15 @@ jj = equi_spaced_integers(Nx,Ny)
 Obs = partial_direct_Obs(Nx,jj)
 Obs['noise'] = 1.0
 
-X0 = GaussRV(C=1.0,Nx=Nx)
+X0 = GaussRV(C=1.0,M=Nx)
 
-f = linear_model_setup(1.2*eye(Nx))
-Dyn['noise'] = 0.0
+# Model is pathololgical: x(k+1) <-- a*x(k), with a>1.
+# Hence, x(k) --> infinity, unless started at exactly 0.
+# Therefore, you probably want to set the truth trajectory explicitly to 0
+# (or let it be a random walk, or something else).
+Dyn = linear_model_setup(1.2*eye(Nx))
+Dyn['noise'] = 1
 
-#other = {'name': os.path.relpath(__file__,'mods/')}
 HMM = HiddenMarkovModel(Dyn,Obs,t,X0)
 Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
@@ -52,17 +52,25 @@ def EnKF_wrong(N,**kwargs):
     Dyn,Obs,chrono,X0 = HMM.Dyn, HMM.Obs, HMM.t, HMM.X0
 
     # Normalization
-    #NRM= N-1 # Usual
-    NRM= 0.2 # Whatever
+    #N1= N-1 # Usual
+    N1= 0.2 # Whatever
 
     # Init
     E = X0.sample(N)
+
+    # **If** you want immediate equality between EnKF(N,N-1) and EnKF(N,N1):
+    X,xb = center(E)
+    E = xb + X*sqrt(N1/(N-1))
+
     stats.assess(0,E=E)
 
     # Loop
     for k,kObs,t,dt in progbar(chrono.ticker):
       E = Dyn(E,t-dt,dt)
-      E = add_noise(E, dt, Dyn.noise, kwargs)
+      # E = add_noise(E, dt, Dyn.noise, kwargs)
+      E += sqrt(dt)*(randn((N,HMM.Nx))@Dyn.noise.C.Right) * 3
+      # XfXf = XX + N1*Q
+      # Xf = X + sqrt(dt)*Q12@Xi * sqrt(N1/N)
 
       # Analysis update
       if kObs is not None:
@@ -76,8 +84,8 @@ def EnKF_wrong(N,**kwargs):
         Y  = Eo-xo
         dy = yy[kObs] - xo
 
-        d,V= eigh(Y @ Obs.noise.C.inv @ Y.T + NRM*eye(N))
-        T  = V@diag(d**(-0.5))@V.T * sqrt(NRM)
+        d,V= eigh(Y @ Obs.noise.C.inv @ Y.T + N1*eye(N))
+        T  = V@diag(d**(-0.5))@V.T * sqrt(N1)
         Pw = V@diag(d**(-1.0))@V.T
         w  = dy @ Obs.noise.C.inv @ Y.T @ Pw
         E  = mu + w@A + T@A
@@ -85,11 +93,11 @@ def EnKF_wrong(N,**kwargs):
       stats.assess(k,kObs,E=E)
   return assimilator
 
+N = 10
 cfgs  = List_of_Configs()
 cfgs += ExtKF()
-cfgs += EnKF('Sqrt',   10,fnoise_treatm='Sqrt-Core')
-cfgs += EnKF_wrong(    10,fnoise_treatm='Sqrt-Core')
-#cfgs += EnKF('PertObs',10,fnoise_treatm='Stoch',infl=1.3,LP=False)
+cfgs += EnKF('Sqrt', N, fnoise_treatm='Stoch')
+cfgs += EnKF_wrong(  N, fnoise_treatm='Stoch')
 
 
 
@@ -111,7 +119,7 @@ stats = []
 avrgs = []
 
 for ic,config in enumerate(cfgs):
-  #config.store_u = True
+  config.store_u = True
   #config.liveplotting = False
   seed(sd0+2)
 
@@ -120,5 +128,16 @@ for ic,config in enumerate(cfgs):
   #print_averages(config, avrgs[-1])
 print_averages(cfgs,avrgs)
 
-plot_time_series(stats[-1])
 
+# Plot initial, transitory time series of mu
+dim = 0
+fig, ax = plt.subplots()
+c0 = plt.rcParams["axes.prop_cycle"]
+ax.set_prop_cycle( c0 + plt.cycler(ls=(['-','--','-.',':','--']*99)[:len(c0)]))
+for i, stat in enumerate(stats):
+  name = cfgs[i].da_method.__name__
+  ax.plot(HMM.t.kk[:20], stat.mu.u[:20,dim], label=name)
+ax.legend()
+ax.set_ylabel('stats.mu.a dim %d'%dim)
+ax.set_xlabel('Time ind')
+ 

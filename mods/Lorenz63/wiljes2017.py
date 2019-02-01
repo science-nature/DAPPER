@@ -4,41 +4,41 @@
 
 from common import *
 
-from mods.Lorenz63.core import step, dfdx, Nx
+from mods.Lorenz63.sak12 import HMM, Nx
 from tools.localization import no_localization
 
-t = Chronology(0.01,dkObs=12,T=4**5,BurnIn=4)
-
-Dyn = {
-    'M'    : Nx,
-    'model': step,
-    'jacob': dfdx,
-    'noise': 0
-    }
-
-mu0 = array([1.509, -1.531, 25.46])
-X0 = GaussRV(C=2,mu=mu0)
+HMM.t = Chronology(0.01,dkObs=12,T=4**5,BurnIn=4)
 
 jj = array([0])
 Obs = partial_direct_Obs(Nx,jj)
-Obs['noise'] = 8
 Obs['localizer'] = no_localization([Nx],jj)
-
-other = {'name': os.path.relpath(__file__,'mods/')}
-
-HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
+Obs['noise'] = 8
+HMM.Obs = Operator(**Obs)
 
 ####################
 # Suggested tuning
 ####################
-# Reproduce benchmarks for NETF and ESRF (here EnKF-N)
-# from left pane of Fig 1.
-# from mods.Lorenz63.wiljes2017 import HMM   ################ Expected RMSE_a:
-# cfgs += EnKF_N(N=5)                                        # 2.67
-# cfgs += EnKF_N(N=30,rot=True)                              # 2.43
-# cfgs += LNETF(N=40,rot=True,infl=1.02,Rs=1.0,loc_rad='NA') # 2.13
-# cfgs += iEnKS('-N', N=10,Lag=2)                            # 2.10
-# cfgs += PartFilt(N=35 ,reg=1.4,NER=0.3)                    # 1.86 not finely tuned
+# Reproduce benchmarks for NETF and ESRF (here EnKF-N) from left pane of Fig 1.
+# from mods.Lorenz63.wiljes2017 import HMM  # RMSE_a reported by DAPPER   PAPER:
+# ------------------------------------------------------------------------------
+# HMM.t.KObs = 10**2
+# cfgs += OptInterp()                                          # 5.4      N/A
+# cfgs += Var3D(infl=0.7)                                      # 3.2      N/A
+# cfgs += EnKF_N(N=5)                                          # 2.68     N/A
+# cfgs += EnKF_N(N=30,rot=True)                                # 2.52     2.5
+# cfgs += LNETF(N=40,rot=True,infl=1.02,Rs=1.0,loc_rad='NA')   # 2.61     ~2.2
+# cfgs += PartFilt(N=35 ,reg=1.4,NER=0.3)                      # 2.05     1.4  (tuning settings not given)
 
+# - The relevance of the experimental settings is questionable,
+#   since the EnKF/NETF are barely able to beat 3D-Var
+#   (with a little tuning beyond infl, 3D-Var would probably
+#   beat these more sophisticated methods, so what then is 
+#   the interest in NETF beating the EnKF in this setting?).
+# - Also, note that the EnKF manages "fine" with N=5,
+#   while the paper only tests N>15.
+# - Finally, note that there is a mismatch between DAPPER's NETF score
+#   and the one reported in the paper. However, DAPPER's implementation
+#   is not entirely wrong, since it has some skill.
+#   Indeed, it is questionable whether it wrong at all.
 
 

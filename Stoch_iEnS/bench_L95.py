@@ -6,7 +6,8 @@ sd0 = seed(3)
 # DA Configurations
 ##############################
 from mods.Lorenz95.sak08 import HMM
-HMM.t.T = 120
+HMM.t.BurnIn = 1
+HMM.t.T = 3
 HMM.t.dkObs = 8 # 4, 8.
 LAG = round(0.4 / HMM.t.dtObs)
 
@@ -14,11 +15,12 @@ LAG = round(0.4 / HMM.t.dtObs)
 CtrlVar = sys.argv[1]
 # Set range of experimental settings
 if CtrlVar == 'N': # ens size
-  xticks = [13, 16, 17, 18, 20, 22, 25, 30, 40, 60, 100]
+  # xticks = [13, 16, 17, 18, 20, 22, 25, 30, 40, 60, 100]
+  xticks = [13, 20]
 if CtrlVar == 'nIter': # max num of iterations
   xticks = [1, 2, 4, 8, 16, 32]
 
-xticks = array(xticks).repeat(5)
+xticks = array(xticks).repeat(1)
 
 # Parallelization and save-path setup
 xticks, save_path, iiRep = distribute(__file__,sys.argv,xticks,CtrlVar,nCore=8)

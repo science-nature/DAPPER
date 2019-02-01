@@ -6,8 +6,7 @@ sd0 = seed(3)
 # DA Configurations
 ##############################
 from mods.Lorenz95.sak08 import HMM
-HMM.t.BurnIn = 1
-HMM.t.T = 3
+HMM.t.T = 120
 HMM.t.dkObs = 8 # 4, 8.
 LAG = round(0.4 / HMM.t.dtObs)
 
@@ -15,12 +14,11 @@ LAG = round(0.4 / HMM.t.dtObs)
 CtrlVar = sys.argv[1]
 # Set range of experimental settings
 if CtrlVar == 'N': # ens size
-  # xticks = [13, 16, 17, 18, 20, 22, 25, 30, 40, 60, 100]
-  xticks = [13, 20]
+  xticks = [13, 16, 17, 18, 20, 22, 25, 30, 40, 60, 100]
 if CtrlVar == 'nIter': # max num of iterations
   xticks = [1, 2, 4, 8, 16, 32]
 
-xticks = array(xticks).repeat(1)
+xticks = array(xticks).repeat(5)
 
 # Parallelization and save-path setup
 xticks, save_path, iiRep = distribute(__file__,sys.argv,xticks,CtrlVar,nCore=8)
@@ -93,7 +91,7 @@ np.savez(save_path,
 ##############################
 if 'WORKER' in sys.argv: sys.exit(0) # quit if script is running as worker.
 
-# R = ResultsTable(save_path)
+R = ResultsTable(save_path)
 
 with coloring(): print("Averages over experiment repetition:")
 R.print_mean_field('rmse_a',1,1,cols=slice(0,2))
@@ -102,11 +100,12 @@ BaseLineMethods = R.split(['Climatology', 'OptInterp', 'Var3D','ExtKF'])
 BaseLineMethods.rm('Var3D')
 
 R.rm("rot:0")
-# R.rm("EnKF")
+R.rm("EnKF")
 
 # Plot
 fig, ax = plt.subplots()
 ax, ax2, _, _ = R.plot_1d_minz('rmse_a',)
+ax.legend()
 BaseLineMethods.plot_1d('rmse_a',color='k')
 
 ##

@@ -20,6 +20,9 @@ def show_answer(excercise_tag):
 answers = {}
 
 
+###########################################
+# Tut: DA & EnKF
+###########################################
 answers['thesaurus 1'] = ["TXT",r"""
 Data Assimilation (DA)     Ensemble      Stochastic     Data        
 Filtering                  Sample        Random         Measurements
@@ -38,14 +41,10 @@ Regression
 Fitting                  
 """]
 
-answers['why Gaussian'] =  ['MD',r"""
- * Pragmatic: leads to least-squares problems, which lead to linear systems of equations.
-   This was demonstrated by the simplicity of the parametric Gaussian-Gaussian Bayes' rule.
- * The central limit theorem (CLT) and all of its implications.
- * The intuitive condition "ML estimator = sample average" implies the sample is drawn from a Gaussian.
- * For more, see chapter 7 of: [Probability theory: the logic of science](https://books.google.com/books/about/Probability_Theory.html?id=tTN4HuUNXjgC) (Edwin T. Jaynes), which is an excellent book for understanding probability and statistics.
-"""]
 
+###########################################
+# Tut: Bayesian inference
+###########################################
 answers['pdf_G_1'] = ['MD',r'''
     pdf_values = 1/sqrt(2*pi*P)*exp(-0.5*(x-mu)**2/P)
     # Version using the scipy (sp) library:
@@ -130,6 +129,18 @@ answers['BR Gauss code'] = ['MD',r'''
     #     mu = b + KG*(y-b)
 ''']
 
+answers['why Gaussian'] =  ['MD',r"""
+ * Pragmatic: leads to least-squares problems, which lead to linear systems of equations.
+   This was demonstrated by the simplicity of the parametric Gaussian-Gaussian Bayes' rule.
+ * The central limit theorem (CLT) and all of its implications.
+ * The intuitive condition "ML estimator = sample average" implies the sample is drawn from a Gaussian.
+ * For more, see chapter 7 of: [Probability theory: the logic of science](https://books.google.com/books/about/Probability_Theory.html?id=tTN4HuUNXjgC) (Edwin T. Jaynes), which is an excellent book for understanding probability and statistics.
+"""]
+
+
+###########################################
+# Tut: Univariate Kalman filtering
+###########################################
 answers['LinReg deriv'] = ['MD',r'''
 $$ \frac{d J_K}{d\alpha} = 0 = \ldots $$
 ''']
@@ -154,10 +165,6 @@ answers['KF func'] = ['MD',r'''
     #KG = PPf[k+1]*H / (H*PPf[k+1]*H + R)
     #PPa[k+1] = (1-KG)*PPf[k+1]
     #mua[k+1] = muf[k+1]+KG*(yy[k]-muf[k+1])
-''']
-
-answers['KF KG fail'] = ['MD',r'''
-Because `PPa[0]` is infinite. And while the limit (as `PPf` goes to +infinity) of `KG = PPf*H / (H*PPf*H + R)` is `H (= 1)`, its numerical evaluation fails (as it should). Note that the infinity did not cause any problems numerically for the "weighted average" form.
 ''']
 
 answers['LinReg plot'] = ['MD',r'''
@@ -197,6 +204,14 @@ $P_\infty = 1/\big(1/R + 1/[F^2 P_\infty]\big)$.
 This yields $P_\infty = R (1-1/F^2)$.
 ''']
 
+answers['KF KG fail'] = ['MD',r'''
+Because `PPa[0]` is infinite. And while the limit (as `PPf` goes to +infinity) of `KG = PPf*H / (H*PPf*H + R)` is `H (= 1)`, its numerical evaluation fails (as it should). Note that the infinity did not cause any problems numerically for the "weighted average" form.
+''']
+
+
+###########################################
+# Tut: Dynamical systems, chaos, Lorenz
+###########################################
 answers["Hint: Lorenz energy"] = ["MD",r'''
 Hint: what's its time-derivative?
 ''']
@@ -246,6 +261,10 @@ answers["doubling time"] = ["MD",r"""
     print("Doubling time (approx):",log(2)/rate)
 """]
 
+
+###########################################
+# Tut: Ensemble [Monte-Carlo] approach
+###########################################
 answers['Gaussian sampling a'] = ['MD',r'''
 Firstly, a linear (affine) transformation can be decomposed into a sequence of sums. This means that $\mathbf{x}$ will be Gaussian.
 It remains only to calculate its moments.
@@ -345,6 +364,10 @@ answers['Cov memory'] = ['MD',r'''
  * (d). 8 trillion bytes. I.e. 8 million MB. 
 ''']
 
+
+###########################################
+# Tut: Writing your own EnKF
+###########################################
 answers['EnKF v1'] = ['MD',r'''
     def my_EnKF(N):
         E = mu0[:,None] + P0_chol @ randn((m,N))
@@ -383,6 +406,10 @@ answers['Repeat experiment cd'] = ['MD',r'''
  * (d). Use: `Perturb  = D_infl * R_chol @ randn((p,N))` in the EnKF algorithm.
 ''']
 
+
+###########################################
+# Tut: Benchmarking with DAPPER
+###########################################
 answers['jagged diagnostics'] = ['MD',r'''
 Because they are only defined at analysis times, i.e. every `dkObs` time step.
 ''']
@@ -425,6 +452,10 @@ answers['Twin Var3D'] = ['MD',r'''
     ...
 ''']
 
+
+###########################################
+# Colin Grudzen
+###########################################
 
 answers['forward_euler'] = ['MD', r'''
 Missing line:
@@ -645,5 +676,12 @@ Moreover, the eigenvalues of <span style='font-size:1.25em'>$\mathbf{U}$</span> 
 <li> the eigenvalues of the diagonal blocks <span style='font-size:1.25em'>$U^{ii}$</span> are ordered descending in magnitude.
 </ol>
 ''']                     
+
+
+###########################################
+# Topic
+###########################################
+
+
 
 

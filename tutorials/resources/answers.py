@@ -51,8 +51,8 @@ answers['pdf_G_1'] = ['MD',r'''
     # pdf_values = sp.stats.norm.pdf(x,loc=mu,scale=sqrt(P))
 ''']
 
-answers['pdf_U_1'] = ['MD',r'''
-    def pdf_U_1(x,mu,P):
+answers['pdf_U1'] = ['MD',r'''
+    def pdf_U1(x,mu,P):
         # Univariate (scalar), Uniform pdf
 
         pdf_values = ones((x-mu).shape)
@@ -69,24 +69,23 @@ answers['pdf_U_1'] = ['MD',r'''
         return pdf_values
 ''']
 
-answers['BR deriv'] = ['MD',r'''
+answers['BR derivation'] = ['MD',r'''
 <a href="https://en.wikipedia.org/wiki/Bayes%27_theorem#Derivation" target="_blank">Wikipedia</a>
 
 ''']
 
 answers['BR grid normalization'] = ['MD',r'''
-Because it can compute $p(y)$ as
-the factor needed to normalize to 1,
-as required by the definition of pdfs.
+Because
+$p(y)$ is just a normalization factor (it's constant in $x$).
+Therefore, since $p(x|y)$ should sum to 1,
+$p(y)$ can be computed as the integral of the nominator.
 
-That's what the `#normalization` line does.
-
-Here's the proof that the normalization (which makes `pp` sum to 1) is equivalent to dividing by $p(y)$:
-$$\texttt{sum(pp)*dx} \approx \int p(x) p(y|x) \, dx = \int p(x,y) \, dx = p(y) \, .$$
+Does this agree with the definition? Yes:
+$$\texttt{sum(pp)*dx} \approx \int p(x) \, p(y|x) \, dx = \int p(x,y) \, dx = p(y) \, .$$
 ''']
 
 answers['Dimensionality a'] = ['MD',r'''
-$N^m$
+$N^M$
 ''']
 answers['Dimensionality b'] = ['MD',r'''
 $15 * 360 * 180 = 972'000 \approx 10^6$
@@ -102,22 +101,23 @@ We can ignore factors that do not depend on $x$.
 p(x|y)
 &= \frac{p(x) \, p(y|x)}{p(y)} \\\
 &\propto p(x) \, p(y|x) \\\
-&=       N(x|b,B) \, N(y|x,R) \\\
+&=       N(x \,|\, b,B) \, N(y \,|\, x,R) \\\
 &\propto \exp \Big( \frac{-1}{2} \Big( (x-b)^2/B + (x-y)^2/R \Big) \Big) \\\
 &\propto \exp \Big( \frac{-1}{2} \Big( (1/B + 1/R)x^2 - 2(b/B + y/R)x \Big) \Big) \\\
 &\propto \exp \Big( \frac{-1}{2} \Big( x - \frac{b/B + y/R}{1/B + 1/R} \Big)^2 \cdot (1/B + 1/R) \Big) \, .
 \end{align}
 
-The last line can be identified as $N(x|\mu,P)$ as defined above.
+The last line can be identified with $N(x \,|\, \mu,P)$ of eqn (G1),
+yielding eqns (5) and (6).
 ''']
 
-answers['KG 2'] = ['MD',r'''
+answers['KG intuition'] = ['MD',r'''
 Because it
 
  * drags the estimate from $b$ "towards" $y$.
  * is between 0 and 1.
- * weights the observation noise level (R) vs. the total noise level (B+R).
- * In the multivariate case (and with $H=I$), the same holds for its eigenvectors.
+ * weights the observation uncertainty (R) vs. the total uncertainty (B+R).
+ * In the multivariate case, the same holds for its eigenvectors.
 ''']
 
 answers['BR Gauss code'] = ['MD',r'''
@@ -129,11 +129,22 @@ answers['BR Gauss code'] = ['MD',r'''
     #     mu = b + KG*(y-b)
 ''']
 
-answers['why Gaussian'] =  ['MD',r"""
+answers['Posterior cov'] =  ['MD',r"""
+  * No.
+      * It means that information is always gained.
+      * No, not always.  
+        But on average, yes:  
+        [the "expected" posterior entropy (and variance)
+        is always smaller than that of the prior.](https://www.quora.com/What-conditions-guarantee-that-the-posterior-variance-will-be-less-than-the-prior-variance#)
+  * It probably won't have decreased. Maybe you will just discard the new information entirely, in which case your certainty will remain the same.  
+    I.e. humans are capable of thinking hierarchically, which effectively leads to other distributions than the Gaussian one.
+"""]
+
+answers['Why Gaussian'] =  ['MD',r"""
  * Pragmatic: leads to least-squares problems, which lead to linear systems of equations.
    This was demonstrated by the simplicity of the parametric Gaussian-Gaussian Bayes' rule.
- * The central limit theorem (CLT) and all of its implications.
- * The intuitive condition "ML estimator = sample average" implies the sample is drawn from a Gaussian.
+ * The central limit theorem (CLT) and all its implications.
+ * The intuitive precondition "ML estimator = sample average" necessitates a Gaussian sampling distribution.
  * For more, see chapter 7 of: [Probability theory: the logic of science](https://books.google.com/books/about/Probability_Theory.html?id=tTN4HuUNXjgC) (Edwin T. Jaynes), which is an excellent book for understanding probability and statistics.
 """]
 

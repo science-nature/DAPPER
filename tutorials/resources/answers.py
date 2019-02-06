@@ -45,20 +45,20 @@ Fitting
 ###########################################
 # Tut: Bayesian inference
 ###########################################
-answers['pdf_G_1'] = ['MD',r'''
-    pdf_values = 1/sqrt(2*pi*P)*exp(-0.5*(x-mu)**2/P)
+answers['pdf_G1'] = ['MD',r'''
+    pdf_values = 1/sqrt(2*pi*B)*exp(-0.5*(x-b)**2/B)
     # Version using the scipy (sp) library:
-    # pdf_values = sp.stats.norm.pdf(x,loc=mu,scale=sqrt(P))
+    # pdf_values = sp.stats.norm.pdf(x,loc=b,scale=sqrt(B))
 ''']
 
 answers['pdf_U1'] = ['MD',r'''
-    def pdf_U1(x,mu,P):
+    def pdf_U1(x,b,B):
         # Univariate (scalar), Uniform pdf
 
-        pdf_values = ones((x-mu).shape)
+        pdf_values = ones((x-b).shape)
 
-        a = mu - sqrt(3*P)
-        b = mu + sqrt(3*P)
+        a = b - sqrt(3*B)
+        b = b + sqrt(3*B)
 
         pdf_values[x<a] = 0
         pdf_values[x>b] = 0
@@ -74,11 +74,20 @@ answers['BR derivation'] = ['MD',r'''
 
 ''']
 
-answers['BR grid normalization'] = ['MD',r'''
+answers['inverse'] = ['MD',r'''
+Because estimation (i.e. inference) is seen as reasoning backwards from the "outcome" to the "cause".
+In physics, causality is a difficult notion.
+Still, we use it to define the direction "backward", or "inverse",
+which we associate with the symolism $f^{-1}$.
+Since $y = f(x)$ is common symbolisism,
+it makes sense to use the symobls $x = f^{-1}(y)$ for the estimation problem.
+''']
+
+answers['BR normalization'] = ['MD',r'''
 Because
 $p(y)$ is just a normalization factor (it's constant in $x$).
 Therefore, since $p(x|y)$ should sum to 1,
-$p(y)$ can be computed as the integral of the nominator.
+$p(y)$ can be computed as the integral of the un-normalized posterior.
 
 Does this agree with the definition? Yes:
 $$\texttt{sum(pp)*dx} \approx \int p(x) \, p(y|x) \, dx = \int p(x,y) \, dx = p(y) \, .$$
@@ -101,23 +110,22 @@ We can ignore factors that do not depend on $x$.
 p(x|y)
 &= \frac{p(x) \, p(y|x)}{p(y)} \\\
 &\propto p(x) \, p(y|x) \\\
-&=       N(x \,|\, b,B) \, N(y \,|\, x,R) \\\
+&=       N(x \mid b,B) \, N(y \mid x,R) \\\
 &\propto \exp \Big( \frac{-1}{2} \Big( (x-b)^2/B + (x-y)^2/R \Big) \Big) \\\
 &\propto \exp \Big( \frac{-1}{2} \Big( (1/B + 1/R)x^2 - 2(b/B + y/R)x \Big) \Big) \\\
 &\propto \exp \Big( \frac{-1}{2} \Big( x - \frac{b/B + y/R}{1/B + 1/R} \Big)^2 \cdot (1/B + 1/R) \Big) \, .
 \end{align}
 
-The last line can be identified with $N(x \,|\, \mu,P)$ of eqn (G1),
-yielding eqns (5) and (6).
+Identifying the last line with $N(x \mid \mu, P)$ yields eqns (5) and (6).
 ''']
 
 answers['KG intuition'] = ['MD',r'''
-Because it
+Because it describes how much the esimate is dragged from $b$ "towards" $y$.  
+I.e. it is a multiplification (amplification) factor,
+which French (signal processing) people like to call "gain".  
 
- * drags the estimate from $b$ "towards" $y$.
- * is between 0 and 1.
- * weights the observation uncertainty (R) vs. the total uncertainty (B+R).
- * In the multivariate case, the same holds for its eigenvectors.
+Relatedly, note that $K$ weights the observation uncertainty $(R)$ vs. the total uncertainty $(B+R)$,
+and so is always between 0 and 1.
 ''']
 
 answers['BR Gauss code'] = ['MD',r'''
@@ -141,9 +149,9 @@ answers['Posterior cov'] =  ['MD',r"""
 """]
 
 answers['Why Gaussian'] =  ['MD',r"""
- * Pragmatic: leads to least-squares problems, which lead to linear systems of equations.
+ * Simplicity: (recursively) yields "linear least-squares problems", whose solution is given by a linear systems of equations.
    This was demonstrated by the simplicity of the parametric Gaussian-Gaussian Bayes' rule.
- * The central limit theorem (CLT) and all its implications.
+ * The central limit theorem (CLT) and all its implications about likely noise distributions.
  * The intuitive precondition "ML estimator = sample average" necessitates a Gaussian sampling distribution.
  * For more, see chapter 7 of: [Probability theory: the logic of science](https://books.google.com/books/about/Probability_Theory.html?id=tTN4HuUNXjgC) (Edwin T. Jaynes), which is an excellent book for understanding probability and statistics.
 """]
@@ -156,38 +164,38 @@ answers['LinReg deriv'] = ['MD',r'''
 $$ \frac{d J_K}{d\alpha} = 0 = \ldots $$
 ''']
 
-answers['LinReg F_k'] = ['MD',r'''
+answers['LinReg 2 Kalman'] = ['MD',r'''
 $$ F_k = \frac{k+1}{k} $$
 ''']
 
-answers['LinReg func'] = ['MD',r'''
+answers['LinReg_k'] = ['MD',r'''
     kk = arange(1,k+1)
     alpha = sum(kk*yy[:k]) / sum(kk**2)
 ''']
 
-answers['KF func'] = ['MD',r'''
+answers['KF_k'] = ['MD',r'''
     # Forecast
-    muf[k+1] = F(k)*mua[k]
+    xf [k+1] = F(k)*xa [k]
     PPf[k+1] = F(k)*PPa[k]*F(k) + Q
     # Analysis
     PPa[k+1] = 1/(1/PPf[k+1] + H*1/R*H)
-    mua[k+1] = PPa[k+1] * (muf[k+1]/PPf[k+1] + yy[k]*H/R)
+    xa [k+1] = PPa[k+1] * (xf[k+1]/PPf[k+1] + yy[k]*H/R)
     # Analysis -- Kalman gain version:
     #KG = PPf[k+1]*H / (H*PPf[k+1]*H + R)
     #PPa[k+1] = (1-KG)*PPf[k+1]
-    #mua[k+1] = muf[k+1]+KG*(yy[k]-muf[k+1])
+    #xa [k+1] = xf[k+1]+KG*(yy[k]-xf[k+1])
 ''']
 
-answers['LinReg plot'] = ['MD',r'''
-Let $\alpha_K$ denote the linear regression estimates (of the slope) based on the observations $y_{1:K} = \\{y_1,\ldots,y_K\\}$.
-Simiarly, let $\mu_K$ denote the KF estimate of $x_K$ based on $y_{1:K}$.
+answers['LinReg compare'] = ['MD',r'''
+
+Let $\hat{a}_K$ denote the linear regression estimates of the slope $a$
+based on the observations $y_1,\ldots, y_K$.  
+Let $\hat{x}_K$ denote the KF estimate of $\hat{x}_K$ based on the same set of obs.  
 It can bee seen in the plot that
-$
-K \alpha_K = \mu_K \, .
-$
+$ \hat{x}_K = K \hat{\alpha}_K \, . $
 ''']
 
-answers['KF = LinReg a'] = ['MD',r'''
+answers['KF == LinReg a'] = ['MD',r'''
 We'll proceed by induction. With $P_0 = \infty$, we get $P_1 = R$, which initializes (4). Now, from (3):
 
 $$
@@ -215,7 +223,7 @@ $P_\infty = 1/\big(1/R + 1/[F^2 P_\infty]\big)$.
 This yields $P_\infty = R (1-1/F^2)$.
 ''']
 
-answers['KF KG fail'] = ['MD',r'''
+answers['KG fail'] = ['MD',r'''
 Because `PPa[0]` is infinite. And while the limit (as `PPf` goes to +infinity) of `KG = PPf*H / (H*PPf*H + R)` is `H (= 1)`, its numerical evaluation fails (as it should). Note that the infinity did not cause any problems numerically for the "weighted average" form.
 ''']
 

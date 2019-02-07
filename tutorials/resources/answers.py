@@ -2,22 +2,30 @@
 from markdown import markdown as md2html
 from IPython.display import HTML, display
 
-bg_color = 'background-color:#d8e7ff;' #e2edff;'
-def show_answer(excercise_tag):
-    TYPE, s = answers[excercise_tag]
+
+def formatted_display(TYPE,s,bg_color):
     s = s[1:] # Remove newline
+    bg = 'background-color:'+ bg_color + ';' #d8e7ff #e2edff
     if   TYPE == "HTML": s = s
     elif TYPE == "MD"  : s = md2html(s)
-    elif TYPE == "TXT" : s = '<code style="'+bg_color+'">'+s+'</code>'
+    elif TYPE == "TXT" : s = '<code style="'+bg+'">'+s+'</code>'
     s = ''.join([
         '<div ',
-        'style="',bg_color,'padding:0.5em;">',
+        'style="',bg,'padding:0.5em;">',
         str(s),
         '</div>'])
     display(HTML(s))
+
+def show_answer(tag):
+    formatted_display(*answers[tag], '#d8e7ff')
+
         
+def show_example(tag):
+    formatted_display(*examples[tag], '#ffed90')
+
 
 answers = {}
+examples = {}
 
 
 ###########################################
@@ -67,6 +75,15 @@ answers['pdf_U1'] = ['MD',r'''
         pdf_values *= height
 
         return pdf_values
+''']
+
+examples['BR'] = ['MD',r'''
+ - You believe the temperature $(x)$ in the room is $22°C \pm 2°C$;  
+more specifically, your prior is: $p(x) = \mathcal{N}(x \mid 22, 4)$.  
+ - A thermometer yields the observation $y = 24°C \pm 2°C$;  
+more specifically, the likelihood is: $p(y|x) = \mathcal{N}(24 \mid x, 4)$.  
+ - Your updated, posterior belief is then $p(x|y) = \mathcal{N}(x \mid 23, 2)$.  
+(exactly how these numbers are calculated will be shown below).
 ''']
 
 answers['BR derivation'] = ['MD',r'''
@@ -165,11 +182,11 @@ $$ \frac{d J_K}{d\alpha} = 0 = \ldots $$
 ''']
 
 answers['LinReg 2 Kalman'] = ['MD',r'''
-$$ F_k = \frac{k+1}{k} $$
+$ F_k = \frac{k+1}{k} $ with $x_0 = 0$.
 ''']
 
 answers['LinReg_k'] = ['MD',r'''
-    kk = arange(1,k+1)
+    kk = 1 + arange(k)
     alpha = sum(kk*yy[:k]) / sum(kk**2)
 ''']
 
@@ -178,10 +195,10 @@ answers['KF_k'] = ['MD',r'''
     xf [k+1] = F(k)*xa [k]
     PPf[k+1] = F(k)*PPa[k]*F(k) + Q
     # Analysis
-    PPa[k+1] = 1/(1/PPf[k+1] + H*1/R*H)
-    xa [k+1] = PPa[k+1] * (xf[k+1]/PPf[k+1] + yy[k]*H/R)
+    PPa[k+1] = 1/(1/PPf[k+1] + 1/R)
+    xa [k+1] = PPa[k+1] * (xf[k+1]/PPf[k+1] + yy[k]/R)
     # Analysis -- Kalman gain version:
-    #KG = PPf[k+1]*H / (H*PPf[k+1]*H + R)
+    #KG = PPf[k+1] / (PPf[k+1] + R)
     #PPa[k+1] = (1-KG)*PPf[k+1]
     #xa [k+1] = xf[k+1]+KG*(yy[k]-xf[k+1])
 ''']
@@ -220,11 +237,18 @@ The proof for (b) is similar.
 answers['Asymptotic P'] = ['MD',r'''
 The fixed point $P_\infty$ should satisfy
 $P_\infty = 1/\big(1/R + 1/[F^2 P_\infty]\big)$.
-This yields $P_\infty = R (1-1/F^2)$.
+This yields $P_\infty = R (1-1/F^2)$.  
+Interestingly, this means that the asymptotic state uncertainty ($P$)
+is direclty proportional to the observation uncertainty ($R$).
 ''']
 
 answers['KG fail'] = ['MD',r'''
-Because `PPa[0]` is infinite. And while the limit (as `PPf` goes to +infinity) of `KG = PPf*H / (H*PPf*H + R)` is `H (= 1)`, its numerical evaluation fails (as it should). Note that the infinity did not cause any problems numerically for the "weighted average" form.
+Because `PPa[0]` is infinite.
+And while the limit (as `PPf` goes to +infinity) of
+`KG = PPf / (PPf + R)` is 1,
+its numerical evaluation fails (as it should).
+Note that the infinity did not cause any problems numerically
+for the "weighted average" form.
 ''']
 
 

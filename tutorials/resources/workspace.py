@@ -12,7 +12,7 @@ else:
 from common import *
 
 # Load answers
-from tutorials.resources.answers import answers, show_answer
+from tutorials.resources.answers import answers, show_answer, show_example
 
 # Load widgets
 from ipywidgets import *

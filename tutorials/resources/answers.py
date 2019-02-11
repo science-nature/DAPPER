@@ -102,12 +102,26 @@ it makes sense to use the symobls $x = f^{-1}(y)$ for the estimation problem.
 
 answers['BR normalization'] = ['MD',r'''
 Because
-$p(y)$ is just a normalization factor (it's constant in $x$).
-Therefore, since $p(x|y)$ should sum to 1,
-$p(y)$ can be computed as the integral of the un-normalized posterior.
+it is inherently given by $p(x)$ and $p(y|x)$,
+such as computed by the normalization.
+Indeed,
+$$\texttt{sum(pp)*dx}
+\approx \int p(x) \, p(y|x) \, dx
+= \int p(x,y) \, dx
+= p(y) \, .$$
 
-Does this agree with the definition? Yes:
-$$\texttt{sum(pp)*dx} \approx \int p(x) \, p(y|x) \, dx = \int p(x,y) \, dx = p(y) \, .$$
+
+<!--
+*Advanced*:
+Firstly, note that normalization is quite necessary, being requried by any expectation computation. For example, $\mathbb{E}(x|y) = \int x \, p(x) \, dx \approx$ `x*pp*dx` is only valid if `pp` has been normalized.
+Computation of the normalization constant is automatic/implicit when fitting the distribution to a parametric one (e.g. the Gaussian one).
+Otherwise, we usually delay its computation until strictly necessary
+(for example, not during intermediate stages of conditioning, but at the end).
+Note that when $ p(x|y)$ is not known
+(has not been evaluated) for an entire grid of $x$,
+but only in a few points,
+then "how to normalize" becomes an important question too.
+-->
 ''']
 
 answers['Dimensionality a'] = ['MD',r'''

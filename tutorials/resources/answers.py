@@ -59,24 +59,6 @@ answers['pdf_G1'] = ['MD',r'''
     # pdf_values = sp.stats.norm.pdf(x,loc=b,scale=sqrt(B))
 ''']
 
-answers['pdf_U1'] = ['MD',r'''
-    def pdf_U1(x,b,B):
-        # Univariate (scalar), Uniform pdf
-
-        pdf_values = ones((x-b).shape)
-
-        a = b - sqrt(3*B)
-        b = b + sqrt(3*B)
-
-        pdf_values[x<a] = 0
-        pdf_values[x>b] = 0
-
-        height = 1/(b-a)
-        pdf_values *= height
-
-        return pdf_values
-''']
-
 examples['BR'] = ['MD',r'''
  - You believe the temperature $(x)$ in the room is $22°C \pm 2°C$;  
 more specifically, your prior is: $p(x) = \mathcal{N}(x \mid 22, 4)$.  
@@ -100,13 +82,23 @@ Since $y = f(x)$ is common symbolisism,
 it makes sense to use the symobls $x = f^{-1}(y)$ for the estimation problem.
 ''']
 
+answers['Posterior behaviour'] = ['MD',r'''
+ - Likelihood becomes flat.  
+ Posterior is dominated by the prior, and becomes (in the limit) superimposed on it.
+ - Likelihood becomes a delta function.  
+ Posterior is dominated by the likelihood, and becomes superimposed on it.
+ - It's located halfway between the prior/likelihood $\forall y$.
+ - No.
+ - No (in fact, we'll see later that it remains Gaussian,
+ and is therefore fully characterized by its mean and its variance).
+ - It would seem we only need to compute its location and scale
+ (otherwise, the shape remains unchanged).
+''']
+
 answers['BR normalization'] = ['MD',r'''
-Because
-it is inherently given by $p(x)$ and $p(y|x)$,
-such as computed by the normalization.
-Indeed,
 $$\texttt{sum(pp)*dx}
-\approx \int p(x) \, p(y|x) \, dx
+\approx \int \texttt{pp}(x) \, dx
+= \int p(x) \, p(y|x) \, dx
 = \int p(x,y) \, dx
 = p(y) \, .$$
 
@@ -122,6 +114,31 @@ Note that when $ p(x|y)$ is not known
 but only in a few points,
 then "how to normalize" becomes an important question too.
 -->
+''']
+
+answers['pdf_U1'] = ['MD',r'''
+    def pdf_U1(x,b,B):
+        # Univariate (scalar), Uniform pdf
+
+        pdf_values = ones((x-b).shape)
+
+        a = b - sqrt(3*B)
+        b = b + sqrt(3*B)
+
+        pdf_values[x<a] = 0
+        pdf_values[x>b] = 0
+
+        height = 1/(b-a)
+        pdf_values *= height
+
+        return pdf_values
+''']
+
+answers['BR U1'] = ['MD',r'''
+ - Because of the discretization.
+ - The problem (of computing the posterior) is ill-posed:  
+   The prior says there's zero probability of the truth being 
+   in the region where the likelihood is not zero.
 ''']
 
 answers['Dimensionality a'] = ['MD',r'''
@@ -192,29 +209,35 @@ answers['Why Gaussian'] =  ['MD',r"""
 # Tut: Univariate Kalman filtering
 ###########################################
 answers['LinReg deriv'] = ['MD',r'''
-$$ \frac{d J_K}{d\alpha} = 0 = \ldots $$
-''']
-
-answers['LinReg 2 Kalman'] = ['MD',r'''
-$ F_k = \frac{k+1}{k} $ with $x_0 = 0$.
+$$ \frac{d J_K}{d a} = 0 = \ldots $$
 ''']
 
 answers['LinReg_k'] = ['MD',r'''
-    kk = 1 + arange(k)
-    alpha = sum(kk*yy[:k]) / sum(kk**2)
+    kk = 1+arange(k)
+    a = sum(kk*yy[kk]) / sum(kk**2)
+''']
+
+answers['Sequential 2 Recusive'] = ['MD',r'''
+    (k+1)/k
+''']
+
+answers['LinReg ⊂ KF'] = ['MD',r'''
+The linear regression problem is formulated with $F_k = (k+1)/k$.  
+The KF accepts a general $F_k$.
 ''']
 
 answers['KF_k'] = ['MD',r'''
-    # Forecast
-    xf [k+1] = F(k)*xa [k]
-    PPf[k+1] = F(k)*PPa[k]*F(k) + Q
-    # Analysis
-    PPa[k+1] = 1/(1/PPf[k+1] + 1/R)
-    xa [k+1] = PPa[k+1] * (xf[k+1]/PPf[k+1] + yy[k]/R)
-    # Analysis -- Kalman gain version:
-    #KG = PPf[k+1] / (PPf[k+1] + R)
-    #PPa[k+1] = (1-KG)*PPf[k+1]
-    #xa [k+1] = xf[k+1]+KG*(yy[k]-xf[k+1])
+    ...
+        else:
+            PPf[k] = F(k-1)*PPa[k-1]*F(k-1) + Q
+            xxf[k] = F(k-1)*xxa[k-1]
+        # Analysis
+        PPa[k] = 1/(1/PPf[k] + 1/R)
+        xxa[k] = PPa[k] * (xxf[k]/PPf[k] + yy[k]/R)
+        # Kalman gain form:
+        # KG     = PPf[k] / (PPf[k] + R)
+        # PPa[k] = (1-KG)*PPf[k]
+        # xxa[k] = xxf[k]+KG*(yy[k]-xxf[k])
 ''']
 
 answers['LinReg compare'] = ['MD',r'''
@@ -223,11 +246,16 @@ Let $\hat{a}_K$ denote the linear regression estimates of the slope $a$
 based on the observations $y_1,\ldots, y_K$.  
 Let $\hat{x}_K$ denote the KF estimate of $\hat{x}_K$ based on the same set of obs.  
 It can bee seen in the plot that
-$ \hat{x}_K = K \hat{\alpha}_K \, . $
+$ \hat{x}_K = K \hat{a}_K \, . $
 ''']
 
-answers['KF == LinReg a'] = ['MD',r'''
-We'll proceed by induction. With $P_0 = \infty$, we get $P_1 = R$, which initializes (4). Now, from (3):
+answers['x_KF == x_LinReg'] = ['MD',r'''
+We'll proceed by induction.  
+
+With $P_1^f = \infty$, we get $P_1 \;(\text{i.e.}\; P_1^a)\; = R$,
+which initializes (13).  
+
+Now, inserting (13) in (12) yields:
 
 $$
 \begin{align}
@@ -248,12 +276,32 @@ which concludes the induction.
 The proof for (b) is similar.
 ''']
 
-answers['Asymptotic P'] = ['MD',r'''
+answers['Asymptotic P when F>1'] = ['MD',r'''
 The fixed point $P_\infty$ should satisfy
 $P_\infty = 1/\big(1/R + 1/[F^2 P_\infty]\big)$.
 This yields $P_\infty = R (1-1/F^2)$.  
 Interestingly, this means that the asymptotic state uncertainty ($P$)
-is direclty proportional to the observation uncertainty ($R$).
+is directly proportional to the observation uncertainty ($R$).
+''']
+
+answers['Asymptotic P when F=1'] = ['MD',r'''
+Since
+$ P_k^{-1} = P_{k-1}^{-1} + R^{-1} \, , $
+it follows that
+$ P_k^{-1} = P_0^{-1} + k R^{-1} \, , $
+and hence
+$$ P_k = \frac{1}{1/P_0 + k/R} \xrightarrow[k \rightarrow \infty]{} 0 \, .
+$$
+''']
+
+answers['Asymptotic P when F<1'] = ['MD',r'''
+Note that $P_k^a < P_k^f$ for each $k$
+(c.f. the Gaussian-Gaussian Bayes rule from tutorial 2.)
+Thus,
+$$
+P_k^a < P_k^f = F^2 P_{k-1}^f
+\xrightarrow[k \rightarrow \infty]{} 0 \, .
+$$
 ''']
 
 answers['KG fail'] = ['MD',r'''
@@ -264,6 +312,16 @@ its numerical evaluation fails (as it should).
 Note that the infinity did not cause any problems numerically
 for the "weighted average" form.
 ''']
+
+
+###########################################
+# Tut: Multivariate Kalman
+###########################################
+answers['Likelihood derivation'] = ['MD',r'''
+
+''']
+
+
 
 
 ###########################################

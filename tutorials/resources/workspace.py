@@ -125,7 +125,8 @@ def plot_ensemble(E):
     Heights     = plt.ylim()[1]*0.5*np.tile(arange(3),(len(E),1)).ravel()
     plt.plot(E_with_NaNs,Heights,'k',lw=0.5,alpha=0.4,label="ensemble")
 
-def piece_wise_DA_step_lines(xf,xa=None):
+def weave_fa(xf,xa=None):
+    "Make piece-wise graph for plotting f/a lines together"
     if xa is None:
         xa = xf
     else:

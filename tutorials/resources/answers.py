@@ -68,6 +68,7 @@ macros=r'''%
 %
 \newcommand{\x}[0]{\bvec{x}}
 \newcommand{\y}[0]{\bvec{y}}
+\newcommand{\br}[0]{\bvec{r}}
 \newcommand{\bmu}[0]{{\bvec{\mu}}}
 \newcommand{\bb}[0]{\bvec{b}}
 %
@@ -364,21 +365,25 @@ for the "weighted average" form.
 ###########################################
 # Tut: Multivariate Kalman
 ###########################################
+
 answers['Likelihood derivation'] = ['MD',r'''
-Note that if $y=r$, then the distribution of $y$ would be the same as for $r$.
-The only difference is that we've added $H x$, which is a (deterministic/fixed) constant, given $x$.
-Adding a constant to a random variable just changes its mean, hence $\mathcal{N}(y \mid H x, R)$
+$$
+'''+macros+r'''
+$$
+Note that if $\y=\br$, then the distribution of $\y$ would be the same as for $\br$.
+The only difference is that we've added $\bH \x$, which is a (deterministic/fixed) constant, given $\x$.
+Adding a constant to a random variable just changes its mean, hence $\mathcal{N}(\y \mid \bH \x, R)$
 
 A more formal (but not really more rigorous) explanation is as follows:
 $$
 \begin{align}
-p(y|x)
-&= \int p(y,r|x) \, d r \tag{by law of total proba.}  \\\
-&= \int p(y|r,x) \, p(r|x) \, d r \tag{by def. of conditional proba.} \\\
-&= \int \delta\big(y-(H x + r)\big) \, p(r|x) \, d r \tag{$y$ is fully determined by $x$ and $r$} \\\
-&= \int \delta\big(y-(H x + r)\big) \, \mathcal{N}(r \mid 0, R) \, d r \tag{the draw of $r$ does not depened on $x$} \\\
-&= \mathcal{N}(y - H x \mid 0, R) \tag{by def. of Dirac Delta} \\\
-&= \mathcal{N}(y \mid H x, R) \tag{by reformulation} \, .
+p(\y|\x)
+&= \int p(\y,\br|\x) \, d \br \tag{by law of total proba.}  \\\
+&= \int p(\y|\br,\x) \, p(\br|\x) \, d \br \tag{by def. of conditional proba.} \\\
+&= \int \delta\big(\y-(\bH \x + \br)\big) \, p(\br|\x) \, d \br \tag{$\y$ is fully determined by $\x$ and $\br$} \\\
+&= \int \delta\big(\y-(\bH \x + \br)\big) \, \mathcal{N}(\br \mid 0, \R) \, d \br \tag{the draw of $\br$ does not depened on $\x$} \\\
+&= \mathcal{N}(\y - \bH \x \mid 0, \R) \tag{by def. of Dirac Delta} \\\
+&= \mathcal{N}(\y \mid \bH \x, \R) \tag{by reformulation} \, .
 \end{align}
 $$
 ''']

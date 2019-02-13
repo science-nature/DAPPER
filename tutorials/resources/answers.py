@@ -1,7 +1,11 @@
-# from markdown2 import markdown as md2html
-from markdown import markdown as md2html
+from markdown import markdown as md2html # better than markdown2 ?
 from IPython.display import HTML, display
 
+# Notes:
+# - md2html rendering sometimes breaks
+#   because it has failed to parse the eqn properly.
+#   For ex: _ in math sometimes gets replaced by <em>.
+#   Can be fixed by escaping, i.e. writing \_
 
 def formatted_display(TYPE,s,bg_color):
     s = s[1:] # Remove newline
@@ -17,7 +21,7 @@ def formatted_display(TYPE,s,bg_color):
     display(HTML(s))
 
 def show_answer(tag):
-    formatted_display(*answers[tag], '#d8e7ff')
+    formatted_display(*answers[tag], '#dbf9ec') # #d8e7ff
 
         
 def show_example(tag):
@@ -27,6 +31,49 @@ def show_example(tag):
 answers = {}
 examples = {}
 
+macros=r'''%
+%MACRO DEFINITION
+\newcommand{\Reals}{\mathbb{R}}
+\newcommand{\Imags}{i\Reals}
+\newcommand{\Integers}{\mathbb{Z}}
+\newcommand{\Naturals}{\mathbb{N}}
+%
+\newcommand{\Expect}[0]{\mathop{}\! \mathbb{E}}
+\newcommand{\NormDist}{\mathop{}\! \mathcal{N}}
+%
+\newcommand{\mat}[1]{{\mathbf{{#1}}}} 
+%\newcommand{\mat}[1]{{\pmb{\mathsf{#1}}}}
+\newcommand{\bvec}[1]{{\mathbf{#1}}}
+%
+\newcommand{\trsign}{{\mathsf{T}}}
+\newcommand{\tr}{^{\trsign}}
+%
+\newcommand{\I}[0]{\mat{I}}
+\newcommand{\K}[0]{\mat{K}}
+\newcommand{\bP}[0]{\mat{P}}
+\newcommand{\F}[0]{\mat{F}}
+\newcommand{\bH}[0]{\mat{H}}
+\newcommand{\bF}[0]{\mat{F}}
+\newcommand{\R}[0]{\mat{R}}
+\newcommand{\Q}[0]{\mat{Q}}
+\newcommand{\B}[0]{\mat{B}}
+\newcommand{\Ri}[0]{\R^{-1}}
+\newcommand{\Bi}[0]{\B^{-1}}
+\newcommand{\X}[0]{\mat{X}}
+\newcommand{\A}[0]{\mat{A}}
+\newcommand{\Y}[0]{\mat{Y}}
+\newcommand{\E}[0]{\mat{E}}
+\newcommand{\U}[0]{\mat{U}}
+\newcommand{\V}[0]{\mat{V}}
+%
+\newcommand{\x}[0]{\bvec{x}}
+\newcommand{\y}[0]{\bvec{y}}
+\newcommand{\bmu}[0]{{\bvec{\mu}}}
+\newcommand{\bb}[0]{\bvec{b}}
+%
+\newcommand{\cx}[0]{\text{const}}
+\newcommand{\norm}[1]{\|{#1}\|}
+%'''
 
 ###########################################
 # Tut: DA & EnKF
@@ -209,7 +256,7 @@ answers['Why Gaussian'] =  ['MD',r"""
 # Tut: Univariate Kalman filtering
 ###########################################
 answers['LinReg deriv'] = ['MD',r'''
-$$ \frac{d J_K}{d a} = 0 = \ldots $$
+$$ \frac{d J_K}{d \hat{a}} = 0 = \ldots $$
 ''']
 
 answers['LinReg_k'] = ['MD',r'''
@@ -318,10 +365,97 @@ for the "weighted average" form.
 # Tut: Multivariate Kalman
 ###########################################
 answers['Likelihood derivation'] = ['MD',r'''
+Note that if $y=r$, then the distribution of $y$ would be the same as for $r$.
+The only difference is that we've added $H x$, which is a (deterministic/fixed) constant, given $x$.
+Adding a constant to a random variable just changes its mean, hence $\mathcal{N}(y \mid H x, R)$
 
+A more formal (but not really more rigorous) explanation is as follows:
+$$
+\begin{align}
+p(y|x)
+&= \int p(y,r|x) \, d r \tag{by law of total proba.}  \\\
+&= \int p(y|r,x) \, p(r|x) \, d r \tag{by def. of conditional proba.} \\\
+&= \int \delta\big(y-(H x + r)\big) \, p(r|x) \, d r \tag{$y$ is fully determined by $x$ and $r$} \\\
+&= \int \delta\big(y-(H x + r)\big) \, \mathcal{N}(r \mid 0, R) \, d r \tag{the draw of $r$ does not depened on $x$} \\\
+&= \mathcal{N}(y - H x \mid 0, R) \tag{by def. of Dirac Delta} \\\
+&= \mathcal{N}(y \mid H x, R) \tag{by reformulation} \, .
+\end{align}
+$$
 ''']
 
 
+answers['KF precision'] = ['MD',r'''
+By Bayes' rule:
+$$
+'''+macros+r'''
+\begin{align}
+- 2 \log p(\x|\y) =
+\norm{\bH \x-\y}\_\R^2 + \norm{\x - \bb}\_\B^2
+\, .
+\end{align}
+$$
+Expanding, and gathering terms of equal powers in $\x$ yields:
+$$
+\begin{align}
+- 2 \log p(\x|\y)
+&=
+\x\tr \left( \bH\tr \Ri \bH + \Bi  \right)\x - 2\x\tr \left[\bH\tr \Ri \y + \Bi \bb\right] + \cx_1
+\, .
+\end{align}
+$$
+Meanwhile
+$$
+\begin{align}
+\norm{\x-\bmu}_\bP^2
+&=
+\x\tr \bP^{-1} \x - 2 \x\tr \bP^{-1} \bmu + \cx_2
+\, .
+\end{align}
+$$
+Eqns (5) and (6) follow by identification.
+''']
+
+answers['Woodbury'] = ['MD',r'''
+We show that they cancel:
+$$
+'''+macros+r'''
+\begin{align}
+  &\left(\B^{-1}+\V\tr \R^{-1} \U \right)
+  \left[ \B - \B \V\tr \left(\R+\U \B \V\tr \right)^{-1} \U \B \right] \\\
+  & \quad = \I_M + \V\tr \R^{-1}\U \B -
+  (\V\tr + \V\tr \R^{-1} \U \B \V\tr)(\R + \U \B \V\tr)^{-1}\U \B \\\
+  & \quad = \I_M + \V\tr \R^{-1}\U \B -
+  \V\tr \R^{-1}(\R+ \U \B \V\tr)(\R + \U \B \V\tr)^{-1} \U \B \\\
+  & \quad = \I_M + \V\tr \R^{-1} \U \B - \V\tr \R^{-1} \U \B \\\
+  & \quad = \I_M
+\end{align}
+$$
+''']
+
+answers['Woodbury C1'] = ['MD',r'''
+$
+'''+macros+r'''
+$The corollary follows from the Woodbury identity
+by replacing $\V,\U$ by $\bH$,
+*provided that everything is still well-defined*.
+In other words,
+we need to show the existence of the left hand side.
+
+Now, for all $\x \in \Reals^M$, $\x\tr \B^{-1} \x > 0$ (since $\B$ is SPD).
+Similarly, $\x\tr \bH\tr \R^{-1} \bH \x\geq 0$,
+implying that the left hand side is SPD:
+$\x\tr (\bH\tr \R^{-1} \bH + \B^{-1})\x > 0$,
+and hence invertible.
+''']
+
+answers['Woodbury C2'] = ['MD',r'''
+$
+'''+macros+r'''
+$A straightforward validation of (C2)
+is obtained by cancelling out one side with the other.
+A more satisfying exercise is to derive it from (C1)
+starting by right-multiplying by $\bH\tr$.
+''']
 
 
 ###########################################

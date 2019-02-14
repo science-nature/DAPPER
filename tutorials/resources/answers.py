@@ -363,6 +363,11 @@ for the "weighted average" form.
 
 
 ###########################################
+# Tut: Time series analysis
+###########################################
+
+
+###########################################
 # Tut: Multivariate Kalman
 ###########################################
 
@@ -466,6 +471,18 @@ starting by right-multiplying by $\bH\tr$.
 ###########################################
 # Tut: Dynamical systems, chaos, Lorenz
 ###########################################
+
+answers["Ergodicity a"] = ["MD",r'''
+For asymptotically large $T$, the answer is "yes";
+however, this is difficult to distinguish if $T<60$ or $N<400$,
+which takes a very long time with the integrator used in the above.
+''']
+
+answers["Ergodicity b"] = ["MD",r'''
+It doesn't matter
+(provided the initial conditions for each experiment is "cropped out" before averaging).
+''']
+
 answers["Hint: Lorenz energy"] = ["MD",r'''
 Hint: what's its time-derivative?
 ''']

@@ -499,7 +499,7 @@ answers["error evolution"] = ["MD",r"""
       A balance is always reached between
       the uncertainty reduction $(1-K)$ and growth $F^2$.  
       Also recall the asymptotic value of $P_k$ computed from
-      [the previous tutorial](T3 - Univariate Kalman filtering.ipynb#Exc-3.14-'Asymptotic-P':).
+      [the previous tutorial](T3 - Univariate Kalman filtering.ipynb#Exc-3.14:).
 * (d). [link](https://en.wikipedia.org/wiki/Logistic_function#Logistic_differential_equation)
 * (e). $\frac{d \varepsilon}{dt} \approx F \varepsilon + (f-g)$
 """]

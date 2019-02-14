@@ -63,20 +63,12 @@ Alternatively, see the `tutorials` folder for an intro to DA.
   
 Installation
 ------------------------------------------------
-Prerequisite: `python3.5+` with
-`scipy`, `matplotlib`, `pandas`.
-This is all comes with [anaconda](https://www.anaconda.com/download)
-by default.
-
-Download, extract the DAPPER folder, and `cd` into it. To test it, run:
-
-    python -i example_1.py
-
-For the tutorials, you will also need
-`jupyter` and the `markdown` package.
-
-It is also recommended to install `tqdm` (e.g. `pip install tqdm`)
-and `colorama`.
+1. Prerequisite: `python3.5+`
+(recommed getting via [anaconda](https://www.anaconda.com/download)).
+2. Download, extract the DAPPER folder, and `cd` into it.  
+`pip install -r requirements.txt`
+3. To test the installation, run:  
+`python -i example_1.py`
 
 
 

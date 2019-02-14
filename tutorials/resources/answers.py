@@ -212,7 +212,7 @@ p(x|y)
 &\propto \exp \Big( \frac{-1}{2} \Big( x - \frac{b/B + y/R}{1/B + 1/R} \Big)^2 \cdot (1/B + 1/R) \Big) \, .
 \end{align}
 
-Identifying the last line with $N(x \mid \mu, P)$ yields eqns (5) and (6).
+Identifying the last line with $N(x \mid \hat{x}, P)$ yields eqns (5) and (6).
 ''']
 
 answers['KG intuition'] = ['MD',r'''
@@ -256,6 +256,20 @@ answers['Why Gaussian'] =  ['MD',r"""
 ###########################################
 # Tut: Univariate Kalman filtering
 ###########################################
+
+# Also see 'Gaussian sampling a'
+answers['Gaussian sums'] = ['MD',r'''
+By the [linearity of the expected value](https://en.wikipedia.org/wiki/Expected_value#Linearity),
+the mean parameter becomes:
+$$ E(Fx+q) =  F E(x) + E(q) = F \hat{x} + \hat{q} \, . $$
+
+Moreover, by independence,
+$ Var(Fx+q) = Var(Fx) + Var(q) $,
+and so
+the variance parameter becomes:
+$$ Var(Fx+q) = F^2 P + Q \, .  $$
+''']
+
 answers['LinReg deriv'] = ['MD',r'''
 $$ \frac{d J_K}{d \hat{a}} = 0 = \ldots $$
 ''']
@@ -551,13 +565,13 @@ answers['Gaussian sampling b'] = ['MD',r'''
 Type `randn??` in a code cell and execute it.
 ''']
 answers['Gaussian sampling c'] = ['MD',r'''
-    z = randn((m,1))
+    z = randn((M,1))
     x = b + L @ z
 ''']
 
 answers['Gaussian sampling d'] = ['MD',r'''
-    b_vertical = 10*ones((m,1))
-    E = b_vertical + L @ randn((m,N))
+    b_vertical = 10*ones((M,1))
+    E = b_vertical + L @ randn((M,N))
     #E = np.random.multivariate_normal(b,P,N).T
 ''']
 
@@ -571,7 +585,7 @@ Procedure:
 
 answers['ensemble moments'] = ['MD',r'''
     x_bar = np.sum(E,axis=1)/N
-    P_bar = zeros((m,m))
+    P_bar = zeros((M,M))
     for n in range(N):
         anomaly = (E[:,n] - x_bar)[:,None]
         P_bar += anomaly @ anomaly.T
@@ -627,11 +641,11 @@ Residual: discrepancy from explained to observed data.
 
 # Also comment on CFL condition (when resolution is increased)?
 answers['Cov memory'] = ['MD',r'''
- * (a). $m$-by-$m$
+ * (a). $M$-by-$M$
  * (b). Using the [cholesky decomposition](https://en.wikipedia.org/wiki/Cholesky_decomposition#Computation),
-    at least 2 times $m^3/3$.
+    at least 2 times $M^3/3$.
  * (c). Assume $\mathbf{P}$ stored as float (double). Then it's 8 bytes/element.
- And the number of elements in $\mathbf{P}$: $m^2$. So the total memory is $8 m^2$.
+ And the number of elements in $\mathbf{P}$: $M^2$. So the total memory is $8 M^2$.
  * (d). 8 trillion bytes. I.e. 8 million MB. 
 ''']
 

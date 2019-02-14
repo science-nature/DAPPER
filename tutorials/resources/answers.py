@@ -388,7 +388,8 @@ answers['Likelihood derivation'] = ['MD',r'''
 $$
 '''+macros+r'''
 $$
-Note that if $\y=\br$, then the distribution of $\y$ would be the same as for $\br$.
+Imagine that $\y=\br$ (instead of eqn 2),
+then the distribution of $\y$ would be the same as for $\br$.
 The only difference is that we've added $\bH \x$, which is a (deterministic/fixed) constant, given $\x$.
 Adding a constant to a random variable just changes its mean,
 hence $\mathcal{N}(\y \mid \bH \x, \R)$
@@ -415,6 +416,7 @@ $$
 \begin{align}
 - 2 \log p(\x|\y) =
 \norm{\bH \x-\y}\_\R^2 + \norm{\x - \bb}\_\B^2
+ + \cx_1
 \, .
 \end{align}
 $$
@@ -423,16 +425,17 @@ $$
 \begin{align}
 - 2 \log p(\x|\y)
 &=
-\x\tr \left( \bH\tr \Ri \bH + \Bi  \right)\x - 2\x\tr \left[\bH\tr \Ri \y + \Bi \bb\right] + \cx_1
+\x\tr \left( \bH\tr \Ri \bH + \Bi  \right)\x
+- 2\x\tr \left[\bH\tr \Ri \y + \Bi \bb\right] + \cx_2
 \, .
 \end{align}
 $$
 Meanwhile
 $$
 \begin{align}
-\norm{\x-\hat{x}}_\bP^2
+\norm{\x-\hat{\x}}_\bP^2
 &=
-\x\tr \bP^{-1} \x - 2 \x\tr \bP^{-1} \hat{x} + \cx_2
+\x\tr \bP^{-1} \x - 2 \x\tr \bP^{-1} \hat{\x} + \cx_3
 \, .
 \end{align}
 $$

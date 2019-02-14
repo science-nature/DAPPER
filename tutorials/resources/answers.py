@@ -490,16 +490,16 @@ Hint: what's its time-derivative?
 answers["Lorenz energy"] = ["MD",r'''
 \begin{align}
 \frac{d}{dt}
-\sum_i
-x_i^2
+\sum_m
+x_m^2
 &=
-2 \sum_i
-x_i \dot{x}_i
+2 \sum_m
+x_m \dot{x}_m
 \end{align}
 
 Next, insert the quadratic terms from the ODE,
 $
-\dot x_i = (x_{i+1} − x_{i-2}) x_{i-1}
+\dot x_m = (x_{m+1} − x_{m-2}) x_{m-1}
 \, .
 $
 

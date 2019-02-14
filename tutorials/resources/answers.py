@@ -69,7 +69,6 @@ macros=r'''%
 \newcommand{\x}[0]{\bvec{x}}
 \newcommand{\y}[0]{\bvec{y}}
 \newcommand{\br}[0]{\bvec{r}}
-\newcommand{\bmu}[0]{{\bvec{\mu}}}
 \newcommand{\bb}[0]{\bvec{b}}
 %
 \newcommand{\cx}[0]{\text{const}}
@@ -391,7 +390,8 @@ $$
 $$
 Note that if $\y=\br$, then the distribution of $\y$ would be the same as for $\br$.
 The only difference is that we've added $\bH \x$, which is a (deterministic/fixed) constant, given $\x$.
-Adding a constant to a random variable just changes its mean, hence $\mathcal{N}(\y \mid \bH \x, R)$
+Adding a constant to a random variable just changes its mean,
+hence $\mathcal{N}(\y \mid \bH \x, \R)$
 
 A more formal (but not really more rigorous) explanation is as follows:
 $$
@@ -430,9 +430,9 @@ $$
 Meanwhile
 $$
 \begin{align}
-\norm{\x-\bmu}_\bP^2
+\norm{\x-\hat{x}}_\bP^2
 &=
-\x\tr \bP^{-1} \x - 2 \x\tr \bP^{-1} \bmu + \cx_2
+\x\tr \bP^{-1} \x - 2 \x\tr \bP^{-1} \hat{x} + \cx_2
 \, .
 \end{align}
 $$
@@ -550,26 +550,28 @@ answers["doubling time"] = ["MD",r"""
 ###########################################
 # Tut: Ensemble [Monte-Carlo] approach
 ###########################################
+
+# answers['Gaussian sampling a'] = ['MD',r'''
+# Firstly, a linear (affine) transformation can be decomposed into a sequence of sums. This means that $\mathbf{x}$ will be Gaussian.
+# It remains only to calculate its moments.
+
+# By the [linearity of the expected value](https://en.wikipedia.org/wiki/Expected_value#Linearity),
+# $$E(\mathbf{x}) = E(\mathbf{L} \mathbf{z} + \mathbf{b}) = \mathbf{L} E(\mathbf{z}) + \mathbf{b} = \mathbf{b} \, .$$
+
+# Moreover,
+# $$\newcommand{\b}{\mathbf{b}} \newcommand{\x}{\mathbf{x}} \newcommand{\z}{\mathbf{z}} \newcommand{\L}{\mathbf{L}}
+# E((\x - \b)(\x - \b)^T) = E((\L \z)(\L \z)^T) = \L E(\z^{} \z^T) \L^T = \L \mathbf{I}_m \L^T = \L \L^T \, .$$
+# ''']
+
 answers['Gaussian sampling a'] = ['MD',r'''
-Firstly, a linear (affine) transformation can be decomposed into a sequence of sums. This means that $\mathbf{x}$ will be Gaussian.
-It remains only to calculate its moments.
-
-By the [linearity of the expected value](https://en.wikipedia.org/wiki/Expected_value#Linearity),
-$$E(\mathbf{x}) = E(\mathbf{L} \mathbf{z} + \mathbf{b}) = \mathbf{L} E(\mathbf{z}) + \mathbf{b} = \mathbf{b} \, .$$
-
-Moreover,
-$$\newcommand{\b}{\mathbf{b}} \newcommand{\x}{\mathbf{x}} \newcommand{\z}{\mathbf{z}} \newcommand{\L}{\mathbf{L}}
-E((\x - \b)(\x - \b)^T) = E((\L \z)(\L \z)^T) = \L E(\z^{} \z^T) \L^T = \L \mathbf{I}_m \L^T = \L \L^T \, .$$
-''']
-answers['Gaussian sampling b'] = ['MD',r'''
 Type `randn??` in a code cell and execute it.
 ''']
-answers['Gaussian sampling c'] = ['MD',r'''
+answers['Gaussian sampling b'] = ['MD',r'''
     z = randn((M,1))
     x = b + L @ z
 ''']
 
-answers['Gaussian sampling d'] = ['MD',r'''
+answers['Gaussian sampling c'] = ['MD',r'''
     b_vertical = 10*ones((M,1))
     E = b_vertical + L @ randn((M,N))
     #E = np.random.multivariate_normal(b,P,N).T

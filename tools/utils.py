@@ -72,29 +72,44 @@ def progbar(iterable, desc=None, leave=1):
     set_term_settings(TS_old)
 
 # See Misc/read1_trials.py
-import termios, sys
-def set_term_settings(TS):
-    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, TS)
-def new_term_settings():
-  "Make stdin.read non-echo and non-block"
+try:
+    import termios, sys
+    def set_term_settings(TS):
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, TS)
+    def new_term_settings():
+      "Make stdin.read non-echo and non-block"
 
-  TS_old = termios.tcgetattr(sys.stdin)
-  TS_new = termios.tcgetattr(sys.stdin)
+      TS_old = termios.tcgetattr(sys.stdin)
+      TS_new = termios.tcgetattr(sys.stdin)
 
-  # Make tty non-echo.
-  TS_new[3] = TS_new[3] & ~(termios.ECHO | termios.ICANON)
+      # Make tty non-echo.
+      TS_new[3] = TS_new[3] & ~(termios.ECHO | termios.ICANON)
 
-  # Make tty non-blocking.
-  TS_new[6][termios.VMIN] = 0
-  TS_new[6][termios.VTIME] = 0
+      # Make tty non-blocking.
+      TS_new[6][termios.VMIN] = 0
+      TS_new[6][termios.VTIME] = 0
 
-  set_term_settings(TS_new)
-  return TS_old
+      set_term_settings(TS_new)
+      return TS_old
 
-def read1(fd=sys.stdin.fileno()):
-  "Get 1 character"
-  if disable_user_interaction: return EMPTY
-  return os.read(fd, 1)
+    def read1(fd=sys.stdin.fileno()):
+      "Get 1 character"
+      if disable_user_interaction: return EMPTY
+      return os.read(fd, 1).decode()
+
+except ImportError:
+    # Non-POSIX. Return msvcrt's (Windows') getch.
+    import msvcrt
+
+    def set_term_settings(TS): pass
+    def new_term_settings(): return None
+
+    def read1(fd=sys.stdin.fileno()):
+      "Get 1 character"
+      if disable_user_interaction: return EMPTY
+      return msvcrt.getch().decode()
+      # return msvcrt.getch()
+
 
 # Set to True before a py.test (which doesn't like reading stdin)
 disable_user_interaction = False

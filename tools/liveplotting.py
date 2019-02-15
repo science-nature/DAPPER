@@ -78,15 +78,21 @@ class LivePlot:
       return
 
     # Playback control
-    ENTER = b'\n'
-    SPACE = b' '
+    # ENTER  = b'\n'  
+    # ENTER2 = b'\r'  
+    # ENTER3 = b'\\r' 
+    # SPACE  = b' '   
+    ENTER  = b'\n'  .decode()
+    ENTER2 = b'\r'  .decode()
+    ENTER3 = b'\\r' .decode()
+    SPACE  = b' '   .decode()
     if self.paused:
       # Loop until user decision is made
       ch = read1() 
       while True:
-        if ch==ENTER:
+        if ch in [ENTER, ENTER2, ENTER3]:
           self.paused = False
-        if ch in [ENTER,SPACE]:
+        if ch in [ENTER, ENTER2, ENTER3 ,SPACE]:
           break
         ch = read1()
         # Pause to empower mpl's GUI zoom, pan, etc.
@@ -97,7 +103,7 @@ class LivePlot:
       if ch==SPACE: # Turn ON pause & turn OFF skipping.
         self.paused = True
         self.skipping = False
-      elif ch==ENTER: # Toggle skipping
+      elif ch in [ENTER, ENTER2, ENTER3]: # Toggle skipping
         self.skipping = not self.skipping 
 
         

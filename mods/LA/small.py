@@ -4,9 +4,9 @@
 from common import *
 
 from mods.LA.core import Fmat, homogeneous_1D_cov
-from mods.Lorenz95.liveplotting import LP_setup
+from mods.Lorenz95.core import LP
 
-tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1)
+tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1,Tplot=100)
 
 Nx = 100
 
@@ -31,10 +31,7 @@ Obs  = partial_direct_Obs(Nx,jj)
 Obs['noise'] = 0.01
 
  
-HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,
-    name = os.path.relpath(__file__,'mods/'),
-    LP   = LP_setup(jj),
-    )
+HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,LP=LP(jj))
 
 
 ####################

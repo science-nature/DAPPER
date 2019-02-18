@@ -5,10 +5,10 @@
 from common import *
 
 from mods.LA.core import sinusoidal_sample, Fmat
-from mods.Lorenz95.liveplotting import LP_setup
+from mods.Lorenz95.core import LP
 
 # Burn-in allows damp*x and x+noise balance out
-tseq = Chronology(dt=1,dkObs=5,T=500,BurnIn=60)
+tseq = Chronology(dt=1,dkObs=5,T=500,BurnIn=60,Tplot=100)
 
 Nx = 1000;
 Ny = 40;
@@ -57,10 +57,7 @@ Dyn = {
     }
 
 ################### Gather ###################
-HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,
-    name = os.path.relpath(__file__,'mods/'),
-    LP   = LP_setup(jj),
-    )
+HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,LP=LP(jj))
 
 
 

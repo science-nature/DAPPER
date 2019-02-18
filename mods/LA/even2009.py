@@ -10,13 +10,13 @@
 from common import *
 
 from mods.LA.core import sinusoidal_sample, Fmat
-from mods.Lorenz95.liveplotting import LP_setup
+from mods.Lorenz95.core import LP
 
 Nx = 1000
 Ny = 4
 jj = equi_spaced_integers(Nx,Ny)
 
-tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1)
+tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1,Tplot=100)
 
 Fm = Fmat(Nx,c=-1,dx=1,dt=tseq.dt)
 def step(x,t,dt):
@@ -43,11 +43,7 @@ X0 = RV(M=Nx, func = lambda N: sqrt(5)/10 * sinusoidal_sample(Nx,wnum,N))
 Obs = partial_direct_Obs(Nx,jj)
 Obs['noise'] = 0.01
 
-HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,
-    LP   = LP_setup(jj,conf_patch=True,conf_mult=1),
-    name = os.path.relpath(__file__,'mods/'),
-    )
-
+HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,liveplotters=LP(jj))
 
 
 ####################

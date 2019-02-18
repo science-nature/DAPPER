@@ -34,6 +34,9 @@ def step(x0, t, dt):
 
   return rk4(lambda t,x: dxdt(x), x0, np.nan, dt)
 
+################################################
+# OPTIONAL (not necessary for EnKF or PartFilt):
+################################################
 def TLM(x):
   """Tangent linear model"""
   assert is1d(x)
@@ -53,9 +56,14 @@ def dfdx(x,t,dt):
   return integrate_TLM(TLM(x),dt,method='analytic')
 
 
-from tools.liveplotting import sliding_marginals
+################################################
+# Add some non-default liveplotters
+################################################
+from tools.liveplotting import LP_correlations, LP_spectral_errors, spatial1d
 def LP(jj=None): return dict(
-      sliding_marginals   = (11, 1, sliding_marginals(jj, dims=arange(5), Tplot=2)) ,
+      spatial1d           = (11, 1, spatial1d(jj)      ),
+      correlations        = (12, 1, LP_correlations    ),
+      spectral_errors     = (13, 0, LP_spectral_errors ),
       )
 
 

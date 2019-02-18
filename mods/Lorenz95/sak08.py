@@ -29,6 +29,8 @@ Obs['localizer'] = loc_setup( (Nx,), (2,), jj, periodic=True )
 
 HMM = HiddenMarkovModel(Dyn,Obs,t,X0)
 
+HMM.liveplotters = LP(jj)
+
 
 ####################
 # Suggested tuning

@@ -25,8 +25,6 @@ class LivePlot:
     potential_figures = OrderedDict(
         # name               num  show_by_default init(ializer)
         sliding_diagnostics = (1, 1,              LP_sliding_diagnostics),
-        correlations        = (2, 0,              LP_correlations       ),
-        spectral_errors     = (3, 0,              LP_spectral_errors    ),
         weight_histogram    = (4, 1,              LP_weight_histogram   ),
         )
     # HMM-specific
@@ -80,8 +78,8 @@ class LivePlot:
     # Playback control
     SPACE  = b' '   
     ENTERs = [b'\n', b'\r'] # Linux + Windows
-    if self.paused:
-      # Loop until user decision is made
+    def pause():
+      "Loop until user decision is made."
       ch = read1() 
       while True:
         if ch in ENTERs:
@@ -91,12 +89,16 @@ class LivePlot:
         ch = read1()
         # Pause to enable zoom, pan, etc. of mpl GUI
         plot_pause(0.01) # Don't use time.sleep()!
+    #
+    if self.paused:
+      pause()
     else:
       # Set switches for pause & skipping
       ch = read1()
       if ch==SPACE: # Turn ON pause & turn OFF skipping.
         self.paused = True
         self.skipping = False
+        pause()
       elif ch in ENTERs: # Toggle skipping
         self.skipping = not self.skipping 
 
@@ -556,7 +558,7 @@ def sliding_marginals(
     if hasattr(stats,'w'): K_fau += a_lag # for adding blanks in resampling (PartFilt)
 
     # Pre-process dimensions
-    DimsX = arange(xx.shape[-1]) if dims is [] else dims            # Chose marginal dims to plot
+    DimsX = arange(xx.shape[-1]) if dims==[] else dims              # Chose marginal dims to plot
     iiY   = [i for i,m in enumerate(obs_inds) if m in DimsX]        # Rm inds of obs if not in DimsX
     DimsY = [m for i,m in enumerate(obs_inds) if m in DimsX]        # Rm obs_inds    if not in DimsX
     DimsY = [DimsY.index(m) if m in DimsY else None for m in DimsX] # Get dim (within y) of each x
@@ -873,6 +875,126 @@ def d_ylim(data,ax=None,cC=0,cE=1,pp=(1,99),Min=-1e20,Max=+1e20):
   if not np.isfinite(maxv): maxv = None
 
   return minv, maxv
+
+
+
+from tools.viz import setup_wrapping
+def spatial1d(
+    obs_inds     = None,
+    ens_props    = {'color': 0.7*RGBs['w'],'alpha':0.5},
+    periodic     = True,
+    conf_mult    = 0,
+    pause_f      = 0.5,
+    pause_a      = 1.0,
+    pause_u      = 0.0,
+    ):
+
+  def init(fignum,stats,key0,E,P):
+
+    # Extract data arrays
+    xx, yy, mu, Nx = stats.xx, stats.yy, stats.mu, stats.HMM.Nx
+
+    # Make periodic wrapper
+    ii, wrap = setup_wrapping(Nx,periodic)
+
+    # Set up figure, axes
+    fig, ax = freshfig(fignum, (8,5))
+    fig.suptitle("1d amplitude plot")
+
+    # Plot x,y
+    nan1 = wrap(nan*ones(Nx))
+    line_x, = ax.plot(ii,nan1,'k-',lw=3,label='Truth')
+    if obs_inds is not None:
+      line_y, = ax.plot(obs_inds, nan*obs_inds,'g*',ms=5,label='Obs')
+
+    # Plot mu/std.dev
+    if conf_mult:
+      line_mu, = ax.plot(ii,nan1,'b-', lw=2,label='DA mean')
+      patch_s  = ax.fill_between(ii,nan1,nan1,
+          color='b',alpha=0.4,label=(str(conf_mult) + '$\sigma$'))
+
+    # Plot ensemble/conf
+    else:
+      if E is not None:
+        lines_E  = ax.plot(ii,wrap(E[0] .T),lw=1,**ens_props,label='Ensemble')
+        lines_E += ax.plot(ii,wrap(E[1:].T),lw=1,**ens_props)
+      else:
+        lines_s  = ax.plot(ii,nan1,"b-", lw=1,label=(str(conf_mult) + '$\sigma$'))
+        lines_s += ax.plot(ii,nan1,"b-", lw=1)
+        line_mu, = ax.plot(ii,nan1,'b-', lw=2,label='DA mean')
+
+    # Tune plot
+    ax.set_ylim( *span(xx) )
+    ax.set_xlim(stretch(ii[0],ii[-1],1,int=True))
+    ax.set_xlabel('State index')
+    ax.set_ylabel('Value')
+    ax.legend(loc='upper right')
+
+    text_t = ax.text(0.01, 0.01, format_time(None,None,None),
+        transform=ax.transAxes,family='monospace',ha='left')
+
+    # Init visibility (must come after legend):
+    if obs_inds is not None:
+      line_y.set_visible(False)
+
+
+    def update(key,E,P):
+      nonlocal patch_s
+      k,kObs,f_a_u = key
+
+      if conf_mult:
+        line_mu.set_ydata(wrap(mu[k]))
+        patch_s.remove()
+        patch_s = ax.fill_between(ii,
+          wrap(mu[k] - conf_mult*sqrt(stats.var[k])),
+          wrap(mu[k] + conf_mult*sqrt(stats.var[k])),
+          color='b',alpha=0.4)
+
+      else:
+        if E is not None:
+
+          for i,line in enumerate(lines_E):
+            line.set_ydata(wrap(E[i]))
+
+          if hasattr(stats,'w'):
+            w    = stats.w[k]
+            wmax = w.max()
+            for i,line in enumerate(lines_E):
+              line.set_alpha((w[i]/wmax).clip(0.1))
+            
+        else:
+          sigma = mu[k] + conf_mult * sqrt(stats.var[k]) * [[1],[-1]]
+          lines_s[0].set_ydata(wrap(sigma[0]))
+          lines_s[1].set_ydata(wrap(sigma[1]))
+          line_mu   .set_ydata(wrap(mu[k]))
+
+      line_x.set_ydata(wrap(xx[k]))
+
+      text_t.set_text(format_time(k,kObs,stats.HMM.t.tt[k]))
+
+      if 'f' in f_a_u:
+        if obs_inds is not None:
+          line_y.set_ydata(yy[kObs])
+          line_y.set_zorder(5)
+          line_y.set_visible(True)
+        plot_pause(pause_f)
+
+      if 'a' in f_a_u:
+        plot_pause(pause_a)
+
+      if 'u' in f_a_u:
+        if obs_inds is not None:
+          line_y.set_visible(False)
+        plot_pause(pause_u)
+
+      return # end update
+
+    # Finalize init
+    update(key0,E,P)
+
+    return update # end init()
+  return init # end spatial1d()
+
 
 
 def freshfig(num,figsize=None,*args,**kwargs):

@@ -116,7 +116,7 @@ class LivePlot:
 star = "${}^*$"
 class LP_sliding_diagnostics:
 
-  def __init__(self,fignum,stats,key0,E,P,T_lag=None):
+  def __init__(self,fignum,stats,key0,E,P,Tplot=None):
       GS = {'left':0.125,'right':0.76}
       fig, (ax1, ax2) = freshfig(fignum, (5,3.5), nrows=2, sharex=True, gridspec_kw=GS)
 
@@ -124,7 +124,7 @@ class LP_sliding_diagnostics:
       ax2.set_ylabel('Values') 
       ax2.set_xlabel('Time (t)')
 
-      self.T_lag, K_lag, a_lag, self.dt_margin = validate_lag(T_lag, stats.HMM.t)
+      self.T_lag, K_lag, a_lag, self.dt_margin = validate_lag(Tplot, stats.HMM.t)
 
       def init_ax(ax,style_table):
         plotted_lines = OrderedDict()
@@ -319,7 +319,7 @@ def plot_time_series(stats,fignum=22,t1=None,t2=None):
   assert t1<t2
   t1, t2 = array([t1,t2]).clip(t.tt[0], t.tt[-1])
 
-  updater = LP_sliding_diagnostics(fignum,stats,(0,None,'u'),None,None,T_lag=(t2-t1))
+  updater = LP_sliding_diagnostics(fignum,stats,(0,None,'u'),None,None,Tplot=(t2-t1))
   updater.dt_margin = 0
   replay(updater,t1,t2)
 
@@ -502,6 +502,10 @@ class LP_correlations:
 def plot_pause(interval):
   """Similar to plt.pause()"""
 
+  # plt.pause(0) just seems to freeze execution.
+  if interval==0:
+    return
+
   try:
     # Implement plt.pause() that doesn't focus window, c.f.
     # github.com/matplotlib/matplotlib/issues/11131, so.com/q/45729092.
@@ -530,14 +534,12 @@ def plot_pause(interval):
     time.sleep(0.1)
 
 
-# ens_props = {'color': 0.7*RGBs['w']
-# color unspecified => rainbow
 
 def sliding_marginals(
     obs_inds     = [],
-    dims         = None,
+    dims         = [],
     labels       = [],
-    T_lag        = None,
+    Tplot        = None,
     ens_props    = dict(alpha=0.4),
     zoomy        = 1.0,
     pause_f      = 0.0,
@@ -548,10 +550,13 @@ def sliding_marginals(
   def init(fignum,stats,key0,E,P):
     xx, yy, mu, var, chrono = stats.xx, stats.yy, stats.mu, stats.var, stats.HMM.t
 
-    T_lag_local, K_lag, a_lag, dt_margin = validate_lag(T_lag, chrono)
+    # Lag settings
+    T_lag, K_lag, a_lag, dt_margin = validate_lag(Tplot, chrono)
+    K_fau = K_lag + 2*a_lag # Lag length total for f + a + u series.
+    if hasattr(stats,'w'): K_fau += a_lag # for adding blanks in resampling (PartFilt)
 
     # Pre-process dimensions
-    DimsX = arange(xx.shape[-1]) if dims is None else dims          # Chose marginal dims to plot
+    DimsX = arange(xx.shape[-1]) if dims is [] else dims            # Chose marginal dims to plot
     iiY   = [i for i,m in enumerate(obs_inds) if m in DimsX]        # Rm inds of obs if not in DimsX
     DimsY = [m for i,m in enumerate(obs_inds) if m in DimsX]        # Rm obs_inds    if not in DimsX
     DimsY = [DimsY.index(m) if m in DimsY else None for m in DimsX] # Get dim (within y) of each x
@@ -575,11 +580,7 @@ def sliding_marginals(
     # Allocate
     d = Bunch() # data arrays
     h = Bunch() # plot handles
-    K_fau = K_lag + 2*a_lag # Lag length total for f + a + u series.
-    if hasattr(stats,'w'):
-      Ea = [None]    # Ens at analysis (to be used by following 'u').
-      K_fau += a_lag # For resampling blanks.
-    # The purpose of "if True": to allow indenting the rest of the line.
+    # Why "if True" ? Just to indent the rest of the line...
     if True         : d.t  = RollingArray((K_fau,))          ; 
     if True         : d.x  = RollingArray((K_fau,Nx))        ; h.x  = []
     if True         : d.y  = RollingArray((K_fau,Ny))        ; h.y  = []
@@ -600,19 +601,10 @@ def sliding_marginals(
       nonlocal d 
       k,kObs,f_a_u = key
 
-      # Particle filter: insert breaks for resampled particles.
-      EE = []
-      if hasattr(stats,'w'):
-        if f_a_u=='a':
-          Ea[0] = E[:,DimsX[0]]              # Store 1st dim of ens.
-        elif f_a_u=='u' and kObs is not None:
-          resampled = Ea[0] != E[:,DimsX[0]] # Mark as resampled if ens changed.
-          EE.append( E[:,DimsX].copy() )     # Copy to avoid changing underlying array.
-          EE[0][resampled] = nan             # Insert breaks
-      EE.append(E[:,DimsX])
+      EE = duplicate_with_blanks_for_resampled(E[:,DimsX], key, hasattr(stats,'w'))
 
       # Roll data array
-      for Ens in EE: # If E is duplicated, so must the others.
+      for Ens in EE: # If E is duplicated, so must the others be.
         if 'E'  in d: d.E .insert(k, Ens)
         if 'mu' in d: d.mu.insert(k, mu[k,DimsX])
         if 's'  in d: d.s .insert(k, mu[k,DimsX] + [[1],[-1]]*sqrt(var[k,DimsX]))
@@ -622,20 +614,17 @@ def sliding_marginals(
 
       # Update graphs
       for ix, (m, iy, ax) in enumerate(zip(DimsX,DimsY,axs)):
-        sliding_xlim(ax, d.t, dt_margin, T_lag_local)
+        sliding_xlim(ax, d.t, dt_margin, T_lag)
         if True:       h.x [ix]   .set_data(d.t, d.x [:,ix])
         if iy!=None:   h.y [iy]   .set_data(d.t, d.y [:,iy])
-        if 'E'  in d: [h.E [ix][n].set_data(d.t, d.E [:,n,ix]) for n in range(len(E))]
         if 'mu' in d:  h.mu[ix]   .set_data(d.t, d.mu[:,ix])
         if 's'  in d: [h.s [ix][b].set_data(d.t, d.s [:,b,ix]) for b in [0,1]]
+        if 'E'  in d: [h.E [ix][n].set_data(d.t, d.E [:,n,ix]) for n in range(len(E))]
+        if 'E'  in d: update_alpha(key, stats, h.E[ix])
 
-
-      if   'f' in f_a_u:
-        if pause_f: plot_pause(pause_f)
-      elif 'a' in f_a_u:
-        if pause_a: plot_pause(pause_a)
-      elif 'u' in f_a_u: 
-        if pause_u: plot_pause(pause_u)
+      if   'f' in f_a_u: plot_pause(pause_f)
+      elif 'a' in f_a_u: plot_pause(pause_a)
+      elif 'u' in f_a_u: plot_pause(pause_u)
 
       return # end update()
 
@@ -643,192 +632,168 @@ def sliding_marginals(
     update(key0,E,P)
 
     return update # end init()
-  return init
+  return init # end sliding_marginals()
 
 
-#TODO
-# Note: the usage of 'dims' in this module is rather unnecessary
-# (repleable by [:3], [:], or simply no indexing). 
-# It's left for generality, but is probably buggy for systems where Nx!=3.
-#
-# Nx = 3
-# dims = arange(Nx)
-#
-# TODO: rm mods/L63/liveplotting
-
-
-def phase3D(
+def phase3d(
     obs_inds     = [],
-    dims         = None,
+    dims         = [],
     labels       = [],
-    T_lag        = None,
+    Tplot        = None,
     ens_props    = dict(alpha=0.4),
     zoom         = 1.5,
     pause_f      = 0.0,
     pause_a      = 0.0,
     pause_u      = 0.0,
-    weight_alpha = False,
     ):
+
+  M = 3 # Only applicable for 3d plots
 
   def init(fignum,stats,key0,E,P):
 
     # Extract data arrays
-    k, kObs, f_a_u = key0[0]
+    k, kObs, f_a_u = key0
     xx, yy, mu, var, chrono = stats.xx, stats.yy, stats.mu, stats.var, stats.HMM.t
-    # Alias
-    jj = obs_inds
-    tt = chrono.tt
 
-    T_lag_local, K_lag, a_lag, dt_margin = validate_lag(T_lag, chrono)
-    dims = [0,1,2] if dims is None else dims
-    assert len(dims)==3
+    # Lag settings
+    T_lag, K_lag, a_lag, dt_margin = validate_lag(Tplot, chrono)
+    K_fau = K_lag + 2*a_lag # Lag length total for f + a + u series.
+    if hasattr(stats,'w'): K_fau += a_lag # for adding blanks in resampling (PartFilt)
+    
+    # Dimension settings
+    nonlocal dims, labels
+    if dims   == []: dims   = [0,1,2]
+    if labels == []: labels = "123"
+    assert len(dims)==M
 
-    # TODO from here
-
-    #####################
     # Set up figure, axes
-    #####################
     fig = plt.figure(fignum, figsize=(5,5))
-    # Add 3d axes
-    # ax3 = fig.add_axes(projection='3d')
     ax3 = plt.subplot(111, projection='3d')
     ax3.set_facecolor('w')
     ax3.set_title("Phase space trajectories")
     # Tune plots
-    for s,i in zip("xyz",range(Nx)):
-      set_ilim(ax3,i,  *stretch(*span(xx[:,i]), 1/zoom) )
-      eval("ax3.set_%slabel('%s')"%(s,s), {'ax3':ax3} )
+    for s,i in zip(labels, dims):
+      set_ilim(ax3, i, *stretch(*span(xx[:,i]),1/zoom))
+      eval("ax3.set_%slabel('%s')"%(s,s), {'ax3':ax3})
 
-    #####################
-    # 3d phase space trajectories
-    #####################
-    if E is None: N = 0
-    else:         N = len(E)
+    # Allocate
+    d = Bunch() # data arrays
+    h = Bunch() # plot handles
+    s = Bunch() # scatter handles
+    if E is not None             : d.E  = RollingArray((K_fau,len(E),M)); h.E = []
+    if P is not None             : d.mu = RollingArray((K_fau,M))
+    if True                      : d.x  = RollingArray((K_fau,M))
+    if list(obs_inds)==list(dims): d.y  = RollingArray((K_fau,M))
 
-    hist_EE = np.full((lag,N,Nx)   , nan)
-    hist_mu = np.full((lag,Nx)     , nan)
-    hist_ss = np.full((lag,2,Nx)   , nan)
-    hist_xx = np.full((lag,Nx)     , nan)
-    hist_yy = np.full((lag,len(jj)), nan)
-    hist_tt = np.copy(tt[:lag]) # using nan's would yield bugs.
+    # Plot tails (invisible coz everything here is nan, for the moment).
+    if 'E'  in d: h.E  += [ax3.plot(*xn    , **ens_props)[0] for xn in np.transpose(d.E,[1,2,0])]
+    if 'mu' in d: h.mu  =  ax3.plot(*d.mu.T, 'b' ,lw=2)  [0]
+    if True     : h.x   =  ax3.plot(*d.x .T, 'k' ,lw=3)  [0]
+    if 'y'  in d: h.y   =  ax3.plot(*d.y .T, 'g*',ms=14) [0]
 
-    PO = list(jj)==list(dims) # PlotObs switch: only if obs operator is id.
-
-    if N : scat_ens =  ax3.scatter(*E.T [dims],s=3 **2, **ens_props)
-    else : scat_mu  =  ax3.scatter(*mu[k,dims],s=8 **2, c='b')
-    if 1 : scat_x   =  ax3.scatter(*xx[k,dims],s=14**2, c='k',marker=(5, 1))
-
-    if N : tail_ens = [ax3.plot(*hist_EE[:,n,:].T,  **ens_props)[0] for n in range(N)]
-    else : tail_mu, =  ax3.plot(*hist_mu       .T, 'b' ,lw=2)
-    if 1 : tail_xx, =  ax3.plot(*hist_xx       .T, 'k' ,lw=4)
-    if PO: tail_yy, =  ax3.plot(*hist_yy       .T, 'g*',ms=14)
+    # Scatter
+    if 'E'  in d: s.E   =  ax3.scatter(*E.T  [dims],s=3 **2, c=[ hn.get_color() for hn in h.E])
+    if 'mu' in d: s.mu  =  ax3.scatter(*mu[k][dims],s=8 **2, c=h.mu.get_color()               )
+    if True     : s.x   =  ax3.scatter(*xx[k, dims],s=14**2, c=h.x .get_color(), marker=(5, 1), zorder=99)
 
 
     def update(key,E,P):
-      nonlocal hist_xx, hist_yy, hist_EE, hist_mu, hist_ss, prev_k, hist_tt, len_roll
       k,kObs,f_a_u = key
+      show_y = 'y' in d and kObs is not None
 
-      #####################
-      # Update rolling data array
-      #####################
-      a = PO and kObs is not None
-
-      # In case of plot restarting
-      if prev_k not in [k, k-1]:
-        hist_xx[:] = nan
-        hist_yy[:] = nan
-        hist_EE[:] = nan
-        hist_mu[:] = nan
-        hist_ss[:] = nan
-        hist_tt[:] = tt[k:k+lag]
-        len_roll   = 0
-      prev_k = k
-
-      # Abbreviate
-      if 1:  _t = tt[k]
-      if N:  _E = E  [:,dims]
-      else:
-            _mu = mu[k,dims]
-            _ss = mu[k,dims] + [[1],[-1]]*sqrt(var[k,dims])
-      if 1:  _x = xx[k,dims]
-      if a:  _y = yy[kObs,:]
-      else:  _y = nan*ones(len(jj))
-
-      # Enter current value
-      if len_roll<lag: # Grow:
-        if 1: hist_tt[len_roll] = _t
-        if 1: hist_xx[len_roll] = _x
-        if N: hist_EE[len_roll] = _E
-        else:
-              hist_mu[len_roll] = _mu
-              hist_ss[len_roll] = _ss
-        if a: hist_yy[len_roll] = _y
-        len_roll += 1
-
-      else: # Roll
-        if 1: hist_tt = roll_n_sub(hist_tt, _t , -1)
-        if 1: hist_xx = roll_n_sub(hist_xx, _x , -1)
-        if 1: hist_yy = roll_n_sub(hist_yy, _y , -1)
-        if N: hist_EE = roll_n_sub(hist_EE, _E , -1)
-        else:
-              hist_mu = roll_n_sub(hist_mu, _mu, -1)
-              hist_ss = roll_n_sub(hist_ss, _ss, -1)
-
-      if 'a' in f_a_u:
-        if pause_a: plot_pause(pause_a)
-
-      #####################
-      # 3d phase space trajectories
-      #####################
       def update_tail(handle,newdata):
         handle.set_data(newdata[:,0],newdata[:,1])
         handle.set_3d_properties(newdata[:,2])
 
-      scat_x._offsets3d = juggle_axes(*tp(xx[k,dims]),'z')
-      update_tail(tail_xx, hist_xx)
-      if 'tail_yy' in locals():
-        update_tail(tail_yy, hist_yy)
+      EE = duplicate_with_blanks_for_resampled(E[:,dims], key, hasattr(stats,'w'))
 
-      if E is not None:
-        scat_ens._offsets3d = juggle_axes(*E[dims].T,'z')
+      for Ens in EE:
+        # Roll data array
+        if 'E'  in d: d.E .insert(k, Ens)
+        if 'mu' in d: d.mu.insert(k, mu[key][dims])
+        if True     : d.x .insert(k, xx[k,   dims])
+        if 'y'  in d: d.y .insert(k, yy[kObs,  : ] if show_y else nan*ones(M))
 
-        # Adjust color alpha (for particle filters):
-        if weight_alpha and hasattr(stats,'w'):
-          colors = scat_ens.get_facecolor()[:,:3]
-          if len(colors)==1:
-            colors = colors.repeat(N,axis=0)
-          alpha = stats.w[k]
-          alpha = (alpha/alpha.max()).clip(0.1,0.4)
-          scat_ens.set_color(np.hstack([colors, alpha[:,None]]))
-          for n in range(N):
-            tail_ens[n].set_alpha(alpha[n])
-        
-        for n in range(N):
-          update_tail(tail_ens[n],hist_EE[:,n,:])
-
+      # Update graph
+      s.x._offsets3d = juggle_axes(*d.x[[-1]].T,'z')
+      update_tail(h.x, d.x)
+      if 'y' in d:
+          update_tail(h.y, d.y)
+      if 'mu' in d:
+          s.mu._offsets3d = juggle_axes(*d.mu[[-1]].T,'z')
+          update_tail(h.mu, d.mu)
       else:
-        scat_mu._offsets3d = juggle_axes(*tp(mu[k,dims]),'z')
-        update_tail(tail_mu, hist_mu)
+          s.E._offsets3d = juggle_axes(*d.E[-1].T,'z')
+          for n in range(len(E)):
+            update_tail(h.E[n],d.E[:,n,:])
+          update_alpha(key, stats, h.E, s.E)
 
-      if pause_f: plot_pause(pause_f)
+      if   'f' in f_a_u: plot_pause(pause_f)
+      elif 'a' in f_a_u: plot_pause(pause_a)
+      elif 'u' in f_a_u: plot_pause(pause_u)
 
       return # end update()
 
-    # Init
-    prev_k   = 0 # Pause/restart monitor
-    len_roll = 0 # Growth counter
+    # Finalize init
     update(key0,E,P)
 
     return update # end init()
-  return init # end LP_setup()
+  return init # end phase3d()
+
+
+def update_alpha(key, stats, lines, scatters=None):
+  "Adjust color alpha (for particle filters)"
+
+  k,kObs,f_a_u = key
+  if kObs is None: return
+  if f_a_u=='f': return
+  if not hasattr(stats,'w'): return
+
+  # Compute alpha values
+  alpha = stats.w[key]
+  alpha = (alpha/alpha.max()).clip(0.1,0.4)
+
+  # Set line alpha
+  for line, a in zip(lines, alpha):
+    line.set_alpha(a)
+
+  # Scatter plot does not have alpha. => Fake it.
+  if scatters is not None:
+    colors = scatters.get_facecolor()[:,:3]
+    if len(colors)==1:
+      colors = colors.repeat(len(w),axis=0)
+    scatters.set_color(np.hstack([colors, alpha[:,None]]))
 
 
 
-def validate_lag(T_lag, chrono):
+def duplicate_with_blanks_for_resampled(E,key,has_w): 
+  "Particle filter: insert breaks for resampled particles."
+  EE = []
+
+  if has_w:
+    k,kObs,f_a_u = key
+    if   f_a_u=='f': pass
+    elif f_a_u=='a': _Ea[0] = E[:,0] # Store (1st dim of) ens.
+    elif f_a_u=='u' and kObs is not None:
+      # Find resampled particles. Insert duplicate ensemble. Write nans (breaks).
+      resampled = _Ea[0] != E[:,0]  # Mark as resampled if ens changed.
+      EE.append( E.copy() )         # Insert current ensemble (copy to avoid overwriting).
+      EE[0][resampled] = nan        # Write breaks
+
+  # Always: append current ensemble
+  EE.append(E)                   
+  return EE
+_Ea = [None] # persistent ens storage
+
+
+def validate_lag(Tplot, chrono):
 
   # Defaults
-  if T_lag is None:
-    T_lag = chrono.Tplot
+  if Tplot is None:
+    Tplot = chrono.Tplot
+  
+  # Rename
+  T_lag = Tplot
 
   # Validate
   t2 = chrono.tt[-1]

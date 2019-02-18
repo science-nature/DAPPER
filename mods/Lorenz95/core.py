@@ -55,7 +55,7 @@ def dfdx(x,t,dt):
 
 from tools.liveplotting import sliding_marginals
 def LP(jj=None): return dict(
-      sliding_marginals   = (11, 1, sliding_marginals(jj, dims=arange(5), T_lag=2)) ,
+      sliding_marginals   = (11, 1, sliding_marginals(jj, dims=arange(5), Tplot=2)) ,
       )
 
 

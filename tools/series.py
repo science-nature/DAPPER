@@ -170,16 +170,17 @@ class FAU_series(NestedPrint):
         for ltr in 'af':
           if ltr in fau:
             raise KeyError("Accessing ."+ltr+" series, but kObs is None.")
-      # The following check has been disabled, because
+      # NB: The following check has been disabled, because
       # it is actually very time consuming when kkObs is long (e.g. 10**4):
-      # elif k != self.chrono.kkObs[kObs]:
-        # raise KeyError("kObs indicated, but k!=kkObs[kObs]")
+      # elif k != self.chrono.kkObs[kObs]: raise KeyError("kObs indicated, but k!=kkObs[kObs]")
     except ValueError:
       # Assume key = k
+      assert not hasattr(key, '__getitem__'), "Key must be 1-dimensional."
       key = (key,None,'u')
     return key
 
   def split_dims(self,k):
+    "Split (k,kObs,fau) into k, (kObs,fau)"
     if isinstance(k,tuple):
       k1 = k[1:]
       k0 = k[0]
@@ -230,7 +231,7 @@ class FAU_series(NestedPrint):
         if self.k_tmp != k0:
           msg = "Only item [" + str(self.k_tmp) + "] is available from "+\
           "the universal (.u) series. One possible source of error "+\
-          "is that the data has not been computed for k="+str(k)+". "+\
+          "is that the data has not been computed for entry k="+str(k0)+". "+\
           "Another possibility is that it has been cleared; "+\
           "if so, a fix might be to set store_u=True, "+\
           "or to use analysis (.a) or forecast (.f) arrays instead."
@@ -297,6 +298,10 @@ class RollingArray:
 
   def span(self):
     return (self.leftmost(),  self[-1])
+
+  @property
+  def T(self):
+    return self.array.T
 
   def __array__  (self,dtype=None): return self.array
   def __len__    (self):            return len(self.array)

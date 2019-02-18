@@ -41,7 +41,9 @@ def noobar(iterable, desc=None, leave=None):
 # Define progbar
 try:
   import tqdm
-  def _progbar(iterable, desc, leave):
+  def progbar(iterable, desc=None, leave=1):
+    "Prints a nice progress bar in the terminal"
+    desc = pdesc(desc)
     if is_notebook:
       return tqdm.tqdm_notebook(iterable,desc=desc,leave=leave)
     else:
@@ -56,23 +58,12 @@ try:
     # return pb
 except ImportError as err:
   install_warn(err)
-  _progbar = noobar
+  progbar = noobar
 
 
-# Wrap the progressbar generator with temporary term settings
-def progbar(iterable, desc=None, leave=1):
-  "Prints a nice progress bar in the terminal"
-  TS_old = new_term_settings()
-  try:
-    for i in _progbar(iterable, pdesc(desc), leave):
-        yield i
-  finally:
-    # Should restore settings both after normal termination
-    # and if KeyboardInterrupt or other exception happened during loop.
-    set_term_settings(TS_old)
-
-# See Misc/read1_trials.py
+# Non-blocking, non-echo read1 from stdin.
 try:
+    # Linux. See Misc/read1_trials.py
     import termios, sys
     def set_term_settings(TS):
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, TS)
@@ -92,27 +83,41 @@ try:
       set_term_settings(TS_new)
       return TS_old
 
-    def read1(fd=sys.stdin.fileno()):
-      "Get 1 character"
-      if disable_user_interaction: return EMPTY
-      return os.read(fd, 1).decode()
+    def _read1():
+      return os.read(sys.stdin.fileno(), 1)
+
+    # Wrap the progressbar generator with temporary term settings
+    # Note: could also do it when loading/exiting DAPPER (untested),
+    # but it doesn't work to repeatedly do it within the assim loop.
+    orig_progbar = progbar
+    def progbar(iterable, desc=None, leave=1):
+      TS_old = new_term_settings()
+      try:
+        for i in orig_progbar(iterable, pdesc(desc), leave):
+            yield i
+      finally:
+        # Should restore settings both after normal termination
+        # and if KeyboardInterrupt or other exception happened during loop.
+        set_term_settings(TS_old)
 
 except ImportError:
-    # Non-POSIX. Return msvcrt's (Windows') getch.
+    # Windows
     import msvcrt
+    def _read1():
+      if msvcrt.kbhit():
+        return msvcrt.getch()
+      else:
+        return None
 
-    def set_term_settings(TS): pass
-    def new_term_settings(): return None
-
-    def read1(fd=sys.stdin.fileno()):
-      "Get 1 character"
-      if disable_user_interaction: return EMPTY
-      return msvcrt.getch().decode()
-      # return msvcrt.getch()
-
+def read1(fd=sys.stdin.fileno()):
+  "Get 1 character. Non-blocking, non-echoing."
+  if disable_user_interaction: return None
+  return _read1()
 
 # Set to True before a py.test (which doesn't like reading stdin)
 disable_user_interaction = False
+
+
 
 
 #########################################

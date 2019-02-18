@@ -70,7 +70,9 @@ Tested on Linux/MacOS/Windows
 2. Download, extract the DAPPER folder, and `cd` into it.  
 `pip install -r requirements.txt`
 3. To test the installation, run:  
-`$ python -i example_1.py`
+`$ ipython`  
+and then:  
+`In [1]: run example_1.py`
 
 
 
@@ -126,7 +128,8 @@ Quasi-Geost | No      | 2d        | 129²≈17k  | ≈140     | Sakov
 
 **To add a new model:**
 Make a new dir: `DAPPER/mods/your_model`. Add the following files:
-* `core.py` to define the core functionality and documentation of your dynamical model. Typically this culminates in a `step(x, t, dt)` function.
+* `core.py` to define the core functionality and documentation of your dynamical model.
+    Typically this culminates in a `step(x, t, dt)` function.
   * The model step operator (and the obs operator) must support
     2D-array (i.e. ensemble) and 1D-array (single realization) input.
     See the `core.py` file in `mods/Lorenz63` and `mods/Lorenz95` for typical
@@ -135,9 +138,9 @@ Make a new dir: `DAPPER/mods/your_model`. Add the following files:
     you will need to define the model linearization.
     Note: this only needs to support 1D input (single realization).
 * `demo.py` to visually showcase a simulation of the model.
-* `liveplotting.py` (optional) to define how
-  the assimilation process should be visualized on-line.
-* Files that define a complete Hidden Markov Model ready for a twin experiment (OSSE). For example, this will plug in the `step`function you made previously as in `Dyn['model'] = step`. For further details, see examples such as `DAPPER/mods/Lorenz63/{sak12,boc12}.py`.
+* Files that define a complete Hidden Markov Model ready for a twin experiment (OSSE).
+    For example, this will plug in the `step`function you made previously as in `Dyn['model'] = step`.
+    For further details, see examples such as `DAPPER/mods/Lorenz63/{sak12,boc12}.py`.
 
 
 <!--
@@ -374,7 +377,6 @@ TODO
   No, INSTEAD: capture key press and don't send to stdout
 
 * Bugs:
-    * On Windows: key listening for liveplotting: ncurses?
     * __name__ for HMM via inspect fails when running a 2nd, ≠ script.
 
 * EITHER: Rm *args, **kwargs from da_methods? (less spelling errors)
@@ -393,7 +395,6 @@ TODO
 * Rename common to DAPPER_workspace.
 * Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
 * Defaults file (fail_gently, liveplotting, store_u mkl.set_num_threads, print options in NestedPrint, computational_threshold)
-* Requirements
 * Post version on norce, nersc and link from enkf.nersc
 
 * Darcy, LotkaVolterra, 2pendulum, Kuramoto-Sivashinsky , Nikolaevskiy Equation

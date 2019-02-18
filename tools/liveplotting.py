@@ -78,24 +78,18 @@ class LivePlot:
       return
 
     # Playback control
-    # ENTER  = b'\n'  
-    # ENTER2 = b'\r'  
-    # ENTER3 = b'\\r' 
-    # SPACE  = b' '   
-    ENTER  = b'\n'  .decode()
-    ENTER2 = b'\r'  .decode()
-    ENTER3 = b'\\r' .decode()
-    SPACE  = b' '   .decode()
+    SPACE  = b' '   
+    ENTERs = [b'\n', b'\r'] # Linux + Windows
     if self.paused:
       # Loop until user decision is made
       ch = read1() 
       while True:
-        if ch in [ENTER, ENTER2, ENTER3]:
+        if ch in ENTERs:
           self.paused = False
-        if ch in [ENTER, ENTER2, ENTER3 ,SPACE]:
+        if ch in ENTERs + [SPACE]:
           break
         ch = read1()
-        # Pause to empower mpl's GUI zoom, pan, etc.
+        # Pause to enable zoom, pan, etc. of mpl GUI
         plot_pause(0.01) # Don't use time.sleep()!
     else:
       # Set switches for pause & skipping
@@ -103,7 +97,7 @@ class LivePlot:
       if ch==SPACE: # Turn ON pause & turn OFF skipping.
         self.paused = True
         self.skipping = False
-      elif ch in [ENTER, ENTER2, ENTER3]: # Toggle skipping
+      elif ch in ENTERs: # Toggle skipping
         self.skipping = not self.skipping 
 
         
@@ -505,15 +499,32 @@ class LP_correlations:
     self.line_AA.set_ydata(AAF)
 
 
-def plot_pause(duration):
-  """
-  plt.pause is not supported by jupyter notebook.
-  Provide fallback that does work.
-  stackoverflow.com/q/34486642
-  """
+def plot_pause(interval):
+  """Similar to plt.pause()"""
+
   try:
-    plt.pause(duration)
+    # Implement plt.pause() that doesn't focus window, c.f.
+    # github.com/matplotlib/matplotlib/issues/11131, so.com/q/45729092.
+    # Only necessary for some platforms (e.g. Windows) and mpl versions.
+    # Even then, mere figure creation may steal the focus if script was
+    # launched with `$ python example_1.py` rather than ipython's `run`.
+    from matplotlib import _pylab_helpers
+    def _plot_pause(interval,  focus_figure=True):
+        canvas = plt.gcf().canvas
+        manager = canvas.manager
+        if manager is not None:
+            if canvas.figure.stale:
+                canvas.draw_idle()
+            if focus_figure:
+                plt.show(block=False)
+            canvas.start_event_loop(interval)
+        else:
+            time.sleep(interval)
+    _plot_pause(interval, focus_figure=False)
+
   except:
+    # Jupyter notebook support
+    # stackoverflow.com/q/34486642
     fig = plt.gcf()
     fig.canvas.draw()
     time.sleep(0.1)
@@ -764,7 +775,7 @@ def phase3D(
               hist_ss = roll_n_sub(hist_ss, _ss, -1)
 
       if 'a' in f_a_u:
-        if pause_a: plt.pause(pause_a)
+        if pause_a: plot_pause(pause_a)
 
       #####################
       # 3d phase space trajectories
@@ -799,7 +810,7 @@ def phase3D(
         scat_mu._offsets3d = juggle_axes(*tp(mu[k,dims]),'z')
         update_tail(tail_mu, hist_mu)
 
-      if pause_f: plt.pause(pause_f)
+      if pause_f: plot_pause(pause_f)
 
       return # end update()
 
@@ -891,6 +902,10 @@ def d_ylim(data,ax=None,cC=0,cE=1,pp=(1,99),Min=-1e20,Max=+1e20):
     return lower and upper
   #if worth_updating(minv,maxv,current):
     #ax.set_ylim(minv,maxv)
+
+  # Some mpl versions don't handle inf limits.
+  if not np.isfinite(minv): minv = None
+  if not np.isfinite(maxv): maxv = None
 
   return minv, maxv
 

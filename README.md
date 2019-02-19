@@ -65,14 +65,12 @@ Installation
 ------------------------------------------------
 Tested on Linux/MacOS/Windows
 1. Prerequisite: `python3.5+`
-(easy to set up with
-[anaconda](https://www.anaconda.com/download), even without admin rights).
+(suggest setting it up with
+[anaconda](https://www.anaconda.com/download)).
 2. Download, extract the DAPPER folder, and `cd` into it.  
-`pip install -r requirements.txt`
+`$ pip install -r requirements.txt`
 3. To test the installation, run:  
-`$ ipython`  
-and then:  
-`In [1]: run example_1.py`
+`$ python example_1.py`  
 
 
 

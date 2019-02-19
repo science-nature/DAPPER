@@ -51,7 +51,7 @@ class model_config:
   and Python calls to step(), for example for dt.
   """
 
-  def __init__(self,name, prms, mp=True):
+  def __init__(self, name, prms, mp=True):
     "Use prms={} to get the default configuration."
 
     # Insert prms. Assert key is present in defaults.
@@ -82,7 +82,7 @@ class model_config:
     """Step a single state vector."""
     assert self.prms["dtout"] == dt  # Coz fortran.step() reads dt (dtout) from prms file.
     assert isinstance(t,float)       # Coz Fortran is typed.
-    assert np.isfinite(t)            # QG is autonomous, but nan/inf wont work.
+    assert np.isfinite(t)            # QG is autonomous, but Fortran doesn't like nan/inf.
     psi = py2f(x0.copy())            # Copy coz Fortran will modify in-place.
     fortran.step(t,psi,self.fname)   # Call Fortran model.
     x = f2py(psi)                    # Flattening
@@ -138,10 +138,10 @@ def ind2sub(ind): return np.unravel_index(ind, shape[::-1])
 # Free run
 #########################
 def gen_sample(model,nSamples,SpinUp,Spacing):
-  simulator = make_recursive(model.step,prog="Simulating")
+  simulator = with_recursion(model.step,prog="Simulating")
   K         = SpinUp + nSamples*Spacing
-  m         = np.prod(shape) # total state length
-  sample    = simulator(zeros(m), K, 0.0, model.prms["dtout"])
+  Nx         = np.prod(shape) # total state length
+  sample    = simulator(zeros(Nx), K, 0.0, model.prms["dtout"])
   return sample[SpinUp::Spacing]
 
 sample_filename = 'data/samples/QG_samples.npz'

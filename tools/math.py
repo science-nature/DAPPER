@@ -35,10 +35,10 @@ def ccat(*args,axis=0):
 def roll_n_sub(arr,item,i_repl=0):
   """
   Example:
-  In:  roll_n_sub(arange(4),99,0)
-  Out: array([99,  0,  1,  2])
-  In:  roll_n_sub(arange(4),99,-1)
-  Out: array([ 1,  2,  3, 99])
+  >>> roll_n_sub(arange(4),99,0)
+  array([99,  0,  1,  2])
+  >>> roll_n_sub(arange(4),99,-1)
+  array([ 1,  2,  3, 99])
   """
   shift       = i_repl if i_repl<0 else (i_repl+1)
   arr         = np.roll(arr,shift,axis=0)
@@ -51,10 +51,18 @@ def roll_n_sub(arr,item,i_repl=0):
 ########################
 
 def ens_compatible(func):
-  """Tranpose before and after."""
+  """Tranpose before and after.
+  Helpful to make functions compatible with both 1d and 2d ndarrays.
+
+  An older version also used np.atleast_2d and squeeze(),
+  but that is more messy than necessary.
+
+  Note: this is the_way™ -- other tricks are sometimes more practical.
+  See for example core.py:dxdt() of LorenzUV, Lorenz95, LotkaVolterra.
+  """
   @functools.wraps(func)
-  def wrapr(x,*kargs,**kwargs):
-    return func(x.T,*kargs,**kwargs).T
+  def wrapr(x,*args,**kwargs):
+    return func(x.T,*args,**kwargs).T
   return wrapr
 
 def center(E,axis=0,rescale=False):
@@ -127,13 +135,13 @@ def with_rk4(dxdt,autonom=False,order=4):
   step = NamedFunc(step,name)
   return step
 
-def make_recursive(func,prog=False):
+def with_recursion(func,prog=False):
   """
   Return a version of func() whose 2nd argument (k)
-  is the number of times to times apply func on its output.
+  specifies the number of times to times apply func on its output.
   Example:
     def step(x,t,dt): ...
-    step_k = make_recursive(step)
+    step_k = with_recursion(step)
     x[k]   = step_k(x0,k,t=NaN,dt)[-1]
   """
   def fun_k(x0,k,*args,**kwargs):
@@ -150,12 +158,12 @@ def make_recursive(func,prog=False):
 
   return fun_k
 
-def integrate_TLM(M,dt,method='approx'):
+def integrate_TLM(TLM,dt,method='approx'):
   """
   Returns the resolvent, i.e. (equivalently)
    - the Jacobian of the step func.
-   - the integral of dU/dt = M@U, with U0=eye.
-  Note that M (the TLM) is assumed constant.
+   - the integral of dU/dt = TLM@U, with U0=eye.
+  Note that the TLM is assumed constant.
 
   method:
    - 'analytic': exact (assuming TLM is constant).
@@ -164,15 +172,15 @@ def integrate_TLM(M,dt,method='approx'):
   NB: 'analytic' typically requries higher inflation in the ExtKF.
   """
   if method == 'analytic':
-    Lambda,V  = np.linalg.eig(M)
+    Lambda,V  = np.linalg.eig(TLM)
     resolvent = (V * exp(dt*Lambda)) @ np.linalg.inv(V)
     resolvent = np.real_if_close(resolvent, tol=10**5)
   else:
-    I = eye(M.shape[0])
+    I = eye(TLM.shape[0])
     if method == 'rk4':
-      resolvent = rk4(lambda t,U: M@U, I, np.nan, dt)
+      resolvent = rk4(lambda t,U: TLM@U, I, np.nan, dt)
     elif method.lower().startswith('approx'):
-      resolvent = I + dt*M
+      resolvent = I + dt*TLM
     else:
       raise ValueError
   return resolvent
@@ -337,17 +345,17 @@ def circulant_ACF(C,do_abs=False):
   assuming it is the cov/corr matrix
   of a 1D periodic domain.
   """
-  m    = len(C)
-  #cols = np.flipud(sla.circulant(arange(m)[::-1]))
-  cols = sla.circulant(arange(m))
-  ACF  = zeros(m)
-  for i in range(m):
+  M    = len(C)
+  #cols = np.flipud(sla.circulant(arange(M)[::-1]))
+  cols = sla.circulant(arange(M))
+  ACF  = zeros(M)
+  for i in range(M):
     row = C[i,cols[i]]
     if do_abs:
       row = abs(row)
     ACF += row
     # Note: this actually also accesses masked values in C.
-  return ACF/m
+  return ACF/M
 
 
 ########################
@@ -379,26 +387,25 @@ def truncate_rank(s,threshold,avoid_pathological):
   return r
 
 def tsvd(A, threshold=0.99999, avoid_pathological=True):
-  """
-  Truncated svd.
+  """Truncated svd.
   Also automates 'full_matrices' flag.
-  threshold: if
-   - float, < 1.0 then "rank" = lowest number such that the
-                                "energy" retained >= threshold
-   - int,  >= 1   then "rank" = threshold
-  avoid_pathological: avoid truncating (e.g.) the identity matrix.
-                      NB: only applies for float threshold.
-  """
-
-  m,n = A.shape
+  - threshold: if
+    * float, < 1.0 then "rank" = lowest number such that the
+                                 "energy" retained >= threshold
+    * int,  >= 1   then "rank" = threshold
+  - avoid_pathological: avoid truncating (e.g.) the identity matrix.
+                        NB: only applies for float threshold."""
+  M,N = A.shape
   full_matrices = False
 
   if is_int(threshold):
     # Assume specific number is requested
     r = threshold
-    assert 1 <= r <= max(m,n)
-    if r > min(m,n):
+    assert 1 <= r <= max(M,N)
+    if r > min(M,N):
       full_matrices = True
+      r = min(M,N)
+
 
   # SVD
   U,s,VT = sla.svd(A, full_matrices)
@@ -424,8 +431,8 @@ def svd0(A):
   both of which always compute the reduced svd.
   For reduction down to rank, see tsvd() instead.
   """
-  m,n = A.shape
-  if m>n: return sla.svd(A, full_matrices=True)
+  M,N = A.shape
+  if M>N: return sla.svd(A, full_matrices=True)
   else:   return sla.svd(A, full_matrices=False)
 
 def pad0(ss,N):
@@ -451,53 +458,54 @@ def tinv(A,*kargs,**kwargs):
 
 
 ########################
-# Setup facilation
+# HMM setup shortcuts 
 ########################
 
 def Id_op():
   return NamedFunc(lambda *args: args[0], "Id operator")
-def Id_mat(m):
-  I = np.eye(m)
-  return NamedFunc(lambda x,t: I, "Id("+str(m)+") matrix")
+def Id_mat(M):
+  I = np.eye(M)
+  return NamedFunc(lambda x,t: I, "Id("+str(M)+") matrix")
 
-def linear_model_setup(M):
-  "M is normalized wrt step length dt."
-  M = np.asarray(M) # sparse or matrix classes not supported
-  m = len(M)
+def linear_model_setup(ModelMatrix):
+  "ModelMatrix is normalized wrt step length dt."
+  ModelMatrix = np.asarray(ModelMatrix) # sparse or matrix classes not supported
+  M = len(ModelMatrix)
   @ens_compatible
-  def model(x,t,dt): return dt*(M@x)
-  def jacob(x,t,dt): return dt*M
-  f = {
-      'm'    : m,
+  def model(x,t,dt): return dt*(ModelMatrix@x)
+  def jacob(x,t,dt): return dt*ModelMatrix
+  Dyn = {
+      'M'    : M,
       'model': model,
       'jacob': jacob,
       }
-  return f
+  return Dyn
 
 
+def equi_spaced_integers(Nx,Ny):
+  """Provide a range of Ny equispaced integers between 0 and Nx-1"""
+  return np.round(linspace(floor(Nx/Ny/2),ceil(Nx-Nx/Ny/2-1),Ny)).astype(int)
 
-def equi_spaced_integers(m,p):
-  """Provide a range of p equispaced integers between 0 and m-1"""
-  return np.round(linspace(floor(m/p/2),ceil(m-m/p/2-1),p)).astype(int)
 
-def direct_obs_matrix(m,obs_inds):
-  """Matrix that "picks" state elements obs_inds out of range(m)"""
-  p = len(obs_inds)
-  H = zeros((p,m))
-  H[range(p),obs_inds] = 1
+def direct_obs_matrix(Nx,obs_inds):
+  """Matrix that "picks" state elements obs_inds out of range(Nx)"""
+  Ny = len(obs_inds)
+  H = zeros((Ny,Nx))
+  H[range(Ny),obs_inds] = 1
   return H
 
-def partial_direct_obs_setup(m,obs_inds):
-  p = len(obs_inds)
-  H = direct_obs_matrix(m,obs_inds)
+def partial_direct_Obs(Nx,obs_inds):
+  Ny = len(obs_inds)
+  H = direct_obs_matrix(Nx,obs_inds)
   @ens_compatible
   def model(x,t): return x[obs_inds]
   def jacob(x,t): return H
-  h = {
-      'm'    : p,
+  Obs = {
+      'M'    : Ny,
       'model': model,
       'jacob': jacob,
       }
-  return h
+  return Obs
+
 
 

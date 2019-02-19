@@ -6,7 +6,7 @@ from mods.Lorenz63.sak12 import HMM
 
 from common import *
 
-HMM.h.noise.C = CovMat(eye(3))
+HMM.Obs.noise.C = CovMat(eye(3))
 
 HMM.name = os.path.relpath(__file__,'mods/')
 

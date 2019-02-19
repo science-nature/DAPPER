@@ -128,6 +128,7 @@ from tools.series import *
 from tools.matrices import *
 from tools.randvars import *
 from tools.viz import *
+from tools.liveplotting import *
 from tools.localization import *
 from tools.convenience import *
 from tools.data_management import *

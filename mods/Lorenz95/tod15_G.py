@@ -2,7 +2,7 @@
 
 from common import *
 from mods.Lorenz95.tod15 import HMM
-HMM.h.noise = GaussRV(C=HMM.h.noise.C)
+HMM.Obs.noise = GaussRV(C=HMM.Obs.noise.C)
 HMM.name = os.path.relpath(__file__,'mods/')
 
 ####################

@@ -2,12 +2,14 @@
 # Phase-plot looks like a butterfly.
 # See demo.py for more info.
 
+
 import numpy as np
 from tools.math import with_rk4, is1d, ens_compatible, integrate_TLM
 
 # Constants
 sig = 10.0; rho = 28.0; beta = 8.0/3
 
+# Dynamics: time derivative.
 @ens_compatible
 def dxdt(x):
   d     = np.zeros_like(x)
@@ -17,21 +19,43 @@ def dxdt(x):
   d[2]  = x*y - beta*z
   return d
 
+# Dynamics: time step integration.
 step = with_rk4(dxdt,autonom=True)
 
+# Time span for plotting. Typically: ≈10 * "system time scale".
+Tplot = 4.0
 
+# Example initial state.
+# Specifics are usually not important coz system is chaotic,
+# and we employ a BurnIn before averaging statistics.
+# But it's often convenient to give a point on the attractor,
+# or at least its basin, or at least ensure that it's "physical".
+x0 = np.array([1.509, -1.531, 25.46])
+
+
+################################################
+# OPTIONAL (not necessary for EnKF or PartFilt):
+################################################
 def TLM(x):
   """Tangent linear model"""
-  assert is1d(x)
   x,y,z = x
-  TLM=np.array(
+  A = np.array(
       [[-sig , sig , 0],
       [rho-z , -1  , -x],
       [y     , x   , -beta]])
-  return TLM
+  return A
 
 def dfdx(x,t,dt):
   """Integral of TLM. Jacobian of step."""
   return integrate_TLM(TLM(x),dt,method='approx')
 
 
+################################################
+# Add some non-default liveplotters
+################################################
+from tools.liveplotting import sliding_marginals, phase3d
+props = dict(labels='xyz', Tplot=1)
+def LP(jj=None): return dict(
+      sliding_marginals   = (11, 1, sliding_marginals(jj, zoomy=0.8, **props)) ,
+      phase3d             = (13, 1, phase3d(jj, **props)                     ) ,
+      )

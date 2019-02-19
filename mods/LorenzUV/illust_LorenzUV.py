@@ -16,9 +16,9 @@ t0 = np.nan
 K  = int(10/dt)
 
 step_1 = with_rk4(LUV.dxdt,autonom=True)
-step_K = make_recursive(step_1,with_prog=1)
+step_K = with_recursion(step_1,prog=1)
 
-x0 = 0.01*randn(LUV.m)
+x0 = 0.01*randn(LUV.M)
 x0 = step_K(x0,int(2/dt),t0,dt)[-1] # BurnIn
 xx = step_K(x0,K        ,t0,dt)
 
@@ -39,10 +39,10 @@ ax = fg.gca()
 L = 20 # Num of lines to plot
 start = int(3e5*dt)
 step  = 3
-for i,p in enumerate(range(L)):
-  k = start + p*step
-  c = cm.viridis(1-p/L)
-  a = 0.8-0.2*p/L
+for i,Ny in enumerate(range(L)):
+  k = start + Ny*step
+  c = cm.viridis(1-Ny/L)
+  a = 0.8-0.2*Ny/L
   plt.plot(iU  ,Ui(xx[k][:nU]),color=c,lw=2  ,alpha=a)[0]
   if i%2==0:
     plt.plot(jj/J,xx[k][circV]  ,color=c,lw=0.7,alpha=a)[0]
@@ -72,16 +72,6 @@ ax.grid(color='k',alpha=0.6,lw=0.4,axis='y',which='major')
 
 
 
-
-
-# # Animate linear
-# plt.figure(1)
-# lhU   = plt.plot(arange(nU+1)    ,xx[-1][circU],'b',lw=3)[0]
-# lhV   = plt.plot(arange(nU*J+1)/J,xx[-1][circV],'g',lw=2)[0]
-# for k in progbar(range(K),'Plotting'):
-#   lhU.set_ydata(xx[k][circU])
-#   lhV.set_ydata(xx[k][circV])
-#   plt.pause(0.001)
 
 
 
@@ -122,10 +112,10 @@ ax.grid(color='k',alpha=0.6,lw=0.4,axis='y',which='major')
 # ax.set_facecolor('white')
 # ax.set_aspect('equal')
 # L = 40 # Num of lines to plot
-# for p in range(L):
-#   k = 143 + p*3
-#   c = cm.viridis(1-p/L)
-#   a = 0.8-0.2*p/L
+# for Ny in range(L):
+#   k = 143 + Ny*3
+#   c = cm.viridis(1-Ny/L)
+#   a = 0.8-0.2*Ny/L
 #   plt.plot(*tU(xx[k][circU]),color=c,lw=2,alpha=a)[0]
 #   plt.plot(*tV(xx[k][circV]),color=c,lw=1,alpha=a)[0]
 

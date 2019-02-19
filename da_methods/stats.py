@@ -1,6 +1,6 @@
 from common import *
 
-class Stats(MLR_Print):
+class Stats(NestedPrint):
   """
   Contains and computes statistics of the DA methods.
   """
@@ -8,62 +8,108 @@ class Stats(MLR_Print):
   # Adjust this to omit heavy computations
   comp_threshold_3 = 51
 
-  # Used by MLR_Print
-  excluded  = MLR_Print.excluded + ['HMM','config','xx','yy']
+  # Used by NestedPrint
+  excluded  = NestedPrint.excluded + ['HMM','config','xx','yy']
   precision = 3
   ordr_by_linenum = -1
  
   def __init__(self,config,HMM,xx,yy):
     """
     Init the default statistics.
-    Note: you may well allocate & compute individual stats elsewhere,
-          and simply assigne them as an attribute to the stats instance.
+
+    Note: you may also allocate & compute individual stats elsewhere
+          (Python allows dynamic class attributes).
+          For example at the top of your experimental DA method,
+          which avoids "polluting" this space.
     """
 
+    ######################################
+    # Save twin experiment settings 
+    ######################################
     self.config = config
     self.HMM    = HMM
     self.xx     = xx
     self.yy     = yy
 
-    m    = HMM.f.m    ; assert m   ==xx.shape[1]
-    K    = HMM.t.K    ; assert K   ==xx.shape[0]-1
-    p    = HMM.h.m    ; assert p   ==yy.shape[1]
-    KObs = HMM.t.KObs ; assert KObs==yy.shape[0]-1
+    # Validations
+    Nx   = HMM.Nx      ; assert Nx   ==xx.shape[1]
+    Ny   = HMM.Ny      ; assert Ny   ==yy.shape[1]
+    K    = HMM.t.K     ; assert K    ==xx.shape[0]-1
+    KObs = HMM.t.KObs  ; assert KObs ==yy.shape[0]-1
 
-    # time-series constructor alias
+
+    ######################################
+    # Declare time series of various stats
+    ######################################
     new_series = self.new_FAU_series
 
-    self.mu     = new_series(m) # Mean
-    self.var    = new_series(m) # Variances
-    self.mad    = new_series(m) # Mean abs deviations
-    self.err    = new_series(m) # Error (mu-truth)
-    self.logp_m = new_series(1) # Marginal, Gaussian Log score
-    self.skew   = new_series(1) # Skewness
-    self.kurt   = new_series(1) # Kurtosis
-    self.rmv    = new_series(1) # Root-mean variance
-    self.rmse   = new_series(1) # Root-mean square error
+    self.mu     = new_series(Nx) # Mean
+    self.var    = new_series(Nx) # Variances
+    self.mad    = new_series(Nx) # Mean abs deviations
+    self.err    = new_series(Nx) # Error (mu-truth)
+    self.logp_m = new_series(1)  # Marginal, Gaussian Log score
+    self.skew   = new_series(1)  # Skewness
+    self.kurt   = new_series(1)  # Kurtosis
+    self.rmv    = new_series(1)  # Root-mean variance
+    self.rmse   = new_series(1)  # Root-mean square error
 
     if hasattr(config,'N'):
       # Ensemble-only init
       self._had_0v = False
       self._is_ens = True
       N            = config.N
-      m_Nm         = min(m,N)
-      self.w       = new_series(N)           # Importance weights
-      self.rh      = new_series(m,dtype=int) # Rank histogram
-      #self.N      = N               # Use w.shape[1] instead
+      minN         = min(Nx,N)
+      self.w       = new_series(N)            # Importance weights
+      self.rh      = new_series(Nx,dtype=int) # Rank histogram
     else:
       # Linear-Gaussian assessment
       self._is_ens = False
-      m_Nm         = m
+      minN         = Nx
 
-    self.svals = new_series(m_Nm) # Principal component (SVD) scores
-    self.umisf = new_series(m_Nm) # Error in component directions
+    self.svals = new_series(minN) # Principal component (SVD) scores
+    self.umisf = new_series(minN) # Error in component directions
 
-    # Other
-    self.trHK  = np.full(KObs+1, nan)
-    self.infl  = np.full(KObs+1, nan)
-    self.iters = np.full(KObs+1, nan)
+
+    ######################################
+    # Declare non-FAU (i.e. normal) series
+    ######################################
+    self.trHK   = np.full (KObs+1, nan)
+    self.infl   = np.full (KObs+1, nan)
+    self.iters  = np.full (KObs+1, nan)
+
+    # Weight-related
+    self.N_eff  = np.full (KObs+1, nan)
+    self.wroot  = np.full (KObs+1, nan)
+    self.resmpl = np.full (KObs+1, nan)
+
+
+    ######################################
+    # Define which stats get plotted as diagnostics in liveplotting, and how.
+    ######################################
+    # NB: The diagnostic liveplotting relies on detecting nan's to avoid
+    #     plotting stats that are not being used.
+    #     => Cannot use dtype bool or int for those that may be plotted.
+
+    def lin(a,b): return lambda x: a + b*x
+    def divN()  : return lambda x: x/N
+    def Id(x)   : return x
+
+    # RMS
+    self.style1 = {
+        'rmse'    : [Id          , None   , dict(c='k'      , label='Error'            )],
+        'rmv'     : [Id          , None   , dict(c='b'      , label='Spread', alpha=0.6)],
+      }
+
+    # OTHER         transf       , shape  , plt kwargs
+    self.style2 = OrderedDict([
+        ('skew'   , [Id          , None   , dict(c=     'g' , label=star+'Skew/$\sigma^3$'        )]),
+        ('kurt'   , [Id          , None   , dict(c=     'r' , label=star+'Kurt$/\sigma^4{-}3$'    )]),
+        ('trHK'   , [Id          , None   , dict(c=     'k' , label=star+'HK'                     )]),
+        ('infl'   , [lin(-10,10) , 'step' , dict(c=     'c' , label='10(infl-1)'                  )]),
+        ('N_eff'  , [divN()      , 'dirac', dict(c=RGBs['y'], label='N_eff/N'             ,lw=3   )]),
+        ('iters'  , [lin(0,.1)   , 'dirac', dict(c=     'm' , label='iters/10'                    )]),
+        ('resmpl' , [Id          , 'dirac', dict(c=     'k' , label='resampled?'                  )]),
+      ])
 
 
   def assess(self,k,kObs=None,f_a_u=None,
@@ -74,14 +120,15 @@ class Stats(MLR_Print):
     f_a_u: One or more of ['f',' a', 'u'], indicating
            that the result should be stored in (respectively)
            the forecast/analysis/universal attribute.
-
-    f_a_u has intelligent defaults. See source code. 
+           Default: 'u' if kObs is None else 'au' ('a' and 'u').
     """
 
     # Initial consistency checks.
     if k==0:
       if kObs is not None:
         raise KeyError("DAPPER convention: no obs at t=0. Helps avoid bugs.")
+      if f_a_u is None:
+        f_a_u = 'u'
       if self._is_ens==True:
         def rze(a,b,c):
           raise TypeError("Expected "+a+" input, but "+b+" is "+c+" None")
@@ -91,31 +138,31 @@ class Stats(MLR_Print):
         if E is not None:  rze("mu/Cov","E","not")
         if mu is None:     rze("mu/Cov","mu","")
 
-    # Intelligent defaults: f_a_u 
-    if   f_a_u is None : f_a_u = 'au' if (kObs is not None) else 'u'
-    elif f_a_u == 'a'  : f_a_u = 'au'
-    elif f_a_u == 'f'  : f_a_u = 'fu'
-    elif f_a_u == 'fau': # as used by Climatology()
-      if kObs is None:   f_a_u = 'u'
+    # Default. Don't add more defaults. It just gets confusing.
+    if f_a_u is None:
+      f_a_u = 'u' if kObs is None else 'au'
 
-    # Assemble key
-    key = (k,kObs,f_a_u)
-
-    LP      = self.config.liveplotting
-    store_u = self.config.store_u
-
-    if not (LP or store_u) and kObs==None:
-      pass # Skip assessment
+    # Prepare assessment call and arguments
+    if self._is_ens:
+      # Ensemble assessment
+      alias = self.assess_ens
+      state_prms = {'E':E,'w':w}
     else:
-      # Prepare assessment call and arguments
-      if self._is_ens:
-        # Ensemble assessment
-        alias = self.assess_ens
-        state_prms = {'E':E,'w':w}
-      else:
-        # Moment assessment
-        alias = self.assess_ext
-        state_prms = {'mu':mu,'P':Cov}
+      # Moment assessment
+      alias = self.assess_ext
+      state_prms = {'mu':mu,'P':Cov}
+
+    for fau in f_a_u:
+      # Assemble key
+      key = (k,kObs,fau)
+
+      # Skip assessment?
+      if kObs==None and not self.config.store_u:
+        try:
+          if not self.LP_instance.any_figs:
+            continue
+        except AttributeError:
+          pass # LP_instance not yet created
 
       # Call assessment
       with np.errstate(divide='ignore',invalid='ignore'):
@@ -132,36 +179,34 @@ class Stats(MLR_Print):
         self._had_0v = True
         warnings.warn("Sample variance was 0 at (k,kObs,fau) = " + str(key))
 
-
-      # LivePlot -- called if ('u' in f_a_u)
-      if LP and 'u' in f_a_u:
-        if hasattr(self,'lplot'):
-          self.lplot.update(key,**state_prms)
-        else:
-          self.lplot = LivePlot(self,key,**state_prms,only=LP)
+      # LivePlot -- Both initiation and update must come after the assessment.
+      if not hasattr(self,'LP_instance'):
+        self.LP_instance = LivePlot(self, self.config.liveplotting, key,E,Cov)
+      else:
+        self.LP_instance.update(key,E,Cov)
 
 
   def assess_ens(self,k,E,w=None):
     """Ensemble and Particle filter (weighted/importance) assessment."""
     # Unpack
-    N,m = E.shape
+    N,Nx = E.shape
     x = self.xx[k[0]]
 
-    # Process weights
+    # Validate weights
     if w is None: 
-      self._has_w = False
-      w           = 1/N
-    else:
-      self._has_w = True
+      try:                    delattr(self,'w')
+      except AttributeError:  pass
+      finally:                w = 1/N
     if np.isscalar(w):
-      assert w   != 0
-      w           = w*ones(N)
+      assert w != 0
+      w = w*ones(N)
+    if hasattr(self,'w'):
+      self.w[k] = w
 
     if abs(w.sum()-1) > 1e-5:      raise_AFE("Weights did not sum to one.",k)
     if not np.all(np.isfinite(E)): raise_AFE("Ensemble not finite.",k)
     if not np.all(np.isreal(E)):   raise_AFE("Ensemble not Real.",k)
 
-    self.w[k]    = w
     self.mu[k]   = w @ E
     A            = E - self.mu[k]
 
@@ -188,8 +233,8 @@ class Stats(MLR_Print):
 
     self.derivative_stats(k,x)
 
-    if sqrt(m*N) <= Stats.comp_threshold_3:
-      if N<=m:
+    if sqrt(Nx*N) <= Stats.comp_threshold_3:
+      if N<=Nx:
         _,s,UT         = svd( (sqrt(w)*A.T).T, full_matrices=False)
         s             *= sqrt(ub) # Makes s^2 unbiased
         self.svals[k]  = s
@@ -203,7 +248,7 @@ class Stats(MLR_Print):
 
       # For each state dim [i], compute rank of truth (x) among the ensemble (E)
       Ex_sorted     = np.sort(np.vstack((E,x)),axis=0,kind='heapsort')
-      self.rh[k]    = [np.where(Ex_sorted[:,i] == x[i])[0][0] for i in range(m)]
+      self.rh[k]    = [np.where(Ex_sorted[:,i] == x[i])[0][0] for i in range(Nx)]
 
 
   def assess_ext(self,k,mu,P):
@@ -214,8 +259,8 @@ class Stats(MLR_Print):
     if not isFinite: raise_AFE("Estimates not finite.",k)
     if not isReal:   raise_AFE("Estimates not Real.",k)
 
-    m = len(mu)
-    x = self.xx[k[0]]
+    Nx = len(mu)
+    x  = self.xx[k[0]]
 
     self.mu[k]  = mu
     self.var[k] = P.diag if isinstance(P,CovMat) else diag(P)
@@ -224,7 +269,7 @@ class Stats(MLR_Print):
 
     self.derivative_stats(k,x)
 
-    if m <= Stats.comp_threshold_3:
+    if Nx <= Stats.comp_threshold_3:
       P             = P.full if isinstance(P,CovMat) else P
       s2,U          = nla.eigh(P)
       self.svals[k] = sqrt(np.maximum(s2,0.0))[::-1]
@@ -240,11 +285,11 @@ class Stats(MLR_Print):
     
   def MGLS(self,k):
     # Marginal Gaussian Log Score.
-    m              = len(self.err[k])
+    Nx             = len(self.err[k])
     ldet           = log(self.var[k]).sum()
     nmisf          = self.var[k]**(-1/2) * self.err[k]
     logp_m         = (nmisf**2).sum() + ldet
-    self.logp_m[k] = logp_m/m
+    self.logp_m[k] = logp_m/Nx
 
 
   def average_in_time(self):
@@ -303,28 +348,10 @@ class Stats(MLR_Print):
 
 
 
-  def new_FAU_series(self,m,**kwargs):
+  def new_FAU_series(self,M,**kwargs):
     "Convenience FAU_series constructor."
     store_u = self.config.store_u
-    return FAU_series(self.HMM.t, m, store_u=store_u, **kwargs)
-
-  # TODO: Provide frontend initializer 
-
-  # Better to initialize manually (np.full...)
-  # def new_array(self,f_a_u,m,**kwargs):
-  #   "Convenience array constructor."
-  #   t = self.HMM.t
-  #   # Convert int-len to shape-tuple
-  #   if is_int(m):
-  #     if m==1: m = ()
-  #     else:    m = (m,)
-  #   # Set length
-  #   if f_a_u=='a':
-  #     K = t.KObs
-  #   elif f_a_u=='u':
-  #     K = t.K
-  #   #
-  #   return np.full((K+1,)+m,**kwargs)
+    return FAU_series(self.HMM.t, M, store_u=store_u, **kwargs)
 
 
 
@@ -336,8 +363,8 @@ def average_each_field(table,axis=1):
     table = np.transpose(table)
   assert table.ndim == 2
 
-  m,N = table.shape
-  avrg = np.empty(m,dict)
+  M,N = table.shape
+  avrg = np.empty(M,dict)
 
   for i,row in enumerate(table):
     avrg[i] = dict()

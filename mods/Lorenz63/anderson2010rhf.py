@@ -4,30 +4,27 @@
 
 from common import *
 
-from mods.Lorenz63.core import step, dfdx
+from mods.Lorenz63.core import step, dfdx, Nx
 from tools.localization import no_localization
-
-m = 3
-p = m
 
 t = Chronology(0.01,dkObs=12,T=4**5,BurnIn=4)
 
-f = {
-    'm'    : m,
+Dyn = {
+    'M'    : Nx,
     'model': step,
     'jacob': dfdx,
     'noise': 0
     }
 
-X0 = GaussRV(C=1,mu=ones(m))
+X0 = GaussRV(C=1,mu=ones(Nx))
 
-h = partial_direct_obs_setup(m,arange(m))
-h['noise'] = 8.0
-h['localizer'] = no_localization([m],arange(m))
+Obs = partial_direct_Obs(Nx,arange(Nx))
+Obs['noise'] = 8.0
+Obs['localizer'] = no_localization([Nx],arange(Nx))
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-HMM = HiddenMarkovModel(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
 
 ####################

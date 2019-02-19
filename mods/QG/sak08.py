@@ -11,8 +11,8 @@ from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 ############################
 
 model = model_config("sak08",{})
-f = {
-    'm'    : np.prod(shape),
+Dyn = {
+    'M'    : np.prod(shape),
     'model': model.step,
     'noise': 0,
     }
@@ -24,7 +24,7 @@ t = Chronology(dt=model.prms['dtout'],dkObs=1,T=1500,BurnIn=250)
 # In my opinion the burn in should be 400.
 # Sakov also used 10 repetitions.
 
-X0 = RV(m=f['m'],file=sample_filename)
+X0 = RV(M=Dyn['M'],file=sample_filename)
 
 
 ############################
@@ -32,8 +32,8 @@ X0 = RV(m=f['m'],file=sample_filename)
 ############################
 
 # This will look like satellite tracks when plotted in 2D
-p  = 300
-jj = equi_spaced_integers(f['m'],p)
+Ny = 300
+jj = equi_spaced_integers(Dyn['M'],Ny)
 jj = jj-jj[0]
 
 # Want: random_offset(t1)==random_offset(t2) if t1==t2.
@@ -62,15 +62,15 @@ batch_shape = [3, 3] # width (in grid points) of each state batch.
 #     if inflation is applied locally, then rmse might actually improve.
 localizer = loc_setup(shape[::-1], batch_shape[::-1], obs_inds, periodic=False)
 
-h = {
-    'm'    : p,
+Obs = {
+    'M'    : Ny,
     'model': hmod,
-    'noise': GaussRV(C=4*eye(p)),
+    'noise': GaussRV(C=4*eye(Ny)),
     'localizer': localizer,
     }
 
 # Moving localization mask for smoothers:
-h['loc_shift'] = lambda ii, dt: ii # no movement (suboptimal, but easy)
+Obs['loc_shift'] = lambda ii, dt: ii # no movement (suboptimal, but easy)
 
 # Jacobian left unspecified coz it's (usually) employed by methods that
 # compute full cov, which in this case is too big.
@@ -79,7 +79,7 @@ h['loc_shift'] = lambda ii, dt: ii # no movement (suboptimal, but easy)
 ############################
 # Other
 ############################
-HMM = HiddenMarkovModel(f,h,t,X0, LP=LP_setup(obs_inds) )
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0, LP=LP_setup(obs_inds) )
 
 
 ####################

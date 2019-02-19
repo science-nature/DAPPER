@@ -19,22 +19,22 @@ nU = LUV.nU
 t = Chronology(dt=0.005,dtObs=0.05,T=4**3,BurnIn=6)  # requires rk4
 
 
-f = {
-    'm'    : LUV.m,
+Dyn = {
+    'M'    : LUV.M,
     'model': with_rk4(LUV.dxdt,autonom=True),
     'noise': 0,
     'jacob': LUV.dfdx,
     'plot' : LUV.plot_state
     }
 
-X0 = GaussRV(C=0.01*eye(LUV.m))
+X0 = GaussRV(C=0.01*eye(LUV.M))
 
 R = 0.1
-h = partial_direct_obs_setup(LUV.m,arange(LUV.nU))
-h['noise'] = R
+Obs = partial_direct_Obs(LUV.M,arange(LUV.nU))
+Obs['noise'] = R
 
 other = {'name': rel_path(__file__,'mods/')+'_full'}
-HMM_full = HiddenMarkovModel(f,h,t,X0,**other)
+HMM_full = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
 
 ################
@@ -44,19 +44,19 @@ HMM_full = HiddenMarkovModel(f,h,t,X0,**other)
 # Just change dt from 005 to 05
 t = Chronology(dt=0.05, dtObs=0.05,T=4**3,BurnIn=6)
 
-f = {
-    'm'    : nU,
+Dyn = {
+    'M'    : nU,
     'model': with_rk4(LUV.dxdt_parameterized),
     'noise': 0,
     }
 
 X0 = GaussRV(C=0.01*eye(nU))
 
-h = partial_direct_obs_setup(nU,arange(nU))
-h['noise'] = R
+Obs = partial_direct_Obs(nU,arange(nU))
+Obs['noise'] = R
  
 other = {'name': rel_path(__file__,'mods/')+'_trunc'}
-HMM_trunc = HiddenMarkovModel(f,h,t,X0,**other)
+HMM_trunc = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
 
 def polynom_prmzt(t,x,order):

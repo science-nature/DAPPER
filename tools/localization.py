@@ -116,7 +116,7 @@ def rectangular_partitioning(shape,steps):
   >>> shape   = [4,13]
   >>> steps   = [2,4]
   >>> batches = rectangular_partitioning(shape, steps)
-  >>> m       = np.prod(shape)
+  >>> M       = np.prod(shape)
   >>> nB      = len(batches)
   >>> values  = np.random.choice(arange(nB),nB,0)
   >>> Z       = zeros(shape)
@@ -168,8 +168,8 @@ def partial_direct_obs_nd_loc_setup(shape,batch_shape,obs_inds,periodic):
   def ind2sub(ind): return np.    unravel_index(ind, shape)
 
 
-  m = np.prod(shape)
-  state_coord = ind2sub(arange(m))
+  M = np.prod(shape)
+  state_coord = ind2sub(arange(M))
 
   batches = rectangular_partitioning(shape, batch_shape)
   batches = [sub2ind(b) for b in batches]
@@ -209,16 +209,16 @@ def no_localization(shape,obs_inds):
      - Pretend that Lorenz63 has localization.
     """
 
-    m = np.prod(shape)
-    batches = [arange(m)]
-    jj = obs_inds_t(obs_inds,t)
+    M = np.prod(shape)
+    batches = [arange(M)]
+    jj = obs_inds_safe(obs_inds,t)
 
     if direction is 'x2y':
       obs_localizer = lambda batch: ( jj, ones(len(jj)) )
       return batches, obs_localizer
 
     elif direction is 'y2x':
-      state_localizer = lambda iObs: ( arange(m), ones(m) )
+      state_localizer = lambda iObs: ( arange(M), ones(M) )
     return state_localizer
 
   return loc_setup

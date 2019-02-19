@@ -1,40 +1,48 @@
 from common import *
 
-class HiddenMarkovModel(MLR_Print):
+class HiddenMarkovModel(NestedPrint):
   """
   Container for attributes of a Hidden Markov Model (HMM), to run a
   "twin experiment", i.e. an "OSSE (observing system simulation experiment)".
   """
-  def __init__(self,f,h,t,X0,**kwargs):
-    self.f  = f  if isinstance(f,  Operator)   else Operator  (**f)
-    self.h  = h  if isinstance(h,  Operator)   else Operator  (**h)
-    self.t  = t  if isinstance(t,  Chronology) else Chronology(**t)
-    self.X0 = X0 if isinstance(X0, RV)         else RV        (**X0)
+
+  def __init__(self,Dyn,Obs,t,X0,**kwargs):
+    self.Dyn = Dyn if isinstance(Dyn, Operator)   else Operator  (**Dyn)
+    self.Obs = Obs if isinstance(Obs, Operator)   else Operator  (**Obs)
+    self.t   = t   if isinstance(t  , Chronology) else Chronology(**t)
+    self.X0  = X0  if isinstance(X0 , RV)         else RV        (**X0)
+    # Assign name by file (using inspect magic)
+    name = inspect.getfile(inspect.stack()[1][0])
+    self.name = os.path.relpath(name,'mods/')
     # Write the rest of parameters
-    de_abbreviate(kwargs, [('LP','liveplotting')])
+    de_abbreviate(kwargs, [('LP','liveplotters')])
     for key, value in kwargs.items():
       setattr(self, key, value)
     # Validation
-    if self.h.noise.C==0 or self.h.noise.C.rk!=self.h.noise.C.m:
+    if self.Obs.noise.C==0 or self.Obs.noise.C.rk!=self.Obs.noise.C.M:
         raise ValueError("Rank-deficient R not supported.")
   
-  # ndim (.m) shortcuts
+  # ndim shortcuts
   @property
-  def M(self): return self.f.m
+  def Nx(self): return self.Dyn.M
   @property
-  def P(self): return self.h.m
+  def Ny(self): return self.Obs.M
 
-class Operator(MLR_Print):
+  # Print options
+  ordering = ['Dyn','Obs','t','X0']
+
+
+class Operator(NestedPrint):
   """
   Container for operators (models).
   """
-  def __init__(self,m,model=None,noise=None,**kwargs):
-    self.m = m
+  def __init__(self,M,model=None,noise=None,**kwargs):
+    self.M = M
 
     # None => Identity model
     if model is None:
       model = Id_op()
-      kwargs['jacob'] = Id_mat(m)
+      kwargs['jacob'] = Id_mat(M)
     self.model = model
 
     # None/0 => No noise
@@ -43,7 +51,7 @@ class Operator(MLR_Print):
     else:
       if noise is None: noise = 0
       if np.isscalar(noise):
-        self.noise = GaussRV(C=noise,m=m)
+        self.noise = GaussRV(C=noise,M=M)
       else:
         self.noise = GaussRV(C=noise)
 
@@ -53,6 +61,9 @@ class Operator(MLR_Print):
   
   def __call__(self,*args,**kwargs):
     return self.model(*args,**kwargs)
+
+  # Print options
+  ordering = ['M','model','noise']
 
 
 
@@ -173,24 +184,6 @@ def DA_Config(da_method):
       return cfg
   return wrapr
 
-
-# Adapted from stackoverflow.com/a/3603824
-class ImmutableAttributes():
-  """
-  Freeze (make immutable) attributes of class instance.
-  Applies to 
-  """
-  __isfrozen = False
-  __keys     = None
-  def __setattr__(self, key, value):
-    #if self.__isfrozen and hasattr(self, key):
-    if self.__isfrozen and key in self.__keys:
-      raise AttributeError(
-          "The attribute %r of %r has been frozen."%(key,type(self)))
-    object.__setattr__(self, key, value)
-  def _freeze(self,keys):
-    self.__keys     = keys
-    self.__isfrozen = True
 
 
 class DAC(ImmutableAttributes):

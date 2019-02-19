@@ -5,49 +5,117 @@ from common import *
 #########################################
 # Progressbar
 #########################################
-def noobar(itrble, desc):
-  """Simple progress bar. To be used if tqdm not installed."""
-  L  = len(itrble)
+
+import inspect
+def pdesc(desc):
+  "Get progbar description by caller inspection."
+
+  if desc is not None:
+    return desc
+
+  # Assume the "progress" happens 2 calling levels above
+  level = 2
+
+  try:
+    # Assuming we're in a DAC, go look above (i.e. stack[3]) for a name_hook.
+    name = inspect.stack()[level+1].frame.f_locals['name_hook'] #so.com/q/15608987
+  except (KeyError, AttributeError):
+    # Otherwise: just get name of what's calling progbar (i.e. stack[2]) 
+    name = inspect.stack()[level].function #so.com/a/900404
+  return name
+
+
+def noobar(iterable, desc=None, leave=None):
+  """Simple progress bar. Fallback in case tqdm not installed."""
+  if desc is None: desc = "Prog"
+  L  = len(iterable)
   print('{}: {: >2d}'.format(desc,0), end='')
-  for k,i in enumerate(itrble):
+  for k,i in enumerate(iterable):
     yield i
     p = (k+1)/L
     e = '' if k<(L-1) else '\n'
     print('\b\b\b\b {: >2d}%'.format(int(100*p)), end=e)
     sys.stdout.flush()
 
-# Get progbar description by inspecting caller function.
-import inspect
-def pdesc(desc):
-  if desc is not None:
-    return desc
-  try:
-    #stackoverflow.com/q/15608987
-    DAC_name  = inspect.stack()[3].frame.f_locals['name_hook']
-  except (KeyError, AttributeError):
-    #stackoverflow.com/a/900404
-    DAC_name  = inspect.stack()[2].function
-  return DAC_name 
 
-# Define progbar as tqdm or noobar
+# Define progbar
 try:
   import tqdm
-  def progbar(inds, desc=None, leave=1):
+  def progbar(iterable, desc=None, leave=1):
+    "Prints a nice progress bar in the terminal"
+    desc = pdesc(desc)
     if is_notebook:
-      pb = tqdm.tqdm_notebook(inds,desc=pdesc(desc),leave=leave)
+      return tqdm.tqdm_notebook(iterable,desc=desc,leave=leave)
     else:
-      pb = tqdm.tqdm(inds,desc=pdesc(desc),leave=leave,smoothing=0.3,dynamic_ncols=True)
+      return tqdm.tqdm(iterable,desc=desc,leave=leave,smoothing=0.3,dynamic_ncols=True)
     # Printing during the progbar loop (may occur with error printing)
     # can cause tqdm to freeze the entire execution. 
     # Seemingly, this is caused by their multiprocessing-safe stuff.
     # Disable this, as per github.com/tqdm/tqdm/issues/461#issuecomment-334343230
+    # pb = tqdm.tqdm(...)
     # try: pb.get_lock().locks = []
     # except AttributeError: pass
-    return pb
+    # return pb
 except ImportError as err:
   install_warn(err)
-  def progbar(inds, desc=None, leave=1):
-    return noobar(inds,desc=pdesc(desc))
+  progbar = noobar
+
+
+# Non-blocking, non-echo read1 from stdin.
+try:
+    # Linux. See Misc/read1_trials.py
+    import termios, sys
+    def set_term_settings(TS):
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, TS)
+    def new_term_settings():
+      "Make stdin.read non-echo and non-block"
+
+      TS_old = termios.tcgetattr(sys.stdin)
+      TS_new = termios.tcgetattr(sys.stdin)
+
+      # Make tty non-echo.
+      TS_new[3] = TS_new[3] & ~(termios.ECHO | termios.ICANON)
+
+      # Make tty non-blocking.
+      TS_new[6][termios.VMIN] = 0
+      TS_new[6][termios.VTIME] = 0
+
+      set_term_settings(TS_new)
+      return TS_old
+
+    def _read1():
+      return os.read(sys.stdin.fileno(), 1)
+
+    # Wrap the progressbar generator with temporary term settings
+    # Note: could also do it when loading/exiting DAPPER (untested),
+    # but it doesn't work to repeatedly do it within the assim loop.
+    orig_progbar = progbar
+    def progbar(iterable, desc=None, leave=1):
+      TS_old = new_term_settings()
+      try:
+        for i in orig_progbar(iterable, pdesc(desc), leave):
+            yield i
+      finally:
+        # Should restore settings both after normal termination
+        # and if KeyboardInterrupt or other exception happened during loop.
+        set_term_settings(TS_old)
+
+except ImportError:
+    # Windows
+    import msvcrt
+    def _read1():
+      if msvcrt.kbhit():
+        return msvcrt.getch()
+      else:
+        return None
+
+def read1(fd=sys.stdin.fileno()):
+  "Get 1 character. Non-blocking, non-echoing."
+  if disable_user_interaction: return None
+  return _read1()
+
+# Set to True before a py.test (which doesn't like reading stdin)
+disable_user_interaction = False
 
 
 
@@ -55,43 +123,6 @@ except ImportError as err:
 #########################################
 # Console input / output
 #########################################
-
-#stackoverflow.com/q/292095
-import select
-def poll_input():
-  i,o,e = select.select([sys.stdin],[],[],0.0001)
-  for s in i: # Only happens if <Enter> has been pressed
-    if s == sys.stdin:
-      return sys.stdin.readline()
-  return None
-
-# Can't get thread solution working (in combination with getch()):
-# stackoverflow.com/a/25442391/38281
-
-# stackoverflow.com/a/21659588/38281
-# (Wait for) any key:
-def _find_getch():
-    try:
-        import termios
-    except ImportError:
-        # Non-POSIX. Return msvcrt's (Windows') getch.
-        import msvcrt
-        return msvcrt.getch
-    # POSIX system. Create and return a getch that manipulates the tty.
-    import sys, tty
-    def _getch():
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(fd)
-            ch = sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
-    return _getch
-getch = _find_getch()
-
-
 
 import inspect
 def spell_out(*args):
@@ -197,7 +228,26 @@ def repr_type_and_name(thing):
   return s
 
 
-class MLR_Print:
+# Adapted from stackoverflow.com/a/3603824
+class ImmutableAttributes():
+  """
+  Freeze (make immutable) attributes of class instance.
+  Applies to 
+  """
+  __isfrozen = False
+  __keys     = None
+  def __setattr__(self, key, value):
+    #if self.__isfrozen and hasattr(self, key):
+    if self.__isfrozen and key in self.__keys:
+      raise AttributeError(
+          "The attribute %r of %r has been frozen."%(key,type(self)))
+    object.__setattr__(self, key, value)
+  def _freeze(self,keys):
+    self.__keys     = keys
+    self.__isfrozen = True
+
+
+class NestedPrint:
   """
   Multi-Line, Recursive repr (print) functionality.
   Set class variables to change look:
@@ -214,7 +264,7 @@ class MLR_Print:
   precision=None
 
   # Recursion monitoring.
-  _stack=[] # Reference using MLR_Print._stack, ...
+  _stack=[] # Reference using NestedPrint._stack, ...
   # not self._stack or self.__class__, which reference sub-class "instance".
 
   # Reference using self.excluded, to access sub-class "instance".
@@ -222,8 +272,9 @@ class MLR_Print:
   excluded.append(re.compile('^_')) # "Private"
   excluded.append('name') # Treated separately
 
-  included = []
-  aliases  = {}
+  included = [] # Only print these (also determines ordering).
+  ordering = [] # Determine ordering (with precedence over included).
+  aliases  = {} # Rename attributes (vars)
 
   def __repr__(self):
     with printoptions(threshold=self.threshold,precision=self.precision):
@@ -232,11 +283,11 @@ class MLR_Print:
 
       # Infinite recursion prevention
       is_top_level = False
-      if MLR_Print._stack == []:
+      if NestedPrint._stack == []:
         is_top_level = True
-      if self in MLR_Print._stack:
+      if self in NestedPrint._stack:
         return "**Recursion**"
-      MLR_Print._stack += [self]
+      NestedPrint._stack += [self]
 
       # Use included or filter-out excluded
       keys = self.included or filter_out(vars(self), *self.excluded)
@@ -247,16 +298,22 @@ class MLR_Print:
         t = repr(getattr(self,key)) # sub-repr
         if '\n' in t:
           # Activate multi-line printing
-          t = t.replace('\n',NL+' '*self.indent) # other lines
-          t = NL+' '*self.indent + t             # first line
+          t = t.replace('\n',NL+' '*self.indent)      # other lines
+          t = NL+' '*self.indent + t                  # first line
         t = NL + self.aliases.get(key,key) + ': ' + t # key-name
         txts[key] = t
 
       def sortr(x):
-        if self.ordr_by_linenum:
-          return self.ordr_by_linenum*txts[x].count('\n')
+        if x in self.ordering:
+          key = -1000 + self.ordering.index(x)
         else:
-          return x.lower()
+          if self.ordr_by_linenum:
+            key = self.ordr_by_linenum*txts[x].count('\n')
+          else:
+            key = x.lower()
+            # Convert str to int (assuming ASCII) for comparison with above cases
+            key = sum( ord(x)*128**i for i,x in enumerate(x[::-1]) )
+        return key
 
       # Assemble string
       s = repr_type_and_name(self)
@@ -265,7 +322,7 @@ class MLR_Print:
 
       # Empty _stack when top-level printing finished
       if is_top_level:
-        MLR_Print._stack = []
+        NestedPrint._stack = []
 
       return s
 
@@ -349,7 +406,9 @@ def set_tmp(obj, attr, val):
       if was_there:
         tmp = getattr(obj, attr)
     setattr(obj, attr, val)
+
     yield #was_there, tmp
+
     if not was_there: delattr(obj, attr)
     else:             setattr(obj, attr, tmp)
 
@@ -456,12 +515,15 @@ def raise_AFE(msg,time_index=None):
 
 def vectorize0(f):
   """
-  Vectorize f for its 1st (index 0) argument.
+  Vectorize f for its 1st (index 0) argument,
+  and do so recursively.
 
   Compared to np.vectorize:
     - less powerful, but safer to only vectorize 1st argument
     - doesn't evaluate the 1st item twice
     - doesn't always return array
+
+  Still, it's quite messy, and should not be used in "production code".
 
   Example:
   >>> @vectorize0

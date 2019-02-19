@@ -1,44 +1,45 @@
 # Settings from
 # Pajonk, Oliver, et al. 
-#   "A deterministic filter for non-Gaussian Bayesian estimation—applications to dynamical system estimation with noisy measurements."
+#   "A deterministic filter for non-Gaussian Bayesian estimation—applications
+#    to dynamical system estimation with noisy measurements."
 #   Physica D: Nonlinear Phenomena 241.7 (2012): 775-788.
 #
+# There is nothing to reproduce from the paper as there are no
+# statistically converged numbers.
+
 # More interesting settings: mods.Lorenz84.harder
 
 from common import *
 
-from mods.Lorenz84.core import step, dfdx
+from mods.Lorenz84.core import step, dfdx, Nx
 from mods.Lorenz63.liveplotting import LP_setup
 
-m = 3
-p = m
-
+Ny = Nx
 
 day = 0.05/6 * 24 # coz dt=0.05 <--> 6h in "model time scale"
 t = Chronology(0.05,dkObs=1,T=200*day,BurnIn=10*day)
 
-m = 3
-f = {
-    'm'    : m,
+Dyn = {
+    'M'    : Nx,
     'model': step,
     'jacob': dfdx,
     'noise': 0
     }
 
-X0  = GaussRV(C=0.01,m=m) # Decreased from Pajonk's C=1.
+X0 = GaussRV(C=0.01,M=Nx) # Decreased from Pajonk's C=1.
 
-h = {
-    'm'    : p,
+Obs = {
+    'M'    : Ny,
     'model': Id_op(),
-    'jacob': Id_mat(p),
+    'jacob': Id_mat(Ny),
     'noise': 0.1,
     }
 
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-HMM = HiddenMarkovModel(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
-HMM.liveplotting = LP_setup(arange(m))
+HMM.liveplotters = LP_setup(arange(Nx))
 
 ####################
 # Suggested tuning

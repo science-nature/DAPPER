@@ -41,8 +41,15 @@ plot_time_series(stats)
 # Hint: suggested DA configs are listed in the HMM file.
 
 # Excercise: Repeat the above excercise, but now with the models:
+# - LotkaVolterra
 # - Lorenz95
 # - LA
 # - QG
+
+# Excercise: 
+# Look at the plots from `plot_time_series(stats)`.
+# Add `store_u=True` to the config definition, and re-run experiment.
+#  - How does this plot change? What does store_u control?
+#  - Set liveplotting=False. Is the experiment quicker with store_u=True or False?
 
 

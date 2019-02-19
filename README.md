@@ -63,20 +63,16 @@ Alternatively, see the `tutorials` folder for an intro to DA.
   
 Installation
 ------------------------------------------------
-Prerequisite: `python3.5+` with
-`scipy`, `matplotlib`, `pandas`.
-This is all comes with [anaconda](https://www.anaconda.com/download)
-by default.
-
-Download, extract the DAPPER folder, and `cd` into it. To test it, run:
-
-    python -i example_1.py
-
-For the tutorials, you will also need
-`jupyter` and the `markdown` package.
-
-It is also recommended to install `tqdm` (e.g. `pip install tqdm`)
-and `colorama`.
+Tested on Linux/MacOS/Windows
+1. Prerequisite: `python3.5+`
+(easy to set up with
+[anaconda](https://www.anaconda.com/download), even without admin rights).
+2. Download, extract the DAPPER folder, and `cd` into it.  
+`pip install -r requirements.txt`
+3. To test the installation, run:  
+`$ ipython`  
+and then:  
+`In [1]: run example_1.py`
 
 
 
@@ -86,14 +82,14 @@ References provided at bottom
 
 Method name                                            | Literature RMSE results reproduced
 ------------------------------------------------------ | ---------------------------------------
-EnKF <sup>1</sup>                                      | Sakov and Oke (2008)
+EnKF <sup>1</sup>                                      | Sakov and Oke (2008), Hoteit (2015)
 EnKF-N                                                 | Bocquet (2012), (2015)
 EnKS, EnRTS                                            | Raanes (2016a)
-iEnKS (and -N)                                         | Sakov (2012), Bocquet (2012), (2014)
+iEnKS <sup>2</sup>                                                 | Sakov (2012), Bocquet (2012), (2014)
 LETKF, local & serial EAKF                             | Bocquet (2011)
 Sqrt. model noise methods                              | Raanes (2015)
-Particle filter (bootstrap) <sup>2</sup>               | Bocquet (2010)
-Optimal/implicit Particle filter  <sup>2</sup>         | "
+Particle filter (bootstrap) <sup>3</sup>               | Bocquet (2010)
+Optimal/implicit Particle filter  <sup>3</sup>         | "
 NETF                                                   | Tödter (2015), Wiljes (2017)
 Rank histogram filter (RHF)                            | Anderson (2010)
 Extended KF                                            | Raanes (2016b)
@@ -101,9 +97,11 @@ Optimal interpolation                                  | "
 Climatology                                            | "
 3D-Var                                                 | 
 
-<sup>1</sup>: Stochastic, DEnKF (i.e. half-update), ETKF (i.e. sym. sqrt.).  
+<sup>1</sup>: Stochastic, DEnKF (i.e. half-update), ETKF (i.e. sym. sqrt.). Serial forms are also available.  
 Tuned with inflation and "random, orthogonal rotations".  
-<sup>2</sup>: Resampling: multinomial (including systematic/universal and residual).  
+<sup>2</sup>: Includes (as particular cases) EnRML, iEnKS, iEnKF.  
+Also supports MDA forms, the bundle version, and "EnKF-N"-type inflation.  
+<sup>3</sup>: Resampling: multinomial (including systematic/universal and residual).  
 The particle filter is tuned with "effective-N monitoring", "regularization/jittering" strength, and more.
 
 **To add a new method:**
@@ -111,7 +109,6 @@ Just add it to `da_methods.py`, using the others in there as templates.
 Remember: DAPPER is a *set of templates* (not a framework);
 do not hesitate make your own scripts and functions
 (instead of squeezing everything into standardized configuration files).
-
 
 
 
@@ -130,17 +127,20 @@ Quasi-Geost | No      | 2d        | 129²≈17k  | ≈140     | Sakov
 *: flexible; set as necessary
 
 **To add a new model:**
-* Make a new dir: `DAPPER/mods/your_model`. Add the following files:
-* `core.py` to define the core functionality and documentation of your model.
-  The model must (and obs operator) support
-  2D-array (i.e. ensemble) and 1D-array (single realization) input.
-  See the `core.py` file in `mods/Lorenz63` and `mods/Lorenz95` for typical
-  implementations, and `mods/QG` for how to parallelize the ensemble simulations.
+Make a new dir: `DAPPER/mods/your_model`. Add the following files:
+* `core.py` to define the core functionality and documentation of your dynamical model.
+    Typically this culminates in a `step(x, t, dt)` function.
+  * The model step operator (and the obs operator) must support
+    2D-array (i.e. ensemble) and 1D-array (single realization) input.
+    See the `core.py` file in `mods/Lorenz63` and `mods/Lorenz95` for typical
+    implementations, and `mods/QG` for how to parallelize the ensemble simulations.
+  * Optional: To use the (extended) Kalman filter,
+    you will need to define the model linearization.
+    Note: this only needs to support 1D input (single realization).
 * `demo.py` to visually showcase a simulation of the model.
-* `liveplotting.py` (optional) to define how
-  the assimilation process should be visualized on-line.
 * Files that define a complete Hidden Markov Model ready for a twin experiment (OSSE).
-  See for example `DAPPER/mods/Lorenz63/{sak12,boc12}.py`.
+    For example, this will plug in the `step`function you made previously as in `Dyn['model'] = step`.
+    For further details, see examples such as `DAPPER/mods/Lorenz63/{sak12,boc12}.py`.
 
 
 <!--
@@ -158,6 +158,20 @@ Quasi-Geost | No      | 2d        | 129²≈17k  | ≈140     | Sakov
     * or very small observation noise (perfectly observed system)
 -->
 
+
+Other reproductions
+------------
+As mentioned [above](#Methods),
+DAPPER reproduces literature results.
+There are also plenty of results in the literature that DAPPER does not reproduce.
+Typically, this means that the published results are incorrect.
+
+A list of experimental settings that can be compared with literature papers
+can be obtained using gnu's `find`:
+
+      $ find -iregex "./mods/.*[0-9]\{1,4\}\.py"
+
+Some of these files contain settings that have been used in several papers.
 
 
 
@@ -204,7 +218,7 @@ DAPPER is aimed at research and teaching (see discussion on top).
 Example of limitations:
  * It is not suited for very big models (>60k unknowns).
  * Time-dependent error covariances and changes in lengths of state/obs
-     (although models f and h may otherwise be time-dependent).
+     (although models f and Obs may otherwise be time-dependent).
  * Non-uniform time sequences not fully supported.
 
 Also, DAPPER comes with no guarantees/support.
@@ -276,6 +290,7 @@ References
 - Bocquet (2015) : Bocquet, Raanes, and Hannart. "Expanding the validity of the ensemble Kalman filter without the intrinsic need for inflation".  
 - Tödter (2015)  : Tödter and Ahrens. "A second-order exact ensemble square root filter for nonlinear data assimilation".  
 - Raanes (2015)  : Raanes, Carrassi, and Bertino. "Extending the square root method to account for model noise in the ensemble Kalman filter".  
+- Hoteit (2015)  : "Mitigating Observation Perturbation Sampling Errors in the Stochastic EnKF"
 - Raanes (2016a) : Raanes. "On the ensemble Rauch-Tung-Striebel smoother and its equivalence to the ensemble Kalman smoother".  
 - Raanes (2016b) : Raanes. "Improvements to Ensemble Methods for Data Assimilation in the Geosciences".  
 - Wiljes (2017)  : Aceved, Wilje and Reich. "Second-order accurate ensemble transform particle filters".  
@@ -319,7 +334,7 @@ Powered by
 <!--
 Implementation choices
 * Uses python3.5+
-* NEW: Use `N-by-m` ndarrays. Pros:
+* NEW: Use `N-by-Nx` ndarrays. Pros:
     * python default
         * speed of (row-by-row) access, especially for models
         * same as default ordering of random numbers
@@ -328,17 +343,17 @@ Implementation choices
     * beneficial operator precedence without `()`. E.g. `dy @ Rinv @ Y.T @ Pw` (where `dy` is a vector)
     * fewer indices: `[n,:]` yields same as `[n]`
     * no checking if numpy return `ndarrays` even when input is `matrix`
-    * Regression literature uses `N-by-m` ("data matrix")
-* OLD: Use `m-by-N` matrix class. Pros:
-    * EnKF literature uses `m-by-N`
+    * Regression literature uses `N-by-Nx` ("data matrix")
+* OLD: Use `Nx-by-N` matrix class. Pros:
+    * EnKF literature uses `Nx-by-N`
     * Matrix multiplication through `*` -- since python3.5 can just use `@`
 
 Conventions:
 * DA_Config, assimilate, stats
 * fau_series
 * E,w,A
-* m-by-N
-* m (not ndims coz thats like 2 for matrices), p, chrono
+* Nx-by-N
+* Nx (not ndims coz thats like 2 for matrices), P, chrono
 * n
 * ii, jj
 * xx,yy
@@ -349,14 +364,20 @@ Conventions:
 <!--
 TODO
 ------------------------------------------------
-* Update list of methods (e.g. ESOPS)
-* Darcy, LotkaVolterra, 2pendulum, Kuramoto-Sivashinsky , Nikolaevskiy Equation
-* Lage demo fil/liveplotting for LorenzUV
-* Reorg file structure: Turn into package?
-* Simplify time management?
-* Use pandas for stats time series?
-* Upgrade example_4 with plot_1d_minz ?
-* Implement spatialized inflation?
+* Make changes to L63.core and sak12 in the rest
+* rename viz.py:span to "xtrma". Or rm?
+* Rename partial_direct_Obs --> partial_Id_Obs
+* Rename dfdx --> dstep_dx
+* Rename TLM --> d2x_dtdx
+* Rename jacob --> linearization
+* Ensure plot_pause is used for all liveplotting
+* Is this why ctrl-c fails so often (from https://docs.python.org/3.5/library/select.html ):
+    "Changed in version 3.5: The function is now retried with a recomputed timeout when interrupted by a signal, except if the signal handler raises an exception (see PEP 475 for the rationale), instead of raising InterruptedError."
+* avoid tqdm multiline (https://stackoverflow.com/a/38345993/38281) ???
+  No, INSTEAD: capture key press and don't send to stdout
+
+* Bugs:
+    * __name__ for HMM via inspect fails when running a 2nd, ≠ script.
 
 * EITHER: Rm *args, **kwargs from da_methods? (less spelling errors)
 *         Replace with opts argument (could be anything).
@@ -368,32 +389,17 @@ TODO
 * Make function DA_Config() a member called 'method' of DAC. Rename DAC to DA_Config.
     => Yields (???) decorator syntax @DA_Config.method  (which would look nice) 
 * Rename DA_Config to DA_method or something
-
-* Rename common to DAPPER_workspace.
-* Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
-* Defaults file (fail_gently, liveplotting, store_u mkl.set_num_threads, etc)
-
-* Requirements
-
-* Replace print_c and termcolors dict by 'with coloring:'. Requirements
-
-* Fix Windows bug (key listening: ncurses?)
-
-* Fix dtObs bug
-
-* Review ens_compatible
-* Rm vectorize0 (too messy). See SO.com/questions/29318459 and more
-
-* rename f til dynamics og h til observation
-
 * Get rid of Tuple assignment of twin/setup items
 
-* Change m to M and ndim? (what about model?)
-
+* Reorg file structure: Turn into package?
+* Rename common to DAPPER_workspace.
+* Welcome message (setting mkl.set_num_threads, setting style, importing from common "setpaths") etc
+* Defaults file (fail_gently, liveplotting, store_u mkl.set_num_threads, print options in NestedPrint, computational_threshold)
 * Post version on norce, nersc and link from enkf.nersc
 
-* Get good/simple local PF with reproduction of Alban's results
-* Reproduce Pulido
+* Darcy, LotkaVolterra, 2pendulum, Kuramoto-Sivashinsky , Nikolaevskiy Equation
+* Simplify time management?
+* Use pandas for stats time series?
 
 -->
 

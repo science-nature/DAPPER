@@ -28,11 +28,11 @@ dt = 0.005
 t0 = np.nan
 
 seed(30) # 3 5 7 13 15 30
-x0 = randn(LUV.m)
+x0 = randn(LUV.M)
 
 true_step  = with_rk4(LUV.dxdt      ,autonom=True)
 model_step = with_rk4(LUV.dxdt_trunc,autonom=True)
-true_K     = make_recursive(true_step,with_prog=1)
+true_K     = with_recursion(true_step,prog=1)
 
 ###########################
 # Compute truth trajectory

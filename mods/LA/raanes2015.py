@@ -5,17 +5,17 @@
 from common import *
 
 from mods.LA.core import sinusoidal_sample, Fmat
-from mods.Lorenz95.liveplotting import LP_setup
+from mods.Lorenz95.core import LP
 
 # Burn-in allows damp*x and x+noise balance out
-tseq = Chronology(dt=1,dkObs=5,T=500,BurnIn=60)
+tseq = Chronology(dt=1,dkObs=5,T=500,BurnIn=60,Tplot=100)
 
-m = 1000;
-p = 40;
+Nx = 1000;
+Ny = 40;
 
-jj = equi_spaced_integers(m,p)
-h = partial_direct_obs_setup(m,jj)
-h['noise'] = 0.01
+jj = equi_spaced_integers(Nx,Ny)
+Obs = partial_direct_Obs(Nx,jj)
+Obs['noise'] = 0.01
 
 
 ################### Noise setup ###################
@@ -33,7 +33,7 @@ except FileNotFoundError:
   # First-time use
   print('Generating a sample from which to initialize experiments.')
   NQ        = 20000 # Must have NQ > (2*wnumQ+1)
-  A         = sinusoidal_sample(m,wnumQ,NQ)
+  A         = sinusoidal_sample(Nx,wnumQ,NQ)
   A         = 1/10 * center(A)[0] / sqrt(NQ)
   Q         = A.T @ A
   U,s,_     = tsvd(Q)
@@ -44,23 +44,20 @@ X0 = GaussRV(C=CovMat(sqrt(5)*L,'Left'))
 
 ################### Forward model ###################
 damp = 0.98;
-Fm = Fmat(m,-1,1,tseq.dt)
+Fm = Fmat(Nx,-1,1,tseq.dt)
 def step(x,t,dt):
   assert dt == tseq.dt
   return x @ Fm.T
 
-f = {
-    'm'    : m,
+Dyn = {
+    'M'    : Nx,
     'model': lambda x,t,dt: damp * step(x,t,dt),
     'jacob': lambda x,t,dt: damp * Fm,
     'noise': GaussRV(C=CovMat(L,'Left')),
     }
 
 ################### Gather ###################
-HMM = HiddenMarkovModel(f,h,tseq,X0,
-    name = os.path.relpath(__file__,'mods/'),
-    LP   = LP_setup(jj),
-    )
+HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,LP=LP(jj))
 
 
 
@@ -78,7 +75,7 @@ HMM = HiddenMarkovModel(f,h,tseq,X0,
 # where XXX is one of:
 # - Stoch
 # - Mult-1
-# - Mult-m
+# - Mult-M
 # - Sqrt-Core
 # - Sqrt-Add-Z
 # - Sqrt-Dep

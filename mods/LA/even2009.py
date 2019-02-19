@@ -10,15 +10,15 @@
 from common import *
 
 from mods.LA.core import sinusoidal_sample, Fmat
-from mods.Lorenz95.liveplotting import LP_setup
+from mods.Lorenz95.core import LP
 
-m = 1000
-p = 4
-jj = equi_spaced_integers(m,p)
+Nx = 1000
+Ny = 4
+jj = equi_spaced_integers(Nx,Ny)
 
-tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1)
+tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1,Tplot=100)
 
-Fm = Fmat(m,c=-1,dx=1,dt=tseq.dt)
+Fm = Fmat(Nx,c=-1,dx=1,dt=tseq.dt)
 def step(x,t,dt):
   assert dt == tseq.dt
   return x @ Fm.T
@@ -26,8 +26,8 @@ def step(x,t,dt):
 # WITHOUT explicit matrix (assumes dt == dx/c):
 # step = lambda x,t,dt: np.roll(x,1,axis=x.ndim-1)
 
-f = {
-    'm'    : m,
+Dyn = {
+    'M'    : Nx,
     'model': step,
     'jacob': Fm,
     'noise': 0
@@ -38,16 +38,12 @@ f = {
 # Yet this is not so implausible because sinusoidal_sample()
 # yields (multivariate) uniform (random numbers) -- not Gaussian.
 wnum  = 25
-X0 = RV(m=m, func = lambda N: sqrt(5)/10 * sinusoidal_sample(m,wnum,N))
+X0 = RV(M=Nx, func = lambda N: sqrt(5)/10 * sinusoidal_sample(Nx,wnum,N))
 
-h = partial_direct_obs_setup(m,jj)
-h['noise'] = 0.01
+Obs = partial_direct_Obs(Nx,jj)
+Obs['noise'] = 0.01
 
-HMM = HiddenMarkovModel(f,h,tseq,X0,
-    LP   = LP_setup(jj,conf_patch=True,conf_mult=1),
-    name = os.path.relpath(__file__,'mods/'),
-    )
-
+HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,liveplotters=LP(jj))
 
 
 ####################

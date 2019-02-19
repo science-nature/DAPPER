@@ -3,37 +3,37 @@
 from common import *
 
 
-class RV(MLR_Print):
+class RV(NestedPrint):
   "Class to represent random variables."
 
-  # Used by MLR_Print
+  # Used by NestedPrint
   ordr_by_linenum = +1
 
-  def __init__(self,m,**kwargs):
+  def __init__(self,M,**kwargs):
     """
-     - m    <int>     : ndim
+     - M    <int>     : ndim
      - is0  <bool>    : if True, the random variable is identically 0
      - func <func(N)> : use this sampling function. Example:
-                        RV(m=4,func=lambda N: rand((N,4))
+                        RV(M=4,func=lambda N: rand((N,4))
      - file <str>     : draw from file. Example:
-                        RV(m=4,file='data/tmp.npz')
+                        RV(M=4,file='data/tmp.npz')
     The following kwords (versions) are available,
     but should not be used for anything serious (use instead subclasses, like GaussRV).
      - icdf <func(x)> : marginal/independent  "inverse transform" sampling. Example:
-                        RV(m=4,icdf = scipy.stats.norm.ppf)
+                        RV(M=4,icdf = scipy.stats.norm.ppf)
      - cdf <func(x)>  : as icdf, but with approximate icdf, from interpolation. Example:
-                        RV(m=4,cdf = scipy.stats.norm.cdf)
+                        RV(M=4,cdf = scipy.stats.norm.cdf)
      - pdf  <func(x)> : "acceptance-rejection" sampling
                         Not implemented.
     """
-    self.m = m
+    self.M = M
     for key, value in kwargs.items():
       setattr(self, key, value)
-    
+
   def sample(self,N):
     if getattr(self,'is0',False):
       # Identically 0
-      E = zeros((N,self.m))
+      E = zeros((N,self.M))
     elif hasattr(self,'func'):
       # Provided by function
       E = self.func(N)
@@ -51,7 +51,7 @@ class RV(MLR_Print):
     elif hasattr(self,'icdf'):
       # Independent "inverse transform" sampling
       icdf = np.vectorize(self.icdf)
-      uu   = rand((N,self.m))
+      uu   = rand((N,self.M))
       E    = icdf(uu)
     elif hasattr(self,'cdf'):
       # Like above, but with inv-cdf approximate, from interpolation
@@ -66,14 +66,14 @@ class RV(MLR_Print):
         uu     = np.vectorize(cdf)(xx)
         icdf   = interp1d(uu,xx)
         self.icdf_interp = np.vectorize(icdf)
-      uu = rand((N,self.m))
+      uu = rand((N,self.M))
       E  = self.icdf_interp(uu)
     elif hasattr(self,'pdf'):
       # "acceptance-rejection" sampling
       raise NotImplementedError
     else:
       raise KeyError
-    assert self.m == E.shape[1]
+    assert self.M == E.shape[1]
     return E
 
 
@@ -85,7 +85,8 @@ class RV_with_mean_and_cov(RV):
   This class must be subclassed to provide sample(),
   i.e. its main purpose is provide a common convenience constructor.
   """
-  def __init__(self,mu=0,C=0,m=None):
+
+  def __init__(self,mu=0,C=0,M=None):
     """Init allowing for shortcut notation."""
 
     if isinstance(mu,CovMat):
@@ -95,54 +96,54 @@ class RV_with_mean_and_cov(RV):
     # Set mu
     mu = exactly_1d(mu)
     if len(mu)>1:
-      if m is None:
-        m = len(mu)
+      if M is None:
+        M = len(mu)
       else:
-        assert len(mu) == m
+        assert len(mu) == M
     else:
-      if m is not None:
-        mu = ones(m)*mu
+      if M is not None:
+        mu = ones(M)*mu
 
     # Set C
     if isinstance(C,CovMat):
-      if m is None:
-        m = C.m
+      if M is None:
+        M = C.M
     else:
       if C is 0:
         pass # Assign as pure 0!
       else:
         if np.isscalar(C):
-          m = len(mu)
-          C = CovMat(C*ones(m),'diag')
+          M = len(mu)
+          C = CovMat(C*ones(M),'diag')
         else:
           C = CovMat(C)
-          if m is None:
-            m = C.m
+          if M is None:
+            M = C.M
 
     # Validation
-    if len(mu) not in (1,m):
-      raise TypeError("Inconsistent shapes of (m,mu,C)")
-    if m is None:
-      raise TypeError("Could not deduce the value of m")
+    if len(mu) not in (1,M):
+      raise TypeError("Inconsistent shapes of (M,mu,C)")
+    if M is None:
+      raise TypeError("Could not deduce the value of M")
     try:
-      if m!=C.m:
-        raise TypeError("Inconsistent shapes of (m,mu,C)")
+      if M!=C.M:
+        raise TypeError("Inconsistent shapes of (M,mu,C)")
     except AttributeError:
       pass
     
     # Assign
-    self.m  = m
+    self.M  = M
     self.mu = mu
     self.C  = C
 
   def sample(self,N):
     """
-    Sample N realizations. Returns N-by-m (ndim) sample matrix.
+    Sample N realizations. Returns N-by-M (ndim) sample matrix.
     Example:
     plt.scatter(*(UniRV(C=randcov(2)).sample(10**4).T))
     """
     if self.C is 0:
-      D = zeros((N,self.m))
+      D = zeros((N,self.M))
     else:
       D = self._sample(N)
     return self.mu + D

@@ -40,7 +40,7 @@ class model_instance():
     # System size
     self.nU = nU       # num of X
     self.J  = J        # num of Y per X  
-    self.m  = (J+1)*nU # => Total state length
+    self.M  = (J+1)*nU # => Total state length
 
     # Other parameters
     self.F  = F  # forcing

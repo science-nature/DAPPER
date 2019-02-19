@@ -9,527 +9,21 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib import colors
 from matplotlib.ticker import MaxNLocator
 
-tri_corr = True
 
-class LivePlot:
-  """
-  Live plotting functionality.
-  """
-  def __init__(self,stats,key,E=None,P=None,only=False,**kwargs):
-    """
-    Initialize plots.
-     - only: (possible) fignums to plot.
-    """
-
-    if isinstance(only,bool):
-      only=range(99)
-    #else: assume only is a list fo fignums
-
-    HMM    = stats.HMM
-    config = stats.config
-    m      = HMM.f.m
-    dt     = HMM.t.dt
-
-    # Store
-    self.HMM   = HMM
-    self.stats = stats
-    self.xx    = stats.xx ; xx = stats.xx
-    self.yy    = stats.yy ; yy = stats.yy
-
-    # Abbreviate
-    mu = stats.mu
-
-    # Set up prompts
-    self.is_on     = True
-    self.is_paused = False
-    print('Initializing liveplotting...')
-    print('Press <Enter> to toggle live plot OFF/ON.')
-    print('Press <Space> and then <Enter> to pause.')
-
-    #ens_props = {} yields rainbow
-    ens_props = {'color': 0.7*RGBs['w'],'alpha':0.3}
-
-    # For periodic functions
-    ii,wrap = setup_wrapping(m)
-
-
-    #####################
-    # Correlation plot
-    #####################
-    if 2 in only and m<1001:
-      GS = {'height_ratios':[4, 1],'hspace':0.09,'top':0.95}
-      fig_C, (ax_C,ax_AC) = freshfig(2, (5,6), nrows=2, gridspec_kw=GS)
-      win_title(fig_C, "Correlations")
-      set_figpos('2311')
-
-      if m<=1003:
-        # Get cov matrix
-        if E is not None:
-          C = np.cov(E.T, ddof=1)
-        else:
-          assert P is not None
-          C = P.full if isinstance(P,CovMat) else P
-          C = C.copy()
-        # Compute corr from cov
-        std = sqrt(diag(C))
-        C  /= std[:,None]
-        C  /= std[None,:]
-        # Mask half
-        mask = np.zeros_like(C, dtype=np.bool)
-        mask   [np.tril_indices_from(mask)] = True
-        if tri_corr:
-          C  = np.ma.masked_where(mask, C)
-        # Make colormap. Log-transform cmap, but not internally in matplotlib,
-        # so as to avoid transforming the colorbar too.
-        cmap = plt.get_cmap('RdBu')
-        trfm = colors.SymLogNorm(linthresh=0.2,linscale=0.2,vmin=-1, vmax=1)
-        cmap = cmap(trfm(linspace(-0.6,0.6,cmap.N)))
-        cmap = colors.ListedColormap(cmap)
-        #
-        VM   = 1.0 # abs(np.percentile(C,[1,99])).max()
-        im_C = ax_C.imshow(C,cmap=cmap,vmin=-VM,vmax=VM)
-        #
-        cax = ax_C.figure.colorbar(im_C,ax=ax_C,shrink=0.8)
-        plt.box(False)
-        ax_C.set_facecolor('w') 
-        ax_C.grid(False)
-        ax_C.set_title("State correlation matrix:", y=1.07)
-        ax_C.xaxis.tick_top()
-        
-        # ax_AC = inset_axes(ax_C,width="30%",height="60%",loc=3)
-        ACF = circulant_ACF(C)
-        AAF = circulant_ACF(C,do_abs=True)
-        line_AC, = ax_AC.plot(arange(m), ACF, label='Correlation')
-        line_AA, = ax_AC.plot(arange(m), AAF, label='Abs. corr.')
-        _   = ax_AC.hlines(0,0,m-1,'k','dotted',lw=1)
-        # Align ax_AC with ax_C
-        bb_AC = ax_AC.get_position()
-        bb_C  = ax_C.get_position()
-        ax_AC.set_position([bb_C.x0, bb_AC.y0, bb_C.width, bb_AC.height])
-        # Tune plot
-        ax_AC.set_title("Auto-correlation:")
-        ax_AC.set_ylabel("Mean value")
-        ax_AC.set_xlabel("Distance (in state indices)")
-        ax_AC.set_xticklabels([])
-        ax_AC.set_yticks([0,1] + list(ax_AC.get_yticks()[[0,-1]]))
-        ax_AC.set_ylim(top=1)
-        ax_AC.legend(frameon=True,facecolor='w',
-            bbox_to_anchor=(1, 1), loc='upper left', borderaxespad=0.02)
-
-        self.fig_C   = fig_C
-        self.ax_C    = ax_C
-        self.ax_AC   = ax_AC
-        self.im_C    = im_C
-        self.line_AC = line_AC
-        self.line_AA = line_AA
-        self.mask    = mask
-      else:
-        not_available_text(ax_C)
-      
-
-    #####################
-    # Spectral error plot
-    #####################
-      fig_S, ax_S = freshfig(4, (4,3))
-      win_title(fig_S, "Spectral view")
-      set_figpos('2311')
-      ax_S.set_xlabel('Sing. value index')
-      ax_S.set_yscale('log')
-      ax_S.set_ylim(bottom=1e-5)
-      #ax_S.set_ylim([1e-3,1e1])
-      try:
-        msft = abs(stats.umisf[0])
-        sprd =     stats.svals[0]
-      except KeyError:
-        self.do_spectral_error = False
-        not_available_text(ax_S, "Spectral stats not being computed")
-      else:
-        if np.any(np.isfinite(msft)):
-          not_available_text(ax_S, "Spectral stats not finite")
-          self.do_spectral_error = False
-        else:
-          self.do_spectral_error = True
-
-      if self.do_spectral_error:
-        self.line_msft, = ax_S.plot(arange(len(msft)),msft,'k',lw=2,label='Error')
-        self.line_sprd, = ax_S.plot(arange(len(sprd)),sprd,'b',lw=2,label='Spread',alpha=0.9)
-        ax_S.get_xaxis().set_major_locator(MaxNLocator(integer=True))
-        ax_S.legend()
-
-      self.ax_S = ax_S
-
-
-    #####################
-    # Diagnostics
-    #####################
-    if 1 in only:
-      GS = {'left':0.125+0.04,'right':0.9+0.04}
-      self.fig_pulse, (self.ax_RMS, self.ax_Uni) = freshfig(
-          1,(5,3.5),nrows=2,sharex=True,gridspec_kw=GS)
-      win_title(self.fig_pulse,"Scalar diagnostics")
-      set_figpos('2312')
-      self.has_checked_presence = False
-
-      def lin(a,b):
-        def f(x):
-          y = a + b*x
-          return y
-        return f
-
-      def divN():
-        try:
-          N = E.shape[0]
-          def f(x): return x/N
-          return f
-        except AttributeError:
-          pass
-        
-
-      # --------------
-      # RMS
-      # --------------
-      d_RMS = {
-          'rmse' : dict(c='k', label='Error'),
-          'rmv'  : dict(c='b', label='Spread', alpha=0.6),
-        }
-
-      # --------------
-      # Plain
-      # --------------
-      d_Uni = OrderedDict([
-          ('skew'   , dict(c='g', label='Skew')),
-          ('kurt'   , dict(c='r', label='Kurt')),
-          ('infl'   , dict(c='c', label='(Infl-1)*10',transf=lin(-10,10))),
-          ('N_eff'  , dict(c='y', label='N_eff/N'    ,transf=divN(),    step=True)),
-          ('iters'  , dict(c='m', label='Iters/2'    ,transf=lin(0,.5), step=True)),
-          ('trHK'   , dict(c='k', label='HK')),
-          ('resmpl' , dict(c='k', label='Resampl?')),
-        ])
-
-      chrono       = HMM.t
-      chrono.pK    = estimate_good_plot_length(xx,chrono,mult=80)
-      chrono.pKObs = int(chrono.pK / chrono.dkObs)
-
-      def raise_field_lvl(dct,fld):
-        dct[fld] = dct['plt'][fld]
-        del dct['plt'][fld]
-
-      def init_axd(ax,dict_of_dicts):
-        new = {}
-        for name in dict_of_dicts:
-
-          # Make plt settings a sub-dict
-          d = {'plt':dict_of_dicts[name]}
-          # Set default lw
-          if 'lw' not in d['plt']: d['plt']['lw'] = 2
-          # Extract from  plt-dict 'transf' and 'step' fields
-          try:             raise_field_lvl(d,'transf')
-          except KeyError: d['transf'] = lambda x: x
-          try:             raise_field_lvl(d,'step')
-          except KeyError: pass
-
-          try: stat = getattr(stats,name) # Check if stat is there.
-          # Fails e.g. if assess(0) before creating stat.
-          except AttributeError: continue
-          try: val0 = stat[0] # Check if stat[0] has been written
-          # Fails e.g. if store_u==False and k_tmp==None (init)
-          except KeyError:       continue
-
-          if isinstance(stat,np.ndarray):
-            if len(stat) != (chrono.KObs+1): raise TypeError(
-                "Only len=(KObs+1) ndarrays supported " +
-                "[use FAU_series for len=(K+1)]")
-            d['data'] = np.full(chrono.pKObs, nan)
-            tt_       = chrono.ttObs[arange(chrono.pKObs)]
-          else:
-            d['data'] = np.full(chrono.pK, nan)
-            tt_       = chrono.tt   [arange(chrono.pK)]
-          d['data'][0] = d['transf'](val0)
-          d['h'],      = ax.plot(tt_,d['data'],**d['plt'])
-          new[name]    = d
-        return new
-
-      self.d_RMS    = init_axd(self.ax_RMS, d_RMS)
-      self.ax_RMS.set_ylabel('RMS')
-
-      self.d_Uni    = init_axd(self.ax_Uni, d_Uni)
-      self.ax_Uni.set_ylabel('mean of marginal\n $\sigma$-normalized values',
-          fontsize='small', labelpad=0)
-      
-      self.ax_Uni.set_xlabel('time (t)')
-
-
-
-    #####################
-    # Weighted histogram
-    #####################
-    if 4 in only and E is not None and stats._has_w:
-      fig_hw, ax_hw = freshfig(4,(6,3), gridspec_kw={'bottom':.15})
-      win_title(fig_hw,"Weight histogram")
-      set_figpos('2321')
-      ax_hw.set_xscale('log')
-      ax_hw.set_xlabel('weigth [× N]')
-      ax_hw.set_ylabel('count')
-      if len(E)<10001:
-        hist   = ax_hw.hist(stats.w[0])[2]
-        N      = len(E)
-        xticks = 1/N * 10**arange(-4,log10(N)+1)
-        xtlbls = array(['$10^{'+ str(int(log10(w*N))) + '}$' for w in xticks])
-        xtlbls[xticks==1/N] = '1'
-        ax_hw.set_xticks(xticks)
-        ax_hw.set_xticklabels(xtlbls)
-        self.fig_hw = fig_hw
-        self.ax_hw  = ax_hw
-        self.hist   = hist
-      else:
-        not_available_text(ax_hw,'Not computed (N > threshold)')
-
-
-
-    #####################
-    # User-defined state
-    #####################
-    if 9 in only and hasattr(HMM,'liveplotting'):
-      self.fig_custom, self.custom = HMM.liveplotting(stats,key,E,P)
-      win_title(self.fig_custom,"Custom plot")
-      set_figpos('2322')
-      plot_pause(0.01)
-
-    self.prev_k = 0
-    plot_pause(0.01)
-
-
-
-  def skip_plotting(self):
-    """
-    Poll user for keypresses.
-    Decide on toggling pause/step/plot:
-    """
-    open_figns = plt.get_fignums()
-    if open_figns == []:
-      return True
-
-    if self.is_paused:
-      # If paused
-      ch = getch()
-      # Wait for <space> or <enter>
-      while ch not in [' ','\r']:
-        ch = getch()
-      # If <enter>, turn off pause
-      if '\r' in ch:
-        self.is_paused = False
-
-    key = poll_input() # =None if <space> was pressed above
-    if key is not None:
-      if key == '\n':
-        # If <enter> 
-        self.is_on = not self.is_on # toggle plotting on/off
-      elif key == ' \n':
-        # If <space>+<enter> 
-        self.is_on = True # turn on plotting
-        self.is_paused = not self.is_paused # toggle pause
-        print("Press <Space> to step. Press <Enter> to resume.")
-    return not self.is_on
-
-
-  def update(self,key,E=None,P=None,**kwargs):
-    """Update liveplots"""
-    if self.skip_plotting(): return
-
-    k,kObs,f_a_u = key
-
-    stats = self.stats
-    mu    = stats.mu
-    m     = self.xx.shape[1]
-
-    ii,wrap = setup_wrapping(m)
-    
-    #####################
-    # Correlation plot
-    #####################
-    if hasattr(self, 'fig_C') and plt.fignum_exists(self.fig_C.number):
-      plt.figure(self.fig_C.number)
-
-      if E is not None:
-        C = np.cov(E,rowvar=False)
-      else:
-        assert P is not None
-        C = P.full if isinstance(P,CovMat) else P
-        C = C.copy()
-      std = sqrt(diag(C))
-      C  /= std[:,None]
-      C  /= std[None,:]
-      if tri_corr:
-        C = np.ma.masked_where(self.mask, C)
-      self.im_C.set_data(C)
-
-      # Auto-corr function
-      ACF = circulant_ACF(C)
-      AAF = circulant_ACF(C,do_abs=True)
-      self.line_AC.set_ydata(ACF)
-      self.line_AA.set_ydata(AAF)
-
-      plot_pause(0.01)
-
-
-    #####################
-    # Spectral error plot
-    #####################
-    if hasattr(self, 'fig_S') and plt.fignum_exists(self.fig_S.number) and self.do_spectral_error:
-      plt.figure(self.fig_S.number)
-      msft = abs(stats.umisf[k])
-      sprd =     stats.svals[k]
-      self.line_sprd.set_ydata(sprd)
-      self.line_msft.set_ydata(msft)
-      update_ylim(msft, self.ax_S)
-      plot_pause(0.01)
-
-
-    #####################
-    # Diagnostics
-    #####################
-    if hasattr(self,'fig_pulse') and plt.fignum_exists(self.fig_pulse.number):
-      plt.figure(self.fig_pulse.number)
-      chrono = self.HMM.t
-
-      # Indices with shift
-      kkU    = arange(chrono.pK) + max(0,k-chrono.pK)
-      ttU    = chrono.tt[kkU]
-      # Indices for Obs-times
-      kkA    = kkU[0] <= chrono.kkObs
-      kkA   &=           chrono.kkObs <= kkU[-1]
-
-      def update_axd(ax,dict_of_dicts):
-        ax.set_xlim(ttU[0], ttU[0] + 1.1*(ttU[-1]-ttU[0]))
-
-        for name, d in dict_of_dicts.items():
-          stat = getattr(stats,name)
-          if isinstance(stat,np.ndarray):
-            tt_              = chrono.ttObs[kkA]
-            d['data']        = stat        [kkA]
-            if d.get('step',False):
-              # Creat "step"-style graph
-              d['data']      = d['data'].repeat(2)
-              tt_            = tt_      .repeat(2)
-              right          = tt_[-1] # use ttU[-1] for continuous extrapolation
-              tt_            = np.hstack([ttU[0], tt_[0:-2], right])
-            elif stat.dtype == 'bool':
-              # Creat "impulse"-style graph
-              tt_            = tt_      .repeat(3)
-              d['data']      = d['data'].repeat(3)
-              tt_     [2::3] = nan
-              d['data'][::3] = False
-          else:
-            tt_              = ttU
-            if stat.store_u:
-              d['data']      = stat[kkU]
-            else: # store .u manually
-              tmp = stat[k]
-              if self.prev_k not in [k, k-1]:
-                # Reset display
-                d['data'][:] = nan
-              if k >= chrono.pK:
-                # Rolling display
-                d['data']    = roll_n_sub(d['data'], tmp, -1)
-              else:
-                # Initial display: append
-                d['data'][k] = tmp
-          d['data'] = d['transf'](d['data'])
-          d['h'].set_data(tt_,d['data'])
-
-      def rm_absent(ax,dict_of_dicts):
-        for name in list(dict_of_dicts):
-          d = dict_of_dicts[name]
-          if not np.any(np.isfinite(d['data'])):
-            d['h'].remove()
-            del dict_of_dicts[name]
-        if dict_of_dicts:
-          ax.legend(loc='upper left')
-
-      update_axd(self.ax_RMS,self.d_RMS)
-      update_axd(self.ax_Uni,self.d_Uni)
-
-      #if k%(chrono.pK/5) <= 1:
-      update_ylim([d['data'] for d in self.d_RMS.values()], self.ax_RMS,
-          bottom=0,      cC=0.2,cE=0.9)
-      update_ylim([d['data'] for d in self.d_Uni.values()], self.ax_Uni,
-          Max=4, Min=-4, cC=0.3,cE=0.9)
-
-      # Check which diagnostics are present
-      if (not self.has_checked_presence) and (k>=chrono.kkObs[0]):
-        rm_absent(self.ax_RMS,self.d_RMS)
-        rm_absent(self.ax_Uni,self.d_Uni)
-        self.has_checked_presence = True
-
-      plot_pause(0.01)
-
-
-
-    #####################
-    # Weight histogram
-    #####################
-    if kObs and hasattr(self, 'fig_hw') and plt.fignum_exists(self.fig_hw.number):
-      plt.figure(self.fig_hw.number)
-      ax_hw     = self.ax_hw
-      _         = [b.remove() for b in self.hist]
-      w         = stats.w[k]
-      N         = len(w)
-      wmax      = w.max()
-      bins      = exp(linspace(log(1e-5/N), log(1), int(N/20)))
-      counted   = w>bins[0]
-      nC        = np.sum(counted)
-      nn,_,pp   = ax_hw.hist(w[counted], bins=bins, color='b')
-      self.hist = pp
-      #thresh   = '#(w<$10^{'+ str(int(log10(bins[0]*N))) + '}/N$ )'
-      ax_hw.set_title('N: {:d}.   N_eff: {:.4g}.   Not shown: {:d}. '.\
-          format(N, 1/(w@w), N-nC))
-      update_ylim([nn], ax_hw, cC=True)
-      plot_pause(0.01)
-
-
-
-    #####################
-    # User-defined state
-    #####################
-    if hasattr(self,'fig_custom') and plt.fignum_exists(self.fig_custom.number):
-      plt.figure(self.fig_custom.number)
-      self.custom(key,E,P)
-      plot_pause(0.01)
-
-    # Trackers
-    self.prev_k = k
-
-
-
-
-def plot_pause(duration):
-  """
-  plt.pause is not supported by jupyter notebook.
-  Provide fallback that does work.
-  stackoverflow.com/q/34486642
-  """
-  try:
-    plt.pause(duration)
-  except:
-    fig = plt.gcf()
-    fig.canvas.draw()
-    time.sleep(0.1)
-
-
-def setup_wrapping(m,periodic=True):
+def setup_wrapping(M,periodic=True):
   """
   Make periodic indices and a corresponding function
   (that works for ensemble input).
   """
 
   if periodic:
-    ii = np.hstack([-0.5, arange(m), m-0.5])
+    ii = np.hstack([-0.5, arange(M), M-0.5])
     def wrap(E):
       midpoint = (E[[0],...] + E[[-1],...])/2
       return ccat(midpoint,E,midpoint)
 
   else:
-    ii = arange(m)
+    ii = arange(M)
     wrap = lambda x: x
 
   return ii, wrap
@@ -553,7 +47,6 @@ def adjust_position(ax,adjust_extent=False,**kwargs):
   # Set
   ax.set_position(d.values())
 
-# TODO: rename "xtrma"
 def span(xx,axis=None):
   a = xx.min(axis)
   b = xx.max(axis)
@@ -574,76 +67,14 @@ def stretch(a,b,factor=1,int=False):
   return a, b
 
 
-
-def update_ylim(data,ax,bottom=None,top=None,Min=-1e20,Max=+1e20,cC=0,cE=1):
-  """
-  Update ylim's intelligently, mainly by computing
-  the low/high percentiles of the data.
-  - data: iterable of arrays for computing percentiles.
-  - bottom/top: override values.
-  - Max/Min: bounds.
-  - cE: exansion (widenting) rate ∈ [0,1].
-      Default: 1, which immediately expands to percentile.
-  - cC: compression (narrowing) rate ∈ [0,1].
-      Default: 0, which does not allow compression.
-  Despite being a little involved,
-  the cost of this subroutine is typically not substantial.
-  """
-
-  #
-  def worth_updating(a,b,curr):
-    # Note: should depend on cC and cE
-    d = abs(curr[1]-curr[0])
-    lower = abs(a-curr[0]) > 0.002*d
-    upper = abs(b-curr[1]) > 0.002*d
-    return lower and upper
-  #
-  current = ax.get_ylim()
-  # Find "reasonable" limits (by percentiles), looping over data
-  maxv = minv = -np.inf # init
-  for d in data:
-    d = d[np.isfinite(d)]
-    if len(d):
-      minv, maxv = np.maximum([minv, maxv], \
-          array([-1, 1]) * np.percentile(d,[1,99]))
-  minv *= -1
-  minv, maxv = stretch(minv,maxv,1.02)
-  # Pry apart equal values
-  if np.isclose(minv,maxv):
-    maxv += 0.5
-    minv -= 0.5
-  # Set rate factor as compress or expand factor. 
-  c0 = cC if minv>current[0] else cE
-  c1 = cC if maxv<current[1] else cE
-  # Adjust
-  minv = np.interp(c0, (0,1), (current[0], minv))
-  maxv = np.interp(c1, (0,1), (current[1], maxv))
-  # Bounds
-  maxv = min(Max,maxv)
-  minv = max(Min,minv)
-  # Overrides
-  if top    is not None: maxv = top
-  if bottom is not None: minv = bottom
-  # Set (if anything's changed)
-  #if worth_updating(minv,maxv,current):
-    #ax.set_ylim(minv,maxv)
-  ax.set_ylim(minv,maxv)
-
-
 def set_ilim(ax,i,Min=None,Max=None):
   """Set bounds on axis i.""" 
   if i is 0: ax.set_xlim(Min,Max)
   if i is 1: ax.set_ylim(Min,Max)
   if i is 2: ax.set_zlim(Min,Max)
 
-def fit_lim(data,zoom=1.0):
-  Min  = data.min()
-  Max  = data.max()
-  lims = round2sigfig([Min, Max])
-  lims = inflate_ens(lims,1/zoom)
-  return lims
-
-
+# Examples:
+# K_lag = estimate_good_plot_length(stats.xx,chrono,mult = 80)
 def estimate_good_plot_length(xx,chrono=None,mult=100):
   """
   Estimate good length for plotting stuff
@@ -734,56 +165,6 @@ def plot_3D_trajectory(stats,dims=0,**kwargs):
   ax3.set_facecolor('w')
 
 
-def plot_time_series(stats,**kwargs):
-  """
-  Plot time series of various statistics.
-  kwargs forwarded to get_plot_inds().
-  """
-
-  # Figure, axes
-  fg = plt.figure(12,figsize=(5,3.5))
-  fg.clf()
-  set_figpos('1313 mac')
-  fg, (ax_e,ax_K) = plt.subplots(2,1,sharex=True,num=12)
-
-  # Time
-  chrono = stats.HMM.t
-  xx     = stats.xx
-  m      = xx.shape[1]
-  dims   = equi_spaced_integers(m, min(m, 10))
-  kk,kkA = get_plot_inds(xx[:,dims],chrono,mult=80,**kwargs)
-  tt,ttA = chrono.tt[kk], chrono.tt[kkA]
-  KA     = len(kkA)      
-
-  # Stats
-  s = stats
-  if s.mu.store_u:
-    tt_  = tt 
-    rmse = s.rmse[kk]
-    rmv  = s.rmv [kk]
-  else:
-    tt_  = ttA
-    rmse = s.rmse.a[:KA]
-    rmv  = s.rmv .a[:KA]
-
-  trKH   = s.trHK  [:KA]
-  skew   = s.skew.a[:KA]
-  kurt   = s.kurt.a[:KA]
-
-  ax_e.plot(        tt_, rmse,'k',lw=2 ,label='Error')
-  ax_e.fill_between(tt_, rmv ,alpha=0.7,label='Spread') 
-  ax_e.set_ylim(0, 1.1*max(np.percentile(rmse,99), rmv.max()) )
-  ax_e.set_ylabel('RMS')
-  ax_e.legend()
-
-  ax_K.plot(ttA, trKH,'k',lw=2,label='HK')
-  ax_K.plot(ttA, skew,'g',lw=2,label='Skew')
-  ax_K.plot(ttA, kurt,'r',lw=2,label='Kurt')
-  ax_K.set_xlabel('time (t)')
-  ax_K.set_ylabel('mean of marginal\n $\sigma$-normalized values',
-      fontsize='small', labelpad=0)
-  ax_K.legend()
-
 
 def plot_hovmoller(xx,chrono=None,**kwargs):
   """
@@ -792,21 +173,21 @@ def plot_hovmoller(xx,chrono=None,**kwargs):
   """
   #cm = mpl.colors.ListedColormap(sns.color_palette("BrBG", 256)) # RdBu_r
   #cm = plt.get_cmap('BrBG')
-  fig, ax = freshfig(16,(4,3.5))
+  fig, ax = plt.subplots(num=16,figsize=(4,3.5))
   set_figpos('3311 mac')
 
-  m = xx.shape[1]
+  Nx = xx.shape[1]
 
   if chrono!=None:
     kk,_ = get_plot_inds(xx,chrono,mult=40,**kwargs)
     tt   = chrono.tt[kk]
     ax.set_ylabel('Time (t)')
   else:
-    pK   = estimate_good_plot_length(xx,mult=40)
-    tt   = arange(pK)
+    K    = estimate_good_plot_length(xx,mult=40)
+    tt   = arange(K)
     ax.set_ylabel('Time indices (k)')
 
-  plt.contourf(arange(m),tt,xx[kk],25)
+  plt.contourf(arange(Nx),tt,xx[kk],25)
   plt.colorbar()
   ax.set_position([0.125, 0.20, 0.62, 0.70])
   ax.set_title("Hovmoller diagram (of 'Truth')")
@@ -856,7 +237,7 @@ def plot_err_components(stats):
   set_figpos('1312 mac')
 
   chrono = stats.HMM.t
-  m      = stats.xx.shape[1]
+  Nx     = stats.xx.shape[1]
 
   err   = mean( abs(stats.err  .a) ,0)
   sprd  = mean(     stats.mad  .a  ,0)
@@ -864,17 +245,17 @@ def plot_err_components(stats):
   usprd = mean(     stats.svals.a  ,0)
 
   ax_r = plt.subplot(311)
-  ax_r.plot(          arange(m),               err,'k',lw=2, label='Error')
-  if m<10**3:
-    ax_r.fill_between(arange(m),[0]*len(sprd),sprd,alpha=0.7,label='Spread')
+  ax_r.plot(          arange(Nx),               err,'k',lw=2, label='Error')
+  if Nx<10**3:
+    ax_r.fill_between(arange(Nx),[0]*len(sprd),sprd,alpha=0.7,label='Spread')
   else:
-    ax_r.plot(        arange(m),              sprd,alpha=0.7,label='Spread')
+    ax_r.plot(        arange(Nx),              sprd,alpha=0.7,label='Spread')
   #ax_r.set_yscale('log')
   ax_r.set_title('Element-wise error comparison')
   ax_r.set_xlabel('Dimension index (i)')
   ax_r.set_ylabel('Time-average (_a) magnitude')
   ax_r.set_ylim(bottom=mean(sprd)/10)
-  ax_r.set_xlim(right=m-1); add_endpoint_xtick(ax_r)
+  ax_r.set_xlim(right=Nx-1); add_endpoint_xtick(ax_r)
   ax_r.get_xaxis().set_major_locator(MaxNLocator(integer=True))
   plt.subplots_adjust(hspace=0.55) # OR: [0.125,0.6, 0.78, 0.34]
   ax_r.legend()
@@ -890,7 +271,7 @@ def plot_err_components(stats):
     ax_s.fill_between(arange(L),[0]*L,usprd,alpha=0.7,label='Spread')
     ax_s.set_yscale('log')
     ax_s.set_ylim(bottom=1e-4*usprd.sum())
-    ax_s.set_xlim(right=m-1); add_endpoint_xtick(ax_s)
+    ax_s.set_xlim(right=Nx-1); add_endpoint_xtick(ax_s)
     ax_s.get_xaxis().set_major_locator(MaxNLocator(integer=True))
     ax_s.legend()
   else:
@@ -911,11 +292,7 @@ def plot_rank_histogram(stats):
       hasattr(stats,'rh') and \
       not all(stats.rh.a[-1]==array(np.nan).astype(int))
 
-  def are_uniform(w):
-    """Test inital & final weights, not intermediate (for speed)."""
-    (w[0]==1/N).all() and (w[-1]==1/N).all()
-
-  fg = plt.figure(13,figsize=(6,3)).clf()
+  fig = plt.figure(23,figsize=(6,3)).clf()
   set_figpos('3331 mac')
   #
   ax_H = plt.subplot(111)
@@ -924,11 +301,10 @@ def plot_rank_histogram(stats):
   ax_H.set_xlabel('ensemble member index (n)')
   ax_H.set_position([0.125,0.15, 0.78, 0.75])
   if has_been_computed:
-    w     = stats.w.a [chrono.maskObs_BI]
     ranks = stats.rh.a[chrono.maskObs_BI]
-    m     = ranks.shape[1]
-    N     = w.shape[1]
-    if are_uniform(w):
+    Nx    = ranks.shape[1]
+    stats.config.N
+    if not hasattr(stats,'w'):
       # Ensemble rank histogram
       integer_hist(ranks.ravel(),N)
     else:
@@ -936,10 +312,10 @@ def plot_rank_histogram(stats):
       # Weight ranks by inverse of particle weight. Why? Coz, with correct
       # importance weights, the "expected value" histogram is then flat.
       # Potential improvement: interpolate weights between particles.
-      w  = w
+      w  = stats.w.a[chrono.maskObs_BI]
       K  = len(w)
       w  = np.hstack([w, ones((K,1))/N]) # define weights for rank N+1
-      w  = array([ w[arange(K),ranks[arange(K),i]] for i in range(m)])
+      w  = array([ w[arange(K),ranks[arange(K),i]] for i in range(Nx)])
       w  = w.T.ravel()
       w  = np.maximum(w, 1/N/100) # Artificial cap. Reduces variance, but introduces bias.
       w  = 1/w
@@ -967,20 +343,13 @@ def show_figs(fignums=None):
     fmw = plt.get_current_fig_manager().window
     fmw.attributes('-topmost',1) # Bring to front, but
     fmw.attributes('-topmost',0) # don't keep in front
-  
-def win_title(fig, string, num=True):
-  "Set window title"
-  if num:
-    n      = fig.number
-    string += " [" + str(n) + "]"
-  fig.canvas.set_window_title(string)
 
 def set_figpos(loc):
   """
   Place figure on screen, where 'loc' can be either
     NW, E, ...
   or
-    4 digits (as str or int) to define grid m,n,i,j.
+    4 digits (as str or int) to define grid M,N,i,j.
   """
 
   #Only works with both:
@@ -1042,13 +411,13 @@ def set_figpos(loc):
     elif loc.startswith('N' ): loc = '2111'
 
   # Place
-  m,n,i,j = [int(x) for x in loc[:4]]
-  assert m>=i>0 and n>=j>0
-  h0   -= (m-1)*25
+  M,N,i,j = [int(x) for x in loc[:4]]
+  assert M>=i>0 and N>=j>0
+  h0   -= (M-1)*25
   yoff  = 25*(i-1)
   if i>1:
     yoff += 25
-  place((j-1)*w0/n, yoff + (i-1)*h0/m, w0/n, h0/m)
+  place((j-1)*w0/N, yoff + (i-1)*h0/M, w0/N, h0/M)
 
 
 # stackoverflow.com/a/7396313
@@ -1080,8 +449,8 @@ def toggle_lines(ax=None,autoscl=True,numbering=False,txtwidth=15,txtsize=None,s
 
   # Get lines and their properties
   lines = {'handle': list(ax.get_lines())}
-  for p in ['label','color','visible']:
-    lines[p] = [plt.getp(x,p) for x in lines['handle']]
+  for prop in ['label','color','visible']:
+    lines[prop] = [plt.getp(x,prop) for x in lines['handle']]
   # Put into pandas for some reason
   lines = pd.DataFrame(lines)
   # Rm those that start with _
@@ -1170,20 +539,6 @@ def toggle_viz(h,prompt=False,legend=False):
   plt.pause(0.02)
   return is_viz
 
-
-def freshfig(num=None,figsize=None,*args,**kwargs):
-  """
-  - If the figure does not exist: create figure it.
-    This allows for figure sizing -- even on Macs.
-  - Otherwise: clear figure (we avoid closing/opening so as
-    to keep (potentially manually set) figure positioning.
-  - The rest is the same as:
-  >>> fig, ax = suplots()
-  """
-  fig = plt.figure(num=num,figsize=figsize)
-  fig.clf()
-  _, ax = plt.subplots(num=fig.number,*args,**kwargs)
-  return fig, ax
 
 def savefig_n(f=None):
   """

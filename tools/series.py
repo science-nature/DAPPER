@@ -108,34 +108,7 @@ def series_mean_with_conf(xx):
   return vc
 
 
-class WeightedSeries(MLR_Print):
-  """
-  Light-weight implementation of a rolling, weighted series.
-  """
-  def __init__(self,arr0,weights=None):
-
-    if weights is None:
-      weights = 1+arange(len(arr0)) # Linearly increasing weights
-    else:
-      assert len(weights)==len(arr0)
-
-    self.weights = weights / sum(weights)
-    self.series  = arr0
-
-  def insert(self,val):
-    self.series = roll_n_sub(self.series,val,-1)
-
-  def __len__(self):
-    return len(self.weights)
-
-  def mean(self):
-    return self.weights@self.series
-  def var(self):
-    return self.weights@(self.series - self.mean())**2
-
-
-
-class FAU_series(MLR_Print):
+class FAU_series(NestedPrint):
   """
   Container for time series of a statistic from filtering.
   Data is indexed with key (k,kObs,f_a_u) or simply k.
@@ -151,19 +124,19 @@ class FAU_series(MLR_Print):
       then you should use a simple np.array instead.
   """
 
-  # Used by MLR_Print
-  included = MLR_Print.included + ['f','a','store_u']
+  # Printing options (cf. NestedPrint)
+  included = NestedPrint.included + ['f','a','store_u']
   aliases  = {
       'f':'Forecast (.f)',
       'a':'Analysis (.a)',
       'u':'All      (.u)'}
-  aliases  = {**MLR_Print.aliases, **aliases}
+  aliases  = {**NestedPrint.aliases, **aliases}
 
-  def __init__(self,chrono,m,store_u=True,**kwargs):
+  def __init__(self,chrono,M,store_u=True,**kwargs):
     """
     Constructor.
      - chrono  : a Chronology object.
-     - m       : len (or shape) of items in series. 
+     - M       : len (or shape) of items in series. 
      - store_u : if False: only the current value is stored.
      - kwargs  : passed on to ndarrays.
     """
@@ -172,17 +145,17 @@ class FAU_series(MLR_Print):
     self.chrono  = chrono
 
     # Convert int-len to shape-tuple
-    self.m = m # store first
-    if is_int(m):
-      if m==1: m = ()
-      else:    m = (m,)
+    self.M = M # store first
+    if is_int(M):
+      if M==1: M = ()
+      else:    M = (M,)
 
-    self.a   = np.full((chrono.KObs+1,)+m, nan, **kwargs)
-    self.f   = np.full((chrono.KObs+1,)+m, nan, **kwargs)
+    self.a   = np.full((chrono.KObs+1,)+M, nan, **kwargs)
+    self.f   = np.full((chrono.KObs+1,)+M, nan, **kwargs)
     if self.store_u:
-      self.u = np.full((chrono.K   +1,)+m, nan, **kwargs)
+      self.u = np.full((chrono.K   +1,)+M, nan, **kwargs)
     else:
-      self.tmp   = np.full(m, nan, **kwargs)
+      self.tmp   = np.full(M, nan, **kwargs)
       self.k_tmp = None
   
   def validate_key(self,key):
@@ -197,14 +170,17 @@ class FAU_series(MLR_Print):
         for ltr in 'af':
           if ltr in fau:
             raise KeyError("Accessing ."+ltr+" series, but kObs is None.")
-      elif k != self.chrono.kkObs[kObs]:
-        raise KeyError("kObs indicated, but k!=kkObs[kObs]")
+      # NB: The following check has been disabled, because
+      # it is actually very time consuming when kkObs is long (e.g. 10**4):
+      # elif k != self.chrono.kkObs[kObs]: raise KeyError("kObs indicated, but k!=kkObs[kObs]")
     except ValueError:
       # Assume key = k
+      assert not hasattr(key, '__getitem__'), "Key must be 1-dimensional."
       key = (key,None,'u')
     return key
 
   def split_dims(self,k):
+    "Split (k,kObs,fau) into k, (kObs,fau)"
     if isinstance(k,tuple):
       k1 = k[1:]
       k0 = k[0]
@@ -232,15 +208,17 @@ class FAU_series(MLR_Print):
   def __getitem__(self,key):
     k,kObs,fau = self.validate_key(key)
 
-    # Check consistency. NB: Somewhat time-consuming.
-    for sub in fau[1:]:
-      i1 = self[k,kObs,sub]
-      i2 = self[k,kObs,fau[0]]
-      if np.any(i1!=i2):
-        if not (np.all(np.isnan(i1)) and np.all(np.isnan(i2))):
-          raise RuntimeError(
-            "Requested item from multiple ('."+fau+"') series, " +\
-            "But the items are not equal.")
+    if len(fau)>1:
+      # Check consistency. NB: Somewhat time-consuming.
+      for sub in fau[1:]:
+        i1 = self[k,kObs,sub]
+        i2 = self[k,kObs,fau[0]]
+        if np.any(i1!=i2):
+          if not (np.all(np.isnan(i1)) and np.all(np.isnan(i2))):
+            raise RuntimeError(
+              "Requested item corresponding to multiple arrays ('%s'), "%fau +\
+              "But the items are not equal.")
+
     if 'f' in fau:
       return self.f[kObs]
     elif 'a' in fau:
@@ -253,7 +231,7 @@ class FAU_series(MLR_Print):
         if self.k_tmp != k0:
           msg = "Only item [" + str(self.k_tmp) + "] is available from "+\
           "the universal (.u) series. One possible source of error "+\
-          "is that the data has not been computed for k="+str(k)+". "+\
+          "is that the data has not been computed for entry k="+str(k0)+". "+\
           "Another possibility is that it has been cleared; "+\
           "if so, a fix might be to set store_u=True, "+\
           "or to use analysis (.a) or forecast (.f) arrays instead."
@@ -265,13 +243,13 @@ class FAU_series(MLR_Print):
     Avarage series,
     but only if it's univariate (scalar).
     """
-    if self.m > 1:
+    if self.M > 1:
       raise NotImplementedError
     avrg = {}
     t = self.chrono
     for sub in 'afu':
       if sub=='u':
-        inds = t.kk_BI
+        inds = t.kk[t.mask_BI]
       else:
         inds = t.maskObs_BI
       if hasattr(self,sub):
@@ -284,6 +262,58 @@ class FAU_series(MLR_Print):
       # Create instance version of 'included'
       self.included = self.included + ['u']
     return super().__repr__()
+
+
+
+class RollingArray:
+  """ND-Array that implements "leftward rolling" along axis 0.
+  Used for data that gets plotted in sliding graphs."""
+  
+  def __init__(self, shape, fillval=nan):
+      self.array = np.full(shape, fillval)
+      self.k1 = 0      # previous k
+      self.nFilled = 0 # 
+
+  def insert(self,k,val):
+    dk = k-self.k1
+
+    # Old (more readable?) version:
+    # if dk in [0,1]: # case: forecast or analysis update
+      # self.array = np.roll(self.array, -1, axis=0)
+    # elif dk>1:      # case: user has skipped ahead (w/o liveplotting)
+      # self.array = np.roll(self.array, -dk, axis=0)
+      # self.array[-dk:] = nan
+    # self.array[-1] = val
+
+    dk = max(1,dk)
+    self.array = np.roll(self.array, -dk, axis=0)
+    self.array[-dk:] = nan
+    self.array[-1 :] = val
+
+    self.k1 = k
+    self.nFilled = min(len(self), self.nFilled+dk)
+
+  def leftmost(self):
+    return self[len(self)-self.nFilled]
+
+  def span(self):
+    return (self.leftmost(),  self[-1])
+
+  @property
+  def T(self):
+    return self.array.T
+
+  def __array__  (self,dtype=None): return self.array
+  def __len__    (self):            return len(self.array)
+  def __repr__   (self):            return 'RollingArray:\n%s'%str(self.array)
+  def __getitem__(self,key):        return self.array[key]
+  def __setitem__(self,key,val):
+    # Don't implement __setitem__ coz leftmost() is then
+    # not generally meaningful (i.e. if an element is set in the middle).
+    # Of course self.array can still be messed with.
+    raise AttributeError("Values should be set with update()")
+
+
 
 
 

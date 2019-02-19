@@ -17,6 +17,10 @@ Force = 8.0
 #  - stupidly crop amplitudes, as is done here:
 prevent_blow_up = False
 
+Tplot = 10
+
+x0 = lambda M: 2.3*np.ones(M)
+
 def dxdt(x):
   a = x.ndim-1
   s = lambda x,n: np.roll(x,-n,axis=a)
@@ -30,14 +34,16 @@ def step(x0, t, dt):
 
   return rk4(lambda t,x: dxdt(x), x0, np.nan, dt)
 
-
+################################################
+# OPTIONAL (not necessary for EnKF or PartFilt):
+################################################
 def TLM(x):
   """Tangent linear model"""
   assert is1d(x)
-  m    = len(x)
-  TLM  = np.zeros((m,m))
-  md   = lambda i: np.mod(i,m)
-  for i in range(m):
+  Nx    = len(x)
+  TLM  = np.zeros((Nx,Nx))
+  md   = lambda i: np.mod(i,Nx)
+  for i in range(Nx):
     TLM[i,i]       = -1.0
     TLM[i,   i-2 ] = -x[i-1]
     TLM[i,md(i+1)] = +x[i-1]
@@ -49,5 +55,15 @@ def dfdx(x,t,dt):
   # method='analytic' is a substantial upgrade for Lor95 
   return integrate_TLM(TLM(x),dt,method='analytic')
 
+
+################################################
+# Add some non-default liveplotters
+################################################
+from tools.liveplotting import LP_correlations, LP_spectral_errors, spatial1d
+def LP(jj=None): return dict(
+      spatial1d           = (11, 1, spatial1d(jj)      ),
+      correlations        = (12, 1, LP_correlations    ),
+      spectral_errors     = (13, 0, LP_spectral_errors ),
+      )
 
 

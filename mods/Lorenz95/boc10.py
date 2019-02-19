@@ -6,22 +6,22 @@ from mods.Lorenz95 import core
 
 t = Chronology(0.05,dkObs=1,T=4**3,BurnIn=20)
 
-m = 10
-f = {
-    'm'    : m,
+Nx = 10
+Dyn = {
+    'M'    : Nx,
     'model': core.step,
     'noise': 0
     }
 
-X0 = GaussRV(m=m, C=0.001)
+X0 = GaussRV(M=Nx, C=0.001)
 
-jj = arange(0,m,2)
-h = partial_direct_obs_setup(m,jj)
-h['noise'] = 1.5
+jj = arange(0,Nx,2)
+Obs = partial_direct_Obs(Nx,jj)
+Obs['noise'] = 1.5
  
 other = {'name': os.path.relpath(__file__,'mods/')}
 
-HMM = HiddenMarkovModel(f,h,t,X0,**other)
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
 
 ####################
 # Suggested tuning

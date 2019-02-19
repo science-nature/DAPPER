@@ -10,9 +10,9 @@ def amplitude_animation(xx,periodic=False,skip=1):
   fig, ax = plt.subplots()
   fig.suptitle('Amplitudes')
   ax.set_ylim(*stretch(*span(xx),1.1))
-  K,m = xx.shape
+  K,Nx = xx.shape
 
-  ii,wrap = setup_wrapping(m,periodic)
+  ii,wrap = setup_wrapping(Nx,periodic)
 
   lh, = ax.plot(ii, wrap(xx[0]))
   ax.set_xlim(*span(ii))
@@ -25,7 +25,7 @@ def amplitude_animation(xx,periodic=False,skip=1):
 
 ##
 if __name__ == "__main__":
-  simulator = make_recursive(step, prog="Simulating")
+  simulator = with_recursion(step, prog="Simulating")
 
   x0 = zeros(40); x0[0] = 1
   xx = simulator(x0, k=500, t=0, dt=0.05)

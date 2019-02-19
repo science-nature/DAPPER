@@ -524,18 +524,25 @@ Finally, apply the periodicity of the indices.
 ''']
 
 answers["error evolution"] = ["MD",r"""
-* (a). $\frac{d \varepsilon}{dt} = \frac{d (x-z)}{dt}
+$\frac{d \varepsilon}{dt} = \frac{d (x-z)}{dt}
 = \frac{dx}{dt} - \frac{dz}{dt} = f(x) - f(z) \approx f(x) - [f(x) - \frac{df}{dx}\varepsilon ] = F \varepsilon$
-* (b). Differentiate $e^{F t}$.
-* (c).
-    * (1). Dissipates to 0.
-    * (2). No.
+"""]
+answers["anti-deriv"] = ["MD",r"""
+Differentiate $e^{F t}$.
+"""]
+answers["predictability cases"] = ["MD",r"""
+* (1). Dissipates to 0.
+* (2). No.
       A balance is always reached between
       the uncertainty reduction $(1-K)$ and growth $F^2$.  
-      Also recall the asymptotic value of $P_k$ computed from
-      [the previous tutorial](T3 - Univariate Kalman filtering.ipynb#Exc-3.14:).
-* (d). [link](https://en.wikipedia.org/wiki/Logistic_function#Logistic_differential_equation)
-* (e). $\frac{d \varepsilon}{dt} \approx F \varepsilon + (f-g)$
+      Also recall the asymptotic value of $P_k$ computed in
+      [T3](T3 - Univariate Kalman filtering.ipynb#Exc-3.14:).
+"""]
+answers["saturation term"] = ["MD",r"""
+[link](https://en.wikipedia.org/wiki/Logistic_function#Logistic_differential_equation)
+"""]
+answers["liner growth"] = ["MD",r"""
+$\frac{d \varepsilon}{dt} \approx F \varepsilon + (f-g)$
 """]
 
 answers["doubling time"] = ["MD",r"""

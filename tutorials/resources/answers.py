@@ -442,6 +442,18 @@ $$
 Eqns (5) and (6) follow by identification.
 ''']
 
+
+# Also comment on CFL condition (when resolution is increased)?
+answers['Cov memory'] = ['MD',r'''
+ * (a). $M$-by-$M$
+ * (b). Using the [cholesky decomposition](https://en.wikipedia.org/wiki/Cholesky_decomposition#Computation),
+    at least 2 times $M^3/3$.
+ * (c). Assume $\mathbf{B}$ stored as float (double). Then it's 8 bytes/element.
+ And the number of elements in $\mathbf{B}$: $M^2$. So the total memory is $8 M^2$.
+ * (d). 8 trillion bytes. I.e. 8 million MB. 
+''']
+
+
 answers['Woodbury'] = ['MD',r'''
 We show that they cancel:
 $$
@@ -573,7 +585,13 @@ answers["doubling time"] = ["MD",r"""
 # E((\x - \b)(\x - \b)^T) = E((\L \z)(\L \z)^T) = \L E(\z^{} \z^T) \L^T = \L \mathbf{I}_m \L^T = \L \L^T \, .$$
 # ''']
 
+answers['KDE'] = ['MD',r'''
+    from scipy.stats import gaussian_kde`
+    ax.plot(xx,gaussian_kde(E.ravel()).evaluate(xx),label="KDE estimate")
+''']
+
 answers['Gaussian sampling a'] = ['MD',r'''
+
 Type `randn??` in a code cell and execute it.
 ''']
 answers['Gaussian sampling b'] = ['MD',r'''
@@ -648,17 +666,6 @@ answers['errors'] = ['MD',r'''
 Residual: discrepancy from explained to observed data.
  * (b). Bias = *average* (i.e. systematic) error.
  * (c). [Wiki](https://en.wikipedia.org/wiki/Mean_squared_error#Proof_of_variance_and_bias_relationship)
-''']
-
-
-# Also comment on CFL condition (when resolution is increased)?
-answers['Cov memory'] = ['MD',r'''
- * (a). $M$-by-$M$
- * (b). Using the [cholesky decomposition](https://en.wikipedia.org/wiki/Cholesky_decomposition#Computation),
-    at least 2 times $M^3/3$.
- * (c). Assume $\mathbf{P}$ stored as float (double). Then it's 8 bytes/element.
- And the number of elements in $\mathbf{P}$: $M^2$. So the total memory is $8 M^2$.
- * (d). 8 trillion bytes. I.e. 8 million MB. 
 ''']
 
 

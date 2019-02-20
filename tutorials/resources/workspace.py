@@ -120,10 +120,6 @@ EnKF_animation = VBox([wS,wT,wI])
 ####################################
 # Misc
 ####################################
-def plot_ensemble(E):
-    E_with_NaNs = np.hstack([np.tile(E,(1,2)),np.nan*ones((len(E),1))]).ravel()
-    Heights     = plt.ylim()[1]*0.5*np.tile(arange(3),(len(E),1)).ravel()
-    plt.plot(E_with_NaNs,Heights,'k',lw=0.5,alpha=0.4,label="ensemble")
 
 def weave_fa(xf,xa=None):
     "Make piece-wise graph for plotting f/a lines together"

@@ -600,9 +600,10 @@ answers['Gaussian sampling b'] = ['MD',r'''
 ''']
 
 answers['Gaussian sampling c'] = ['MD',r'''
-    b_vertical = 10*ones((M,1))
-    E = b_vertical + L @ randn((M,N))
-    #E = np.random.multivariate_normal(b,P,N).T
+    E = b[:,None] + L @ randn((M,N))
+    # Alternatives:
+    # E = np.random.multivariate_normal(b,B,N).T
+    # E = ( b + randn((N,M)) @ L.T ).T
 ''']
 
 answers['Average sampling error'] = ['MD',r'''
@@ -610,17 +611,17 @@ Procedure:
 
  1. Repeat the experiment many times.
  2. Compute the average error ("bias") of $\overline{\mathbf{x}}$. Verify that it converges to 0 as $N$ is increased.
- 3. Compute the average *squared* error. Verify that it is approximately $\text{diag}(\mathbf{P})/N$.
+ 3. Compute the average *squared* error. Verify that it is approximately $\text{diag}(\mathbf{B})/N$.
 ''']
 
 answers['ensemble moments'] = ['MD',r'''
     x_bar = np.sum(E,axis=1)/N
-    P_bar = zeros((M,M))
+    B_bar = zeros((M,M))
     for n in range(N):
-        anomaly = (E[:,n] - x_bar)[:,None]
-        P_bar += anomaly @ anomaly.T
-        #P_bar += np.outer(anomaly,anomaly)
-    P_bar /= (N-1)
+        xc = (E[:,n] - x_bar)[:,None] # x_centered
+        B_bar += xc @ xc.T
+        #B_bar += np.outer(xc,xc)
+    B_bar /= (N-1)
 ''']
 
 answers['Why (N-1)'] = ['MD',r'''
@@ -629,15 +630,17 @@ answers['Why (N-1)'] = ['MD',r'''
 ''']
 
 answers['ensemble moments vectorized'] = ['MD',r'''
- * (a). Show that element $(i,j)$ of the matrix product $\mathbf{A}^{} \mathbf{B}^T$
- equals element $(i,j)$ of the sum of the outer product of their columns: $\sum_n \mathbf{a}_n \mathbf{b}_n^T$. Put this in the context of $\overline{\mathbf{P}}$.
+ * (a). Show that element $(i,j)$ of the matrix product $\mathbf{X}^{} \mathbf{Y}^T$
+ equals element $(i,j)$ of the sum of the outer product of their columns:
+ $\sum_n \mathbf{x}_n \mathbf{y}_n^T$.
+ Put this in the context of $\overline{\mathbf{B}}$.
  * (b). Use the following
  
 code:
 
     x_bar = np.sum(E,axis=1,keepdims=True)/N
-    A     = E - x_bar
-    P_bar = A @ A.T / (N-1)   
+    X     = E - x_bar
+    B_bar = X @ X.T / (N-1)   
 ''']
 
 # Skipped
@@ -652,12 +655,12 @@ answers['Why matrix notation'] = ['MD',r'''
 ''']
 
 answers['estimate cross'] = ['MD',r'''
-    def estimate_cross_cov(E1,E2):
-        N = E1.shape[1]
-        assert N==E2.shape[1]
-        A1 = E1 - np.mean(E1,axis=1,keepdims=True)
-        A2 = E2 - np.mean(E2,axis=1,keepdims=True)
-        CC = A1 @ A2.T / (N-1)
+    def estimate_cross_cov(Ex,Ey):
+        N = Ex.shape[1]
+        assert N==Ey.shape[1]
+        X = Ex - np.mean(Ex,axis=1,keepdims=True)
+        Y = Ey - np.mean(Ey,axis=1,keepdims=True)
+        CC = X @ Y.T / (N-1)
         return CC
 ''']
 

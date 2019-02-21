@@ -681,12 +681,12 @@ Residual: discrepancy from explained to observed data.
 ###########################################
 answers['EnKF v1'] = ['MD',r'''
     def my_EnKF(N):
-        E = mu0[:,None] + P0_chol @ randn((m,N))
+        E = mu0[:,None] + P0_chol @ randn((M,N))
         for k in range(1,K+1):
             # Forecast
             t   = k*dt
             E   = f(E,t-dt,dt)
-            E  += Q_chol @ randn((m,N))
+            E  += Q_chol @ randn((M,N))
             if not k%dkObs:
                 # Analysis
                 y        = yy[k//dkObs-1] # current obs
@@ -741,7 +741,7 @@ answers['Rank hist'] = ['MD',r'''
 # The "butterfly" is contained within a certain box (limits for $x$, $y$ and $z$).
 answers['RMSE vs inf error'] = ['MD',r'''
 It follows from [the fact that](https://en.wikipedia.org/wiki/Lp_space#Relations_between_p-norms)
-$ \newcommand{\x}{\mathbf{x}} \|\x\|_2 \leq m^{1/2} \|\x\|\_\infty \text{and}  \|\x\|_1 \leq m^{1/2} \|\x\|_2$
+$ \newcommand{\x}{\mathbf{x}} \|\x\|_2 \leq M^{1/2} \|\x\|\_\infty \text{and}  \|\x\|_1 \leq M^{1/2} \|\x\|_2$
 that
 $$ 
 \text{RMSE} 
@@ -749,7 +749,7 @@ $$
 \leq \| \text{RMSE}\_{0:k} \|\_\infty
 $$
 and
-$$ \text{RMSE}_k = \| \text{Error}_k \|\_2 / \sqrt{m} \leq \| \text{Error}_k \|\_\infty$$
+$$ \text{RMSE}_k = \| \text{Error}_k \|\_2 / \sqrt{M} \leq \| \text{Error}_k \|\_\infty$$
 ''']
 
 answers['Twin Climatology'] = ['MD',r'''

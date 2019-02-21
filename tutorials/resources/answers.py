@@ -68,11 +68,15 @@ macros=r'''%
 %
 \newcommand{\x}[0]{\bvec{x}}
 \newcommand{\y}[0]{\bvec{y}}
+\newcommand{\q}[0]{\bvec{q}}
 \newcommand{\br}[0]{\bvec{r}}
 \newcommand{\bb}[0]{\bvec{b}}
 %
 \newcommand{\cx}[0]{\text{const}}
 \newcommand{\norm}[1]{\|{#1}\|}
+%
+\newcommand{\bx}[0]{\bvec{\bar{x}}}
+\newcommand{\barP}[0]{\mat{\bar{P}}}
 %'''
 
 ###########################################

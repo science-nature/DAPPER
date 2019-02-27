@@ -52,51 +52,83 @@ def normalize(xx):
   xx = xx/sqrt(s2)
   return xx
 
+xlim  = 3.1
+ylim  = xlim*sqrt(2)
+
+
+###########################
+# Histograms -- one axes
+###########################
 nBins = 30
 nHist = int(1e5)
-xlim  = 3
 
 xx = randn(nHist)
-yy = NLT(xx)
+yyNLT = NLT(xx)
+yyLin = Lin(xx)
 
+plt.figure(1,figsize=(5,sqrt(2)*5)).clear()
+fig, ax0 = plt.subplots(num=1)
+axX = ax0.twinx()
+axY = ax0.twiny()
+axX.set_yticks([])
+axY.set_xticks([])
+axY.grid(None)
+axX.grid(None)
 
-###########################
-# Histograms
-###########################
-# Just to get familiar with the NLT model.
+hhx, bbx, ppx    = axX.hist(xx   ,bins=nBins,range=(-xlim,xlim))
+hhy, bby, ppy    = axY.hist(yyNLT,bins=nBins,range=(-ylim,ylim),orientation="horizontal")
+_, _, ppyLin     = axY.hist(yyLin,bins=bby                     ,orientation="horizontal")
 
-plt.figure(1)
-plt.clf()
+# Coloring
+cm = plt.cm.get_cmap('jet')
+customize = lambda x: x**0.8 # shifts cmaps
+# Indices of inverse mapping
+mids = 0.5 * (bbx[1:] + bbx[:-1])
+inds = sorted(range(nBins), key=lambda k: NLT(mids[k]) + 0.01*np.sign(mids[k]))
+# Bin coloring
+for i,pr in enumerate(ppx   ): pr.set_color(cm( customize(i      /(nBins-1)) )); pr.set_ec('k'); pr.set_lw(0.6)
+for i,pr in enumerate(ppy   ): pr.set_color(cm( customize(inds[i]/(nBins-1)) )); pr.set_ec('k'); pr.set_lw(0.6)
+for i,pr in enumerate(ppyLin): pr.set_color(cm( customize(i      /(nBins-1)) )); pr.set_ec('k'); pr.set_lw(0.6)
 
-axX = plt.subplot(221)
-xxp = plt.hist(xx,bins=nBins,range=(-xlim,xlim))[2]
-axX.tick_params(labelbottom='off')
+axX.set_ylim(top  =5*axX.get_ylim()[1]) # downscale histogram
+axY.set_xlim(right=5*axY.get_xlim()[1]) # downscale histogram
+axY.invert_xaxis()
 
-axY = plt.subplot(224)
-yyp = plt.hist(yy,bins=nBins,range=(-xlim,xlim),orientation="horizontal")[2]
-axY.tick_params(labelleft='off')
-
-# Transformation
-axT = plt.subplot(223)
-zz  = linspace(-xlim,xlim,201)
+ax0.yaxis.tick_right()
+ax0.set_xlim(-xlim,xlim)
+ax0.set_ylim(-ylim,ylim)
+zz  = linspace(-xlim,xlim,20001)
 zz  = zz[zz!=0]
-plt.plot(zz,NLT(zz)   ,label=r'$\mathcal{M}_{\rm NonLin}$')
-plt.plot(zz,aprx(zz)  ,label=r'$\mathcal{M}_{\rm Lin}$')
-plt.ylim(-xlim,xlim)
+line_Lin, = ax0.plot(zz,Lin (zz), 'k--', lw=3, label=r'$\mathcal{M}_{\rm Lin}$')
+line_NLT, = ax0.plot(zz,NLT (zz), 'k-' , lw=3, label=r'$\mathcal{M}_{\rm NonLin}$')
+# line_aprx, = ax0.plot(zz,aprx(zz), 'k:' , lw=3, label=r'$\mathcal{M}_{\rm Approx}$')
+ax0.legend(loc="upper center")
+ax0.set_zorder(99)
+ax0.patch.set_alpha(0)
+# ax0.grid("on",color='k')
+ax0.set_xticks(np.array([-1, 0, 1]).astype(int))
+ax0.set_yticks(np.array([-sqrt(2), 0, sqrt(2)]))
+ax0.set_yticklabels(["$-\sqrt{2}$","$0$","$+\sqrt{2}$"])
+ax0.grid(None)
 
+# Animate
+if True:
+  savefig_n.index = 1
+  def save():
+    savefig_n('data/AdInf/NonLin_yet_Gaussian/models_n', ext=".eps")
 
-# Bin mapping
-xx_bins = [pr.get_x() for pr in xxp]
-yy_bins = [NLT(x) for x in xx_bins]
-inds    = sorted(range(nBins), key=lambda k: yy_bins[k])
+  def leg(*handles):
+    ax0.legend(handles, [x.get_label() for x in handles], loc="upper center")
 
-cm = plt.cm.get_cmap('viridis')
-
-# Bin colouring
-for i,pr in enumerate(xxp):
-  pr.set_color(cm(i/(nBins-1)))
-for i,pr in enumerate(yyp):
-  pr.set_color(cm(inds[i]/(nBins-1)))
+  # Hide all
+  toggle_viz(*(ppx + ppyLin + ppy), line_Lin, line_NLT, pause=False)
+  # Play/save
+  toggle_viz(line_Lin);  leg(line_Lin)          ; save()
+  toggle_viz(*ppx)    ;  pass                   ; save()
+  toggle_viz(*ppyLin) ;  pass                   ; save()
+  toggle_viz(line_NLT);  leg(line_Lin, line_NLT); save()
+  toggle_viz(*ppyLin)
+  toggle_viz(*ppy)    ;  pass                   ; save()
 
 
 ###########################

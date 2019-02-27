@@ -199,12 +199,12 @@ def save():
 # - findobj (fails coz complicates getting _legmarker and text)
 # - looping over axes (gets messier than this)
 objects = {}
-objects[ax0] = {line.get_label(): line                          for line in           ax0.get_lines()}
-objects[ax1] = {line.get_label(): line                          for line in           ax1.get_lines()}
+objects[ax0] = {line.get_label(): [line]                        for line in           ax0.get_lines()}
+objects[ax1] = {line.get_label(): [line]                        for line in           ax1.get_lines()}
 objects[leg] = {line.get_label(): [line, line._legmarker, text] for line, text in zip(leg.get_lines(), leg.get_texts())}
 def tog(label):
   for key in objects:
-    toggle_viz(objects[key][label])
+    toggle_viz(*objects[key][label])
 
   # Text seems sometimes not responsive to set_visible() calls.
   # Hack: plot & rm an arbitrary line to flush the calls.
@@ -215,13 +215,13 @@ for h in hh: tog(h)
 
 # Animate
 save()
-tog('iEnKS N:? upd_a:PertObs       Lag:%s MDA:0 nIter:3 '%LAG); save()
+tog('iEnKS N:? upd_a:PertObs       Lag:%s MDA:0 nIter:3' %LAG); save()
 tog('iEnKS N:? upd_a:PertObs       Lag:%s MDA:0 nIter:10'%LAG); save()
-tog('iEnKS N:? upd_a:PertObs       Lag:%s MDA:1 nIter:3 '%LAG); save()
+tog('iEnKS N:? upd_a:PertObs       Lag:%s MDA:1 nIter:3' %LAG); save()
 tog('iEnKS N:? upd_a:PertObs       Lag:%s MDA:1 nIter:10'%LAG); save()
-tog('iEnKS N:? upd_a:Sqrt    rot:1 Lag:%s MDA:0 nIter:3 '%LAG); save()
+tog('iEnKS N:? upd_a:Sqrt    rot:1 Lag:%s MDA:0 nIter:3' %LAG); save()
 tog('iEnKS N:? upd_a:Sqrt    rot:1 Lag:%s MDA:0 nIter:10'%LAG); save()
-tog('iEnKS N:? upd_a:Sqrt    rot:1 Lag:%s MDA:1 nIter:3 '%LAG); save()
+tog('iEnKS N:? upd_a:Sqrt    rot:1 Lag:%s MDA:1 nIter:3' %LAG); save()
 tog('iEnKS N:? upd_a:Sqrt    rot:1 Lag:%s MDA:1 nIter:10'%LAG); save()
 
 ##

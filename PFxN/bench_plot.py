@@ -39,12 +39,12 @@ ax.set_ylim(0.2,0.6)
 ax.legend()
 
 # Hide all elements
-toggle_viz(hh.values(),prompt=False) # legend=0 also nice
+toggle_viz(*hh.values(),prompt=False) # legend=0 also nice
 
 savefig_n.index = 1
 def tog(h,save=True,*a,**b):
   toggle_viz(h,*a,**b)
-  if save: savefig_n()
+  # if save: savefig_n()
 
 tog(hh['EnKF'])
 tog(hh['iEnKS'])

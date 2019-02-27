@@ -258,6 +258,7 @@ ax.set_ylabel('RMSE')
 ##
 
 savefig_n.index = 1
+# TODO: probably needs to be updated for new version of toggle_viz() 
 def tog(h,save=True,*a,**b):
   toggle_viz(h,prompt=True,*a,**b)
   if save: savefig_n('data/AdInf/figs/prez/'+fname+'_')

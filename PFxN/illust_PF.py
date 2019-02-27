@@ -137,11 +137,11 @@ h['G'] = delta_plot(ax,G        ,c='r',label='Jittered particles')
 
 savefig_n.index = 1
 def tog(h,save=True,*a,**b):
-  toggle_viz(h,prompt=False,*a,**b)
+  toggle_viz(*h,prompt=False,*a,**b)
   # if save: savefig_n()
 
 # Hide all elements
-toggle_viz(h.values(),prompt=False) # legend=0 also nice
+toggle_viz(*sum(h.values(),[]),prompt=False) # legend=0 also nice
 
 tog(h['prior'])
 tog(h['lklhd'])

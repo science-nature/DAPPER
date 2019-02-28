@@ -25,7 +25,7 @@ import mods.Lorenz95.core as core
 HMM.t.T = 4**4.0
 
 # Specify the control variable (i.e. the plotting xlabel) of interest.
-CtrlVar = sys.argv[1] # command-line argument #1
+CtrlVar = sys.argv[1] # For example, run script with: `python example_3.py N`
 # CtrlVar = 'N'
 
 # Define range of the experiment control variable.
@@ -39,7 +39,7 @@ if CtrlVar == 'F': # Model forcing
 xticks = array(xticks).repeat(32)
 
 # If this script is run
-# - with the second argument PARALLELIZE,
+# - with the 2nd command-line argument being PARALLELIZE,
 #   then this function will split the 'xticks' array into 'nCore' batches,
 #   and distribute each to a WORKER which run the rest of the script in parallel.
 #   Important: see comment in distribute() about enforcing single-core use by numpy.

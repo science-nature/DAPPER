@@ -81,6 +81,7 @@ def adjust_osse(variable,X):
 def adjust_cfg(C,variable,X):
   if variable == 'F':
     if getattr(C,'loc_rad',None)=='?': C = C.update_settings(loc_rad=L95_rad(X,core.Force))
+    if getattr(C,'loc_rad',None)=='$': C = C.update_settings(loc_rad=L95_rad(X,core.Force))
   elif variable == 'N':
     if getattr(C,'N'      ,None)=='?': C = C.update_settings(      N=X)
     if getattr(C,'loc_rad',None)=='?': C = C.update_settings(loc_rad=L95_rad(X,core.Force))
@@ -93,7 +94,7 @@ def adjust_cfg(C,variable,X):
 #  => Tuneable parameters exits. Here, we define some tuning xticks.
 def L95_rad(N,F):
   # Approximately fitted (for infl=1.0) variogram (Gaussian).
-  r = 10*(1-exp(-(N/40)**2))**0.8
+  r = 0.08 + 10*(1-exp(-(N/40)**2))**0.8
   r *= sqrt(8/F) # Not tuned at all!
   return r
 def L95_lag(N,F):

@@ -66,6 +66,7 @@ avrgs = []
 for ic,config in enumerate(cfgs):
   # config.store_u = True
   # config.liveplotting = True
+  # config.fail_gently = True
   seed(sd0+2)
 
   stats += [ config.assimilate(HMM,xx,yy) ]

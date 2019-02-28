@@ -167,7 +167,7 @@ Typically, this means that the published results are incorrect.
 A list of experimental settings that can be compared with literature papers
 can be obtained using gnu's `find`:
 
-      $ find -iregex "./mods/.*[0-9]\{1,4\}\.py"
+			$ find . -iname "[a-z]*[0-9].py" | grep mods
 
 Some of these files contain settings that have been used in several papers.
 

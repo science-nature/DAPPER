@@ -1027,20 +1027,6 @@ def spatial1d(
 
 
 
-def freshfig(num,figsize=None,*args,**kwargs):
-  """Create/clear figure.
-  - If the figure does not exist: create figure it.
-    This allows for figure sizing -- even on Macs.
-  - Otherwise: clear figure (we avoid closing/opening so as
-    to keep (potentially manually set) figure pos and size.
-  - The rest is the same as:
-    >>> fig, ax = suplots()
-  """
-  fig = plt.figure(num=num,figsize=figsize)
-  fig.clf()
-  _, ax = plt.subplots(num=fig.number,*args,**kwargs)
-  return fig, ax
-
 
 
 

@@ -247,18 +247,17 @@ def plot_rank_histogram(stats):
       hasattr(stats,'rh') and \
       not all(stats.rh.a[-1]==array(np.nan).astype(int))
 
-  fig = plt.figure(23,figsize=(6,3)).clf()
+  fig, ax = freshfig(24, (6,3))
   set_figpos('3331 mac')
-  #
-  ax_H = plt.subplot(111)
-  ax_H.set_title('(Average of marginal) rank histogram (_a)')
-  ax_H.set_ylabel('Freq. of occurence\n (of truth in interval n)')
-  ax_H.set_xlabel('ensemble member index (n)')
-  ax_H.set_position([0.125,0.15, 0.78, 0.75])
+  ax.set_title('(Mean of marginal) rank histogram (_a)')
+  ax.set_ylabel('Freq. of occurence\n (of truth in interval n)')
+  ax.set_xlabel('ensemble member index (n)')
+  adjust_position(ax, y0=0.05, x0=0.05, adjust_extent=True)
+
   if has_been_computed:
     ranks = stats.rh.a[chrono.maskObs_BI]
     Nx    = ranks.shape[1]
-    stats.config.N
+    N     = stats.config.N
     if not hasattr(stats,'w'):
       # Ensemble rank histogram
       integer_hist(ranks.ravel(),N)
@@ -276,13 +275,28 @@ def plot_rank_histogram(stats):
       w  = 1/w
       integer_hist(ranks.ravel(),N,weights=w)
   else:
-    not_available_text(ax_H)
+    not_available_text(ax)
   
 
 def adjustable_box_or_forced():
   "For set_aspect(), adjustable='box-forced' replaced by 'box' since mpl 2.2.0."
   from pkg_resources import parse_version as pv
   return 'box-forced' if pv(mpl.__version__) < pv("2.2.0") else 'box'
+
+
+def freshfig(num,figsize=None,*args,**kwargs):
+  """Create/clear figure.
+  - If the figure does not exist: create figure it.
+    This allows for figure sizing -- even on Macs.
+  - Otherwise: clear figure (we avoid closing/opening so as
+    to keep (potentially manually set) figure pos and size.
+  - The rest is the same as:
+    >>> fig, ax = suplots()
+  """
+  fig = plt.figure(num=num,figsize=figsize)
+  fig.clf()
+  _, ax = plt.subplots(num=fig.number,*args,**kwargs)
+  return fig, ax
 
 
 def show_figs(fignums=None):

@@ -61,6 +61,9 @@ except ImportError as err:
   progbar = noobar
 
 
+# Set to True before a py.test (which doesn't like reading stdin)
+disable_user_interaction = False
+
 # Non-blocking, non-echo read1 from stdin.
 try:
     # Linux. See Misc/read1_trials.py
@@ -86,19 +89,28 @@ try:
     def _read1():
       return os.read(sys.stdin.fileno(), 1)
 
-    # Wrap the progressbar generator with temporary term settings
-    # Note: could also do it when loading/exiting DAPPER (untested),
-    # but it doesn't work to repeatedly do it within the assim loop.
-    orig_progbar = progbar
-    def progbar(iterable, desc=None, leave=1):
-      TS_old = new_term_settings()
-      try:
-        for i in orig_progbar(iterable, pdesc(desc), leave):
-            yield i
-      finally:
-        # Should restore settings both after normal termination
-        # and if KeyboardInterrupt or other exception happened during loop.
+    try:
+        # Test setting/restoring settings 
+        TS_old = new_term_settings()
         set_term_settings(TS_old)
+        
+        # Wrap the progressbar generator with temporary term settings
+        # Note: could also do it when loading/exiting DAPPER (untested),
+        # but it doesn't work to repeatedly do it within the assim loop.
+        orig_progbar = progbar
+        def progbar(iterable, desc=None, leave=1):
+          TS_old = new_term_settings()
+          try:
+            for i in orig_progbar(iterable, pdesc(desc), leave):
+                yield i
+          finally:
+            # Should restore settings both after normal termination
+            # and if KeyboardInterrupt or other exception happened during loop.
+            set_term_settings(TS_old)
+
+    except:
+        # Fails in non-terminal environments
+        disable_user_interaction = True
 
 except ImportError:
     # Windows
@@ -113,9 +125,6 @@ def read1(fd=sys.stdin.fileno()):
   "Get 1 character. Non-blocking, non-echoing."
   if disable_user_interaction: return None
   return _read1()
-
-# Set to True before a py.test (which doesn't like reading stdin)
-disable_user_interaction = False
 
 
 

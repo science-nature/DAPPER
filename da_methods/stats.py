@@ -91,8 +91,10 @@ class Stats(NestedPrint):
     #     => Cannot use dtype bool or int for those that may be plotted.
 
     def lin(a,b): return lambda x: a + b*x
-    def divN()  : return lambda x: x/N
     def Id(x)   : return x
+    def divN(x) :
+      try: return x/N
+      except NameError: return nan
 
     # RMS
     self.style1 = {
@@ -106,7 +108,7 @@ class Stats(NestedPrint):
         ('kurt'   , [Id          , None   , dict(c=     'r' , label=star+'Kurt$/\sigma^4{-}3$'    )]),
         ('trHK'   , [Id          , None   , dict(c=     'k' , label=star+'HK'                     )]),
         ('infl'   , [lin(-10,10) , 'step' , dict(c=     'c' , label='10(infl-1)'                  )]),
-        ('N_eff'  , [divN()      , 'dirac', dict(c=RGBs['y'], label='N_eff/N'             ,lw=3   )]),
+        ('N_eff'  , [divN        , 'dirac', dict(c=RGBs['y'], label='N_eff/N'             ,lw=3   )]),
         ('iters'  , [lin(0,.1)   , 'dirac', dict(c=     'm' , label='iters/10'                    )]),
         ('resmpl' , [Id          , 'dirac', dict(c=     'k' , label='resampled?'                  )]),
       ])

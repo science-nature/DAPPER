@@ -457,45 +457,47 @@ def toggle_lines(ax=None,autoscl=True,numbering=False,txtwidth=15,txtsize=None,s
   return check
 
 
-@vectorize0
-def toggle_viz(h,prompt=False,legend=False):
-  """Toggle visibility of the graphics with handle h."""
+def toggle_viz(*handles,prompt=False,legend=False,pause=True):
+  """Toggle visibility of the graphics with handle handles."""
 
-  # Core functionality: turn on/off
-  is_viz = not h.get_visible()
-  h.set_visible(is_viz)
+  are_viz = []
+  for h in handles:
 
-  if prompt:
-    input("Press <Enter> to continue...")
+    # Core functionality: turn on/off
+    is_viz = not h.get_visible()
+    h.set_visible(is_viz)
+    are_viz += [is_viz]
 
-  # Legend updating. Basic version: works by
-  #  - setting line's label to actual_label/'_nolegend_' if is_viz/not
-  #  - re-calling legend()
-  if legend:
-      if is_viz:
-        try:
-          h.set_label(h.actual_label)
-        except AttributeError:
-          pass
-      else:
-        h.actual_label = h.get_label()
-        h.set_label('_nolegend_')
-      # Legend refresh
-      ax = h.axes
-      with warnings.catch_warnings():
-        warnings.simplefilter("error",category=UserWarning)
-        try:
-          ax.legend()
-        except UserWarning:
-          # If all labels are '_nolabel_' then ax.legend() throws warning,
-          # and quits before refreshing. => Refresh by creating/rm another legend.
-          ax.legend('TMP').remove()
+    # Legend updating. Basic version: works by
+    #  - setting line's label to actual_label/'_nolegend_' if is_viz/not
+    #  - re-calling legend()
+    if legend:
+        if is_viz:
+          try:
+            h.set_label(h.actual_label)
+          except AttributeError:
+            pass
+        else:
+          h.actual_label = h.get_label()
+          h.set_label('_nolegend_')
+        # Legend refresh
+        ax = h.axes
+        with warnings.catch_warnings():
+          warnings.simplefilter("error",category=UserWarning)
+          try:
+            ax.legend()
+          except UserWarning:
+            # If all labels are '_nolabel_' then ax.legend() throws warning,
+            # and quits before refreshing. => Refresh by creating/rm another legend.
+            ax.legend('TMP').remove()
 
-  plt.pause(0.02)
-  return is_viz
+  if prompt: input("Press <Enter> to continue...")
+  if pause:  plt.pause(0.02)
+
+  return are_viz
 
 
-def savefig_n(f=None):
+def savefig_n(f=None, ext='.pdf'):
   """
   Simplify the exporting of a figure, especially when it's part of a series.
   """
@@ -503,7 +505,7 @@ def savefig_n(f=None):
   if f is None:
     f = inspect.getfile(inspect.stack()[1][0])   # Get __file__ of caller
     f = save_dir(f)                              # Prep save dir
-  f = f + str(savefig_n.index) + '.pdf'          # Compose name
+  f = f + str(savefig_n.index) + ext             # Compose name
   print("Saving fig to:",f)                      # Print
   plt.savefig(f)                                 # Save
   savefig_n.index += 1                           # Increment index

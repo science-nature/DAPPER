@@ -488,16 +488,16 @@ def plot_pause(interval):
                 canvas.draw_idle()
             if focus_figure:
                 plt.show(block=False)
-            canvas.start_event_loop(interval)
+            if not is_notebook:
+                canvas.start_event_loop(interval)
         else:
             time.sleep(interval)
     _plot_pause(interval, focus_figure=False)
 
   except:
-    # Jupyter notebook support
-    # stackoverflow.com/q/34486642
-    fig = plt.gcf()
-    fig.canvas.draw()
+    # Jupyter notebook support (SO.com/q/34486642)
+    # Note: no longer needed with the above _plot_pause()?
+    plt.gcf().canvas.draw()
     time.sleep(0.1)
 
 

@@ -185,10 +185,11 @@ if R.xlabel=='N':
 #   But simply with infl=1.01 one obtains a much more reasonable benchmark curve.
 #   However, the difference to **tuned** inflation (represented here by the EnKF-N)
 #   is still very clear.
-# - TODO: replace tuning functions by argmin (i.e. R.minz_tuning).
+# - TODO: replace tuning functions by argmin (i.e. R.minz_tuning). Merge with example_4.
 #   Why: good tuning functions require too much manual labor, and bad ones yield noisy curves.
 #   Also use 2d plotting tools.
 # - TODO: more thought to localization + adaptive inflation
+#   This should also enable {inflation+localization} to get more advantage over {localization only}.
 
 ##
 

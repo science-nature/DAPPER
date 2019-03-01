@@ -147,16 +147,10 @@ class LP_sliding_diagnostics:
             ln['shape']  = style_table[name][1]
             ln['plt']    = style_table[name][2]
 
-            # Decide on RollingArray length
-            ln['plot_u'] = False
-            if isinstance(stat,FAU_series):
-              if stat.store_u or stat.k_tmp==key0[0]:
-                ln['plot_u'] = True
-            u_lag = K_lag if ln['plot_u'] else 0
-
             # Create series
-            ln['data'] = RollingArray(u_lag + 2*a_lag)
-            ln['tt']   = RollingArray(u_lag + 2*a_lag)
+            K_plot, ln['plot_u'] = determine_K_plot(stat,key0,K_lag,a_lag)
+            ln['data'] = RollingArray(K_plot)
+            ln['tt']   = RollingArray(K_plot)
 
             # Plot (init)
             ln['handle'], = ax.plot(ln['tt'],ln['data'],**ln['plt'])
@@ -281,17 +275,6 @@ class LP_sliding_diagnostics:
          finalize_init(ax2, self.d2, True)
 
 
-def replay(updater,t1,t2):
-  "Used for non-live plotting (plot_time_series)"
-  chrono = updater.stats.HMM.t
-  for k,kObs,t,dt in chrono.ticker:
-    if t1 <= t <= t2:
-      if kObs is not None:
-        updater((k,kObs,'f'),None,None)
-        updater((k,kObs,'a'),None,None)
-      if updater.stats.config.store_u:
-        updater((k,kObs,'u'),None,None)
-
 
 def sliding_xlim(ax, tt, dt_margin, lag):
   if tt.nFilled==0: return        # Quit
@@ -308,24 +291,6 @@ def sliding_xlim(ax, tt, dt_margin, lag):
     span   = min(lag, span)       #   Bound
     t1     = t2 - span            #   Set span.
   ax.set_xlim(t1, t2 + dt_margin) # Set xlim to span
-
-
-def plot_time_series(stats,fignum=22,t1=None,t2=None):
-  """
-  Plot time series of various statistics.
-  kwargs forwarded to get_plot_inds().
-  """
-  t = stats.HMM.t
-  if t1 is None: t1 = t.tt[0]
-  if t2 is None: t2 = t1 + t.Tplot
-  assert t1<t2
-  t1, t2 = array([t1,t2]).clip(t.tt[0], t.tt[-1])
-
-  updater = LP_sliding_diagnostics(fignum,stats,(0,None,'u'),None,None,Tplot=(t2-t1))
-  updater.dt_margin = 0
-  replay(updater,t1,t2)
-
-  set_figpos('1313 mac')
 
 
 class LP_weight_histogram:
@@ -523,16 +488,16 @@ def plot_pause(interval):
                 canvas.draw_idle()
             if focus_figure:
                 plt.show(block=False)
-            canvas.start_event_loop(interval)
+            if not is_notebook:
+                canvas.start_event_loop(interval)
         else:
             time.sleep(interval)
     _plot_pause(interval, focus_figure=False)
 
   except:
-    # Jupyter notebook support
-    # stackoverflow.com/q/34486642
-    fig = plt.gcf()
-    fig.canvas.draw()
+    # Jupyter notebook support (SO.com/q/34486642)
+    # Note: no longer needed with the above _plot_pause()?
+    plt.gcf().canvas.draw()
     time.sleep(0.1)
 
 
@@ -552,10 +517,12 @@ def sliding_marginals(
   def init(fignum,stats,key0,E,P):
     xx, yy, mu, var, chrono = stats.xx, stats.yy, stats.mu, stats.var, stats.HMM.t
 
-    # Lag settings
+    # Lag settings:
     T_lag, K_lag, a_lag, dt_margin = validate_lag(Tplot, chrono)
-    K_fau = K_lag + 2*a_lag # Lag length total for f + a + u series.
-    if hasattr(stats,'w'): K_fau += a_lag # for adding blanks in resampling (PartFilt)
+    K_plot, plot_u = determine_K_plot(stats.mu,key0,K_lag,a_lag)
+    # Extend K_plot forther for adding blanks in resampling (PartFilt):
+    has_w = hasattr(stats,'w')
+    if has_w: K_plot += a_lag
 
     # Pre-process dimensions
     DimsX = arange(xx.shape[-1]) if dims==[] else dims              # Chose marginal dims to plot
@@ -583,12 +550,12 @@ def sliding_marginals(
     d = Bunch() # data arrays
     h = Bunch() # plot handles
     # Why "if True" ? Just to indent the rest of the line...
-    if True         : d.t  = RollingArray((K_fau,))          ; 
-    if True         : d.x  = RollingArray((K_fau,Nx))        ; h.x  = []
-    if True         : d.y  = RollingArray((K_fau,Ny))        ; h.y  = []
-    if E is not None: d.E  = RollingArray((K_fau,len(E),Nx)) ; h.E  = []
-    if P is not None: d.mu = RollingArray((K_fau,Nx))        ; h.mu = []
-    if P is not None: d.s  = RollingArray((K_fau,2,Nx))      ; h.s  = []
+    if True         : d.t  = RollingArray((K_plot,))          ; 
+    if True         : d.x  = RollingArray((K_plot,Nx))        ; h.x  = []
+    if True         : d.y  = RollingArray((K_plot,Ny))        ; h.y  = []
+    if E is not None: d.E  = RollingArray((K_plot,len(E),Nx)) ; h.E  = []
+    if P is not None: d.mu = RollingArray((K_plot,Nx))        ; h.mu = []
+    if P is not None: d.s  = RollingArray((K_plot,2,Nx))      ; h.s  = []
 
     # Plot (invisible coz everything here is nan, for the moment).
     for ix, (m, iy, ax) in enumerate(zip(DimsX,DimsY,axs)):
@@ -603,13 +570,13 @@ def sliding_marginals(
       nonlocal d 
       k,kObs,f_a_u = key
 
-      EE = duplicate_with_blanks_for_resampled(E[:,DimsX], key, hasattr(stats,'w'))
+      EE = duplicate_with_blanks_for_resampled(E, DimsX, key, has_w)
 
       # Roll data array
       for Ens in EE: # If E is duplicated, so must the others be.
         if 'E'  in d: d.E .insert(k, Ens)
-        if 'mu' in d: d.mu.insert(k, mu[k,DimsX])
-        if 's'  in d: d.s .insert(k, mu[k,DimsX] + [[1],[-1]]*sqrt(var[k,DimsX]))
+        if 'mu' in d: d.mu.insert(k, mu[key][DimsX])
+        if 's'  in d: d.s .insert(k, mu[key][DimsX] + [[1],[-1]]*sqrt(var[key][DimsX]))
         if True     : d.t .insert(k, chrono.tt[k])
         if True     : d.y .insert(k, yy[kObs,iiY] if kObs is not None else nan*ones(Ny))
         if True     : d.x .insert(k, xx[k,DimsX])
@@ -657,35 +624,40 @@ def phase3d(
     k, kObs, f_a_u = key0
     xx, yy, mu, var, chrono = stats.xx, stats.yy, stats.mu, stats.var, stats.HMM.t
 
-    # Lag settings
+    # Lag settings:
     T_lag, K_lag, a_lag, dt_margin = validate_lag(Tplot, chrono)
-    K_fau = K_lag + 2*a_lag # Lag length total for f + a + u series.
-    if hasattr(stats,'w'): K_fau += a_lag # for adding blanks in resampling (PartFilt)
+    K_plot, plot_u = determine_K_plot(stats.mu,key0,K_lag,a_lag)
+    # Extend K_plot forther for adding blanks in resampling (PartFilt):
+    has_w = hasattr(stats,'w')
+    if has_w: K_plot += a_lag
     
     # Dimension settings
     nonlocal dims, labels
     if dims   == []: dims   = [0,1,2]
-    if labels == []: labels = "123"
+    if labels == []: labels = ["$x_%s$"%i for i in "123"]
     assert len(dims)==M
 
     # Set up figure, axes
     fig = plt.figure(fignum, figsize=(5,5))
     ax3 = plt.subplot(111, projection='3d')
     ax3.set_facecolor('w')
-    ax3.set_title("Phase space trajectories")
-    # Tune plots
+    ax3.set_title("Phase space trajectories" +
+        ("" if plot_u else "\n(obs times only)"))
+    # Tune plot
     for s,i in zip(labels, dims):
       set_ilim(ax3, i, *stretch(*span(xx[:,i]),1/zoom))
-      eval("ax3.set_%slabel('%s')"%(s,s), {'ax3':ax3})
+      ax3.set_xlabel(labels[0])
+      ax3.set_ylabel(labels[1])
+      ax3.set_zlabel(labels[2])
 
     # Allocate
     d = Bunch() # data arrays
     h = Bunch() # plot handles
     s = Bunch() # scatter handles
-    if E is not None             : d.E  = RollingArray((K_fau,len(E),M)); h.E = []
-    if P is not None             : d.mu = RollingArray((K_fau,M))
-    if True                      : d.x  = RollingArray((K_fau,M))
-    if list(obs_inds)==list(dims): d.y  = RollingArray((K_fau,M))
+    if E is not None             : d.E  = RollingArray((K_plot,len(E),M)); h.E = []
+    if P is not None             : d.mu = RollingArray((K_plot,M))
+    if True                      : d.x  = RollingArray((K_plot,M))
+    if list(obs_inds)==list(dims): d.y  = RollingArray((K_plot,M))
 
     # Plot tails (invisible coz everything here is nan, for the moment).
     if 'E'  in d: h.E  += [ax3.plot(*xn    , **ens_props)[0] for xn in np.transpose(d.E,[1,2,0])]
@@ -695,7 +667,7 @@ def phase3d(
 
     # Scatter
     if 'E'  in d: s.E   =  ax3.scatter(*E.T  [dims],s=3 **2, c=[ hn.get_color() for hn in h.E])
-    if 'mu' in d: s.mu  =  ax3.scatter(*mu[k][dims],s=8 **2, c=h.mu.get_color()               )
+    if 'mu' in d: s.mu  =  ax3.scatter(*nan*ones(M),s=8 **2, c=h.mu.get_color()               )
     if True     : s.x   =  ax3.scatter(*xx[k, dims],s=14**2, c=h.x .get_color(), marker=(5, 1), zorder=99)
 
 
@@ -703,18 +675,22 @@ def phase3d(
       k,kObs,f_a_u = key
       show_y = 'y' in d and kObs is not None
 
+      if plot_u:             ind = k
+      elif 'u' not in f_a_u: ind = kObs
+      else: return
+
       def update_tail(handle,newdata):
         handle.set_data(newdata[:,0],newdata[:,1])
         handle.set_3d_properties(newdata[:,2])
 
-      EE = duplicate_with_blanks_for_resampled(E[:,dims], key, hasattr(stats,'w'))
+      EE = duplicate_with_blanks_for_resampled(E, dims, key, has_w)
 
       for Ens in EE:
         # Roll data array
-        if 'E'  in d: d.E .insert(k, Ens)
-        if 'mu' in d: d.mu.insert(k, mu[key][dims])
-        if True     : d.x .insert(k, xx[k,   dims])
-        if 'y'  in d: d.y .insert(k, yy[kObs,  : ] if show_y else nan*ones(M))
+        if 'E'  in d: d.E .insert(ind, Ens)
+        if True     : d.x .insert(ind, xx[k,   dims])
+        if 'y'  in d: d.y .insert(ind, yy[kObs,  : ] if show_y else nan*ones(M))
+        if 'mu' in d: d.mu.insert(ind, mu[key][dims])
 
       # Update graph
       s.x._offsets3d = juggle_axes(*d.x[[-1]].T,'z')
@@ -743,6 +719,45 @@ def phase3d(
   return init # end phase3d()
 
 
+
+def validate_t1t2(chrono,t1,t2): 
+  t = chrono
+  if t1 is None: t1 = t.tt[0]
+  if t2 is None: t2 = t1 + t.Tplot
+  assert t1<t2
+  t1, t2 = array([t1,t2]).clip(t.tt[0], t.tt[-1])
+  return t1, t2
+
+# TODO: add plot_pause for animation
+def replay(updater,chrono,t1,t2):
+  "Used for non-live plotting (plot_time_series)"
+  for k,kObs,t,dt in chrono.ticker:
+    if t1 <= t <= t2:
+      if kObs is not None:
+        updater((k,kObs,'f'),None,None)
+        updater((k,kObs,'a'),None,None)
+      updater((k,kObs,'u'),None,None)
+
+def plot_time_series(stats,fignum=22,t1=None,t2=None):
+  """Plot time series of various statistics."""
+  chrono  = stats.HMM.t 
+  t1, t2  = validate_t1t2(chrono,t1,t2)
+  updater = LP_sliding_diagnostics(fignum,stats,(0,None,'u'),None,None,Tplot=(t2-t1))
+  updater.dt_margin = 0
+  replay(updater,chrono,t1,t2)
+
+  set_figpos('1313 mac')
+
+def plot_3D_trajectory(stats,fignum=23,t1=None,t2=None,**kwargs):
+  """Plot 3D phase-space trajectory."""
+  chrono  = stats.HMM.t
+  t1, t2  = validate_t1t2(chrono,t1,t2)
+  init    = phase3d(Tplot=t2-t1,**kwargs)
+  P0      = np.full_like(stats.HMM.X0.C.full, nan) # P0 not None => plots mu
+  updater = init(fignum,stats,(0,None,'u'),None,P0)
+  replay(updater,chrono,t1,t2)
+
+
 def update_alpha(key, stats, lines, scatters=None):
   "Adjust color alpha (for particle filters)"
 
@@ -768,11 +783,12 @@ def update_alpha(key, stats, lines, scatters=None):
 
 
 
-def duplicate_with_blanks_for_resampled(E,key,has_w): 
+def duplicate_with_blanks_for_resampled(E,dims,key,has_w): 
   "Particle filter: insert breaks for resampled particles."
   EE = []
 
-  if has_w:
+  if has_w and E is not None:
+    E = E[:,dims]
     k,kObs,f_a_u = key
     if   f_a_u=='f': pass
     elif f_a_u=='a': _Ea[0] = E[:,0] # Store (1st dim of) ens.
@@ -809,6 +825,20 @@ def validate_lag(Tplot, chrono):
   return T_lag, K_lag, a_lag, dt_margin
 
 
+def determine_K_plot(stat,key0,K_lag,a_lag):
+  """Determine K_plot: the time (in inds) window of plotting,
+  i.e. the length of the RollingArray to be used."""
+
+  if isinstance(stat,FAU_series):
+    plot_u  = stat.store_u or stat.k_tmp==key0[0]
+    K_plot  = 2*a_lag          # f+a series
+    if plot_u: K_plot += K_lag # u series.
+
+  else:
+    plot_u = False
+    K_plot = a_lag
+
+  return K_plot, plot_u
 
 
 
@@ -996,20 +1026,6 @@ def spatial1d(
   return init # end spatial1d()
 
 
-
-def freshfig(num,figsize=None,*args,**kwargs):
-  """Create/clear figure.
-  - If the figure does not exist: create figure it.
-    This allows for figure sizing -- even on Macs.
-  - Otherwise: clear figure (we avoid closing/opening so as
-    to keep (potentially manually set) figure pos and size.
-  - The rest is the same as:
-    >>> fig, ax = suplots()
-  """
-  fig = plt.figure(num=num,figsize=figsize)
-  fig.clf()
-  _, ax = plt.subplots(num=fig.number,*args,**kwargs)
-  return fig, ax
 
 
 

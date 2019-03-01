@@ -159,7 +159,7 @@ def DA_Config(da_method):
       # Grab argument names/values
       #---------------------------
       # Process abbreviations, aliases
-      de_abbreviate(kwargs, [('LP','liveplotting'),('store_intermediate','store_u')])
+      de_abbreviate(kwargs, [('LP','liveplotting')])
 
       cfg = OrderedDict()
       i   = 0

@@ -360,14 +360,15 @@ Conventions:
 
 
 <!--
+
 TODO
 ------------------------------------------------
 * Make changes to L63.core and sak12 in the rest
 * rename viz.py:span to "xtrma". Or rm?
-* Rename partial_direct_Obs --> partial_Id_Obs
-* Rename dfdx --> dstep_dx
-* Rename TLM --> d2x_dtdx
-* Rename jacob --> linearization
+* Rename partial_direct_Obs -> partial_Id_Obs
+* Rename dfdx -> dstep_dx
+* Rename TLM -> d2x_dtdx
+* Rename jacob -> linearization
 * Ensure plot_pause is used for all liveplotting
 * Is this why ctrl-c fails so often (from https://docs.python.org/3.5/library/select.html ):
     "Changed in version 3.5: The function is now retried with a recomputed timeout when interrupted by a signal, except if the signal handler raises an exception (see PEP 475 for the rationale), instead of raising InterruptedError."

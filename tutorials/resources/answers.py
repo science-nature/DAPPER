@@ -1,25 +1,87 @@
-# from markdown2 import markdown as md2html
-from markdown import markdown as md2html
+from markdown import markdown as md2html # better than markdown2 ?
 from IPython.display import HTML, display
 
-bg_color = 'background-color:#d8e7ff;' #e2edff;'
-def show_answer(excercise_tag):
-    TYPE, s = answers[excercise_tag]
+# Notes:
+# - md2html rendering sometimes breaks
+#   because it has failed to parse the eqn properly.
+#   For ex: _ in math sometimes gets replaced by <em>.
+#   Can be fixed by escaping, i.e. writing \_
+
+def formatted_display(TYPE,s,bg_color):
     s = s[1:] # Remove newline
+    bg = 'background-color:'+ bg_color + ';' #d8e7ff #e2edff
     if   TYPE == "HTML": s = s
     elif TYPE == "MD"  : s = md2html(s)
-    elif TYPE == "TXT" : s = '<code style="'+bg_color+'">'+s+'</code>'
+    elif TYPE == "TXT" : s = '<code style="'+bg+'">'+s+'</code>'
     s = ''.join([
         '<div ',
-        'style="',bg_color,'padding:0.5em;">',
+        'style="',bg,'padding:0.5em;">',
         str(s),
         '</div>'])
     display(HTML(s))
+
+def show_answer(tag):
+    formatted_display(*answers[tag], '#dbf9ec') # #d8e7ff
+
         
+def show_example(tag):
+    formatted_display(*examples[tag], '#ffed90')
+
 
 answers = {}
+examples = {}
 
+macros=r'''%
+%MACRO DEFINITION
+\newcommand{\Reals}{\mathbb{R}}
+\newcommand{\Imags}{i\Reals}
+\newcommand{\Integers}{\mathbb{Z}}
+\newcommand{\Naturals}{\mathbb{N}}
+%
+\newcommand{\Expect}[0]{\mathop{}\! \mathbb{E}}
+\newcommand{\NormDist}{\mathop{}\! \mathcal{N}}
+%
+\newcommand{\mat}[1]{{\mathbf{{#1}}}} 
+%\newcommand{\mat}[1]{{\pmb{\mathsf{#1}}}}
+\newcommand{\bvec}[1]{{\mathbf{#1}}}
+%
+\newcommand{\trsign}{{\mathsf{T}}}
+\newcommand{\tr}{^{\trsign}}
+%
+\newcommand{\I}[0]{\mat{I}}
+\newcommand{\K}[0]{\mat{K}}
+\newcommand{\bP}[0]{\mat{P}}
+\newcommand{\F}[0]{\mat{F}}
+\newcommand{\bH}[0]{\mat{H}}
+\newcommand{\bF}[0]{\mat{F}}
+\newcommand{\R}[0]{\mat{R}}
+\newcommand{\Q}[0]{\mat{Q}}
+\newcommand{\B}[0]{\mat{B}}
+\newcommand{\Ri}[0]{\R^{-1}}
+\newcommand{\Bi}[0]{\B^{-1}}
+\newcommand{\X}[0]{\mat{X}}
+\newcommand{\A}[0]{\mat{A}}
+\newcommand{\Y}[0]{\mat{Y}}
+\newcommand{\E}[0]{\mat{E}}
+\newcommand{\U}[0]{\mat{U}}
+\newcommand{\V}[0]{\mat{V}}
+%
+\newcommand{\x}[0]{\bvec{x}}
+\newcommand{\y}[0]{\bvec{y}}
+\newcommand{\q}[0]{\bvec{q}}
+\newcommand{\br}[0]{\bvec{r}}
+\newcommand{\bb}[0]{\bvec{b}}
+%
+\newcommand{\cx}[0]{\text{const}}
+\newcommand{\norm}[1]{\|{#1}\|}
+%
+\newcommand{\bx}[0]{\bvec{\bar{x}}}
+\newcommand{\barP}[0]{\mat{\bar{P}}}
+%'''
 
+###########################################
+# Tut: DA & EnKF
+###########################################
 answers['thesaurus 1'] = ["TXT",r"""
 Data Assimilation (DA)     Ensemble      Stochastic     Data        
 Filtering                  Sample        Random         Measurements
@@ -38,28 +100,81 @@ Regression
 Fitting                  
 """]
 
-answers['why Gaussian'] =  ['MD',r"""
- * Pragmatic: leads to least-squares problems, which lead to linear systems of equations.
-   This was demonstrated by the simplicity of the parametric Gaussian-Gaussian Bayes' rule.
- * The central limit theorem (CLT) and all of its implications.
- * The intuitive condition "ML estimator = sample average" implies the sample is drawn from a Gaussian.
- * For more, see chapter 7 of: [Probability theory: the logic of science](https://books.google.com/books/about/Probability_Theory.html?id=tTN4HuUNXjgC) (Edwin T. Jaynes), which is an excellent book for understanding probability and statistics.
-"""]
 
-answers['pdf_G_1'] = ['MD',r'''
-    pdf_values = 1/sqrt(2*pi*P)*exp(-0.5*(x-mu)**2/P)
+###########################################
+# Tut: Bayesian inference
+###########################################
+answers['pdf_G1'] = ['MD',r'''
+    pdf_values = 1/sqrt(2*pi*B)*exp(-0.5*(x-b)**2/B)
     # Version using the scipy (sp) library:
-    # pdf_values = sp.stats.norm.pdf(x,loc=mu,scale=sqrt(P))
+    # pdf_values = sp.stats.norm.pdf(x,loc=b,scale=sqrt(B))
 ''']
 
-answers['pdf_U_1'] = ['MD',r'''
-    def pdf_U_1(x,mu,P):
+examples['BR'] = ['MD',r'''
+ - You believe the temperature $(x)$ in the room is $22°C \pm 2°C$;  
+more specifically, your prior is: $p(x) = \mathcal{N}(x \mid 22, 4)$.  
+ - A thermometer yields the observation $y = 24°C \pm 2°C$;  
+more specifically, the likelihood is: $p(y|x) = \mathcal{N}(24 \mid x, 4)$.  
+ - Your updated, posterior belief is then $p(x|y) = \mathcal{N}(x \mid 23, 2)$.  
+(exactly how these numbers are calculated will be shown below).
+''']
+
+answers['BR derivation'] = ['MD',r'''
+<a href="https://en.wikipedia.org/wiki/Bayes%27_theorem#Derivation" target="_blank">Wikipedia</a>
+
+''']
+
+answers['inverse'] = ['MD',r'''
+Because estimation (i.e. inference) is seen as reasoning backwards from the "outcome" to the "cause".
+In physics, causality is a difficult notion.
+Still, we use it to define the direction "backward", or "inverse",
+which we associate with the symolism $f^{-1}$.
+Since $y = f(x)$ is common symbolisism,
+it makes sense to use the symobls $x = f^{-1}(y)$ for the estimation problem.
+''']
+
+answers['Posterior behaviour'] = ['MD',r'''
+ - Likelihood becomes flat.  
+ Posterior is dominated by the prior, and becomes (in the limit) superimposed on it.
+ - Likelihood becomes a delta function.  
+ Posterior is dominated by the likelihood, and becomes superimposed on it.
+ - It's located halfway between the prior/likelihood $\forall y$.
+ - No.
+ - No (in fact, we'll see later that it remains Gaussian,
+ and is therefore fully characterized by its mean and its variance).
+ - It would seem we only need to compute its location and scale
+ (otherwise, the shape remains unchanged).
+''']
+
+answers['BR normalization'] = ['MD',r'''
+$$\texttt{sum(pp)*dx}
+\approx \int \texttt{pp}(x) \, dx
+= \int p(x) \, p(y|x) \, dx
+= \int p(x,y) \, dx
+= p(y) \, .$$
+
+
+<!--
+*Advanced*:
+Firstly, note that normalization is quite necessary, being requried by any expectation computation. For example, $\mathbb{E}(x|y) = \int x \, p(x) \, dx \approx$ `x*pp*dx` is only valid if `pp` has been normalized.
+Computation of the normalization constant is automatic/implicit when fitting the distribution to a parametric one (e.g. the Gaussian one).
+Otherwise, we usually delay its computation until strictly necessary
+(for example, not during intermediate stages of conditioning, but at the end).
+Note that when $ p(x|y)$ is not known
+(has not been evaluated) for an entire grid of $x$,
+but only in a few points,
+then "how to normalize" becomes an important question too.
+-->
+''']
+
+answers['pdf_U1'] = ['MD',r'''
+    def pdf_U1(x,b,B):
         # Univariate (scalar), Uniform pdf
 
-        pdf_values = ones((x-mu).shape)
+        pdf_values = ones((x-b).shape)
 
-        a = mu - sqrt(3*P)
-        b = mu + sqrt(3*P)
+        a = b - sqrt(3*B)
+        b = b + sqrt(3*B)
 
         pdf_values[x<a] = 0
         pdf_values[x>b] = 0
@@ -70,24 +185,15 @@ answers['pdf_U_1'] = ['MD',r'''
         return pdf_values
 ''']
 
-answers['BR deriv'] = ['MD',r'''
-<a href="https://en.wikipedia.org/wiki/Bayes%27_theorem#Derivation" target="_blank">Wikipedia</a>
-
-''']
-
-answers['BR grid normalization'] = ['MD',r'''
-Because it can compute $p(y)$ as
-the factor needed to normalize to 1,
-as required by the definition of pdfs.
-
-That's what the `#normalization` line does.
-
-Here's the proof that the normalization (which makes `pp` sum to 1) is equivalent to dividing by $p(y)$:
-$$\texttt{sum(pp)*dx} \approx \int p(x) p(y|x) \, dx = \int p(x,y) \, dx = p(y) \, .$$
+answers['BR U1'] = ['MD',r'''
+ - Because of the discretization.
+ - The problem (of computing the posterior) is ill-posed:  
+   The prior says there's zero probability of the truth being 
+   in the region where the likelihood is not zero.
 ''']
 
 answers['Dimensionality a'] = ['MD',r'''
-$N^m$
+$N^M$
 ''']
 answers['Dimensionality b'] = ['MD',r'''
 $15 * 360 * 180 = 972'000 \approx 10^6$
@@ -103,22 +209,22 @@ We can ignore factors that do not depend on $x$.
 p(x|y)
 &= \frac{p(x) \, p(y|x)}{p(y)} \\\
 &\propto p(x) \, p(y|x) \\\
-&=       N(x|b,B) \, N(y|x,R) \\\
+&=       N(x \mid b,B) \, N(y \mid x,R) \\\
 &\propto \exp \Big( \frac{-1}{2} \Big( (x-b)^2/B + (x-y)^2/R \Big) \Big) \\\
 &\propto \exp \Big( \frac{-1}{2} \Big( (1/B + 1/R)x^2 - 2(b/B + y/R)x \Big) \Big) \\\
 &\propto \exp \Big( \frac{-1}{2} \Big( x - \frac{b/B + y/R}{1/B + 1/R} \Big)^2 \cdot (1/B + 1/R) \Big) \, .
 \end{align}
 
-The last line can be identified as $N(x|\mu,P)$ as defined above.
+Identifying the last line with $N(x \mid \hat{x}, P)$ yields eqns (5) and (6).
 ''']
 
-answers['KG 2'] = ['MD',r'''
-Because it
+answers['KG intuition'] = ['MD',r'''
+Because it describes how much the esimate is dragged from $b$ "towards" $y$.  
+I.e. it is a multiplification (amplification) factor,
+which French (signal processing) people like to call "gain".  
 
- * drags the estimate from $b$ "towards" $y$.
- * is between 0 and 1.
- * weights the observation noise level (R) vs. the total noise level (B+R).
- * In the multivariate case (and with $H=I$), the same holds for its eigenvectors.
+Relatedly, note that $K$ weights the observation uncertainty $(R)$ vs. the total uncertainty $(B+R)$,
+and so is always between 0 and 1.
 ''']
 
 answers['BR Gauss code'] = ['MD',r'''
@@ -130,47 +236,91 @@ answers['BR Gauss code'] = ['MD',r'''
     #     mu = b + KG*(y-b)
 ''']
 
+answers['Posterior cov'] =  ['MD',r"""
+  * No.
+      * It means that information is always gained.
+      * No, not always.  
+        But on average, yes:  
+        [the "expected" posterior entropy (and variance)
+        is always smaller than that of the prior.](https://www.quora.com/What-conditions-guarantee-that-the-posterior-variance-will-be-less-than-the-prior-variance#)
+  * It probably won't have decreased. Maybe you will just discard the new information entirely, in which case your certainty will remain the same.  
+    I.e. humans are capable of thinking hierarchically, which effectively leads to other distributions than the Gaussian one.
+"""]
+
+answers['Why Gaussian'] =  ['MD',r"""
+ * Simplicity: (recursively) yields "linear least-squares problems", whose solution is given by a linear systems of equations.
+   This was demonstrated by the simplicity of the parametric Gaussian-Gaussian Bayes' rule.
+ * The central limit theorem (CLT) and all its implications about likely noise distributions.
+ * The intuitive precondition "ML estimator = sample average" necessitates a Gaussian sampling distribution.
+ * For more, see chapter 7 of: [Probability theory: the logic of science](https://books.google.com/books/about/Probability_Theory.html?id=tTN4HuUNXjgC) (Edwin T. Jaynes), which is an excellent book for understanding probability and statistics.
+"""]
+
+
+###########################################
+# Tut: Univariate Kalman filtering
+###########################################
+
+# Also see 'Gaussian sampling a'
+answers['Gaussian sums'] = ['MD',r'''
+By the [linearity of the expected value](https://en.wikipedia.org/wiki/Expected_value#Linearity),
+the mean parameter becomes:
+$$ E(Fx+q) =  F E(x) + E(q) = F \hat{x} + \hat{q} \, . $$
+
+Moreover, by independence,
+$ Var(Fx+q) = Var(Fx) + Var(q) $,
+and so
+the variance parameter becomes:
+$$ Var(Fx+q) = F^2 P + Q \, .  $$
+''']
+
 answers['LinReg deriv'] = ['MD',r'''
-$$ \frac{d J_K}{d\alpha} = 0 = \ldots $$
+$$ \frac{d J_K}{d \hat{a}} = 0 = \ldots $$
 ''']
 
-answers['LinReg F_k'] = ['MD',r'''
-$$ F_k = \frac{k+1}{k} $$
+answers['LinReg_k'] = ['MD',r'''
+    kk = 1+arange(k)
+    a = sum(kk*yy[kk]) / sum(kk**2)
 ''']
 
-answers['LinReg func'] = ['MD',r'''
-    kk = arange(1,k+1)
-    alpha = sum(kk*yy[:k]) / sum(kk**2)
+answers['Sequential 2 Recusive'] = ['MD',r'''
+    (k+1)/k
 ''']
 
-answers['KF func'] = ['MD',r'''
-    # Forecast
-    muf[k+1] = F(k)*mua[k]
-    PPf[k+1] = F(k)*PPa[k]*F(k) + Q
-    # Analysis
-    PPa[k+1] = 1/(1/PPf[k+1] + H*1/R*H)
-    mua[k+1] = PPa[k+1] * (muf[k+1]/PPf[k+1] + yy[k]*H/R)
-    # Analysis -- Kalman gain version:
-    #KG = PPf[k+1]*H / (H*PPf[k+1]*H + R)
-    #PPa[k+1] = (1-KG)*PPf[k+1]
-    #mua[k+1] = muf[k+1]+KG*(yy[k]-muf[k+1])
+answers['LinReg ⊂ KF'] = ['MD',r'''
+The linear regression problem is formulated with $F_k = (k+1)/k$.  
+The KF accepts a general $F_k$.
 ''']
 
-answers['KF KG fail'] = ['MD',r'''
-Because `PPa[0]` is infinite. And while the limit (as `PPf` goes to +infinity) of `KG = PPf*H / (H*PPf*H + R)` is `H (= 1)`, its numerical evaluation fails (as it should). Note that the infinity did not cause any problems numerically for the "weighted average" form.
+answers['KF_k'] = ['MD',r'''
+    ...
+        else:
+            PPf[k] = F(k-1)*PPa[k-1]*F(k-1) + Q
+            xxf[k] = F(k-1)*xxa[k-1]
+        # Analysis
+        PPa[k] = 1/(1/PPf[k] + 1/R)
+        xxa[k] = PPa[k] * (xxf[k]/PPf[k] + yy[k]/R)
+        # Kalman gain form:
+        # KG     = PPf[k] / (PPf[k] + R)
+        # PPa[k] = (1-KG)*PPf[k]
+        # xxa[k] = xxf[k]+KG*(yy[k]-xxf[k])
 ''']
 
-answers['LinReg plot'] = ['MD',r'''
-Let $\alpha_K$ denote the linear regression estimates (of the slope) based on the observations $y_{1:K} = \\{y_1,\ldots,y_K\\}$.
-Simiarly, let $\mu_K$ denote the KF estimate of $x_K$ based on $y_{1:K}$.
+answers['LinReg compare'] = ['MD',r'''
+
+Let $\hat{a}_K$ denote the linear regression estimates of the slope $a$
+based on the observations $y_1,\ldots, y_K$.  
+Let $\hat{x}_K$ denote the KF estimate of $\hat{x}_K$ based on the same set of obs.  
 It can bee seen in the plot that
-$
-K \alpha_K = \mu_K \, .
-$
+$ \hat{x}_K = K \hat{a}_K \, . $
 ''']
 
-answers['KF = LinReg a'] = ['MD',r'''
-We'll proceed by induction. With $P_0 = \infty$, we get $P_1 = R$, which initializes (4). Now, from (3):
+answers['x_KF == x_LinReg'] = ['MD',r'''
+We'll proceed by induction.  
+
+With $P_1^f = \infty$, we get $P_1 \;(\text{i.e.}\; P_1^a)\; = R$,
+which initializes (13).  
+
+Now, inserting (13) in (12) yields:
 
 $$
 \begin{align}
@@ -191,10 +341,179 @@ which concludes the induction.
 The proof for (b) is similar.
 ''']
 
-answers['Asymptotic P'] = ['MD',r'''
+answers['Asymptotic P when F>1'] = ['MD',r'''
 The fixed point $P_\infty$ should satisfy
 $P_\infty = 1/\big(1/R + 1/[F^2 P_\infty]\big)$.
-This yields $P_\infty = R (1-1/F^2)$.
+This yields $P_\infty = R (1-1/F^2)$.  
+Interestingly, this means that the asymptotic state uncertainty ($P$)
+is directly proportional to the observation uncertainty ($R$).
+''']
+
+answers['Asymptotic P when F=1'] = ['MD',r'''
+Since
+$ P_k^{-1} = P_{k-1}^{-1} + R^{-1} \, , $
+it follows that
+$ P_k^{-1} = P_0^{-1} + k R^{-1} \, , $
+and hence
+$$ P_k = \frac{1}{1/P_0 + k/R} \xrightarrow[k \rightarrow \infty]{} 0 \, .
+$$
+''']
+
+answers['Asymptotic P when F<1'] = ['MD',r'''
+Note that $P_k^a < P_k^f$ for each $k$
+(c.f. the Gaussian-Gaussian Bayes rule from tutorial 2.)
+Thus,
+$$
+P_k^a < P_k^f = F^2 P_{k-1}^f
+\xrightarrow[k \rightarrow \infty]{} 0 \, .
+$$
+''']
+
+answers['KG fail'] = ['MD',r'''
+Because `PPa[0]` is infinite.
+And while the limit (as `PPf` goes to +infinity) of
+`KG = PPf / (PPf + R)` is 1,
+its numerical evaluation fails (as it should).
+Note that the infinity did not cause any problems numerically
+for the "weighted average" form.
+''']
+
+
+###########################################
+# Tut: Time series analysis
+###########################################
+
+
+###########################################
+# Tut: Multivariate Kalman
+###########################################
+
+answers['Likelihood derivation'] = ['MD',r'''
+$$
+'''+macros+r'''
+$$
+Imagine that $\y=\br$ (instead of eqn 2),
+then the distribution of $\y$ would be the same as for $\br$.
+The only difference is that we've added $\bH \x$, which is a (deterministic/fixed) constant, given $\x$.
+Adding a constant to a random variable just changes its mean,
+hence $\mathcal{N}(\y \mid \bH \x, \R)$
+
+A more formal (but not really more rigorous) explanation is as follows:
+$$
+\begin{align}
+p(\y|\x)
+&= \int p(\y,\br|\x) \, d \br \tag{by law of total proba.}  \\\
+&= \int p(\y|\br,\x) \, p(\br|\x) \, d \br \tag{by def. of conditional proba.} \\\
+&= \int \delta\big(\y-(\bH \x + \br)\big) \, p(\br|\x) \, d \br \tag{$\y$ is fully determined by $\x$ and $\br$} \\\
+&= \int \delta\big(\y-(\bH \x + \br)\big) \, \mathcal{N}(\br \mid 0, \R) \, d \br \tag{the draw of $\br$ does not depened on $\x$} \\\
+&= \mathcal{N}(\y - \bH \x \mid 0, \R) \tag{by def. of Dirac Delta} \\\
+&= \mathcal{N}(\y \mid \bH \x, \R) \tag{by reformulation} \, .
+\end{align}
+$$
+''']
+
+
+answers['KF precision'] = ['MD',r'''
+By Bayes' rule:
+$$
+'''+macros+r'''
+\begin{align}
+- 2 \log p(\x|\y) =
+\norm{\bH \x-\y}\_\R^2 + \norm{\x - \bb}\_\B^2
+ + \cx_1
+\, .
+\end{align}
+$$
+Expanding, and gathering terms of equal powers in $\x$ yields:
+$$
+\begin{align}
+- 2 \log p(\x|\y)
+&=
+\x\tr \left( \bH\tr \Ri \bH + \Bi  \right)\x
+- 2\x\tr \left[\bH\tr \Ri \y + \Bi \bb\right] + \cx_2
+\, .
+\end{align}
+$$
+Meanwhile
+$$
+\begin{align}
+\norm{\x-\hat{\x}}_\bP^2
+&=
+\x\tr \bP^{-1} \x - 2 \x\tr \bP^{-1} \hat{\x} + \cx_3
+\, .
+\end{align}
+$$
+Eqns (5) and (6) follow by identification.
+''']
+
+
+# Also comment on CFL condition (when resolution is increased)?
+answers['Cov memory'] = ['MD',r'''
+ * (a). $M$-by-$M$
+ * (b). Using the [cholesky decomposition](https://en.wikipedia.org/wiki/Cholesky_decomposition#Computation),
+    at least 2 times $M^3/3$.
+ * (c). Assume $\mathbf{B}$ stored as float (double). Then it's 8 bytes/element.
+ And the number of elements in $\mathbf{B}$: $M^2$. So the total memory is $8 M^2$.
+ * (d). 8 trillion bytes. I.e. 8 million MB. 
+''']
+
+
+answers['Woodbury'] = ['MD',r'''
+We show that they cancel:
+$$
+'''+macros+r'''
+\begin{align}
+  &\left(\B^{-1}+\V\tr \R^{-1} \U \right)
+  \left[ \B - \B \V\tr \left(\R+\U \B \V\tr \right)^{-1} \U \B \right] \\\
+  & \quad = \I_M + \V\tr \R^{-1}\U \B -
+  (\V\tr + \V\tr \R^{-1} \U \B \V\tr)(\R + \U \B \V\tr)^{-1}\U \B \\\
+  & \quad = \I_M + \V\tr \R^{-1}\U \B -
+  \V\tr \R^{-1}(\R+ \U \B \V\tr)(\R + \U \B \V\tr)^{-1} \U \B \\\
+  & \quad = \I_M + \V\tr \R^{-1} \U \B - \V\tr \R^{-1} \U \B \\\
+  & \quad = \I_M
+\end{align}
+$$
+''']
+
+answers['Woodbury C1'] = ['MD',r'''
+$
+'''+macros+r'''
+$The corollary follows from the Woodbury identity
+by replacing $\V,\U$ by $\bH$,
+*provided that everything is still well-defined*.
+In other words,
+we need to show the existence of the left hand side.
+
+Now, for all $\x \in \Reals^M$, $\x\tr \B^{-1} \x > 0$ (since $\B$ is SPD).
+Similarly, $\x\tr \bH\tr \R^{-1} \bH \x\geq 0$,
+implying that the left hand side is SPD:
+$\x\tr (\bH\tr \R^{-1} \bH + \B^{-1})\x > 0$,
+and hence invertible.
+''']
+
+answers['Woodbury C2'] = ['MD',r'''
+$
+'''+macros+r'''
+$A straightforward validation of (C2)
+is obtained by cancelling out one side with the other.
+A more satisfying exercise is to derive it from (C1)
+starting by right-multiplying by $\bH\tr$.
+''']
+
+
+###########################################
+# Tut: Dynamical systems, chaos, Lorenz
+###########################################
+
+answers["Ergodicity a"] = ["MD",r'''
+For asymptotically large $T$, the answer is "yes";
+however, this is difficult to distinguish if $T<60$ or $N<400$,
+which takes a very long time with the integrator used in the above.
+''']
+
+answers["Ergodicity b"] = ["MD",r'''
+It doesn't matter
+(provided the initial conditions for each experiment is "cropped out" before averaging).
 ''']
 
 answers["Hint: Lorenz energy"] = ["MD",r'''
@@ -204,16 +523,16 @@ Hint: what's its time-derivative?
 answers["Lorenz energy"] = ["MD",r'''
 \begin{align}
 \frac{d}{dt}
-\sum_i
-x_i^2
+\sum_m
+x_m^2
 &=
-2 \sum_i
-x_i \dot{x}_i
+2 \sum_m
+x_m \dot{x}_m
 \end{align}
 
 Next, insert the quadratic terms from the ODE,
 $
-\dot x_i = (x_{i+1} − x_{i-2}) x_{i-1}
+\dot x_m = (x_{m+1} − x_{m-2}) x_{m-1}
 \, .
 $
 
@@ -221,18 +540,25 @@ Finally, apply the periodicity of the indices.
 ''']
 
 answers["error evolution"] = ["MD",r"""
-* (a). $\frac{d \varepsilon}{dt} = \frac{d (x-z)}{dt}
+$\frac{d \varepsilon}{dt} = \frac{d (x-z)}{dt}
 = \frac{dx}{dt} - \frac{dz}{dt} = f(x) - f(z) \approx f(x) - [f(x) - \frac{df}{dx}\varepsilon ] = F \varepsilon$
-* (b). Differentiate $e^{F t}$.
-* (c).
-    * (1). Dissipates to 0.
-    * (2). No.
+"""]
+answers["anti-deriv"] = ["MD",r"""
+Differentiate $e^{F t}$.
+"""]
+answers["predictability cases"] = ["MD",r"""
+* (1). Dissipates to 0.
+* (2). No.
       A balance is always reached between
       the uncertainty reduction $(1-K)$ and growth $F^2$.  
-      Also recall the asymptotic value of $P_k$ computed from
-      [the previous tutorial](T3 - Univariate Kalman filtering.ipynb#Exc-3.14-'Asymptotic-P':).
-* (d). [link](https://en.wikipedia.org/wiki/Logistic_function#Logistic_differential_equation)
-* (e). $\frac{d \varepsilon}{dt} \approx F \varepsilon + (f-g)$
+      Also recall the asymptotic value of $P_k$ computed in
+      [T3](T3 - Univariate Kalman filtering.ipynb#Exc-3.14:).
+"""]
+answers["saturation term"] = ["MD",r"""
+[link](https://en.wikipedia.org/wiki/Logistic_function#Logistic_differential_equation)
+"""]
+answers["liner growth"] = ["MD",r"""
+$\frac{d \varepsilon}{dt} \approx F \varepsilon + (f-g)$
 """]
 
 answers["doubling time"] = ["MD",r"""
@@ -246,29 +572,42 @@ answers["doubling time"] = ["MD",r"""
     print("Doubling time (approx):",log(2)/rate)
 """]
 
-answers['Gaussian sampling a'] = ['MD',r'''
-Firstly, a linear (affine) transformation can be decomposed into a sequence of sums. This means that $\mathbf{x}$ will be Gaussian.
-It remains only to calculate its moments.
 
-By the [linearity of the expected value](https://en.wikipedia.org/wiki/Expected_value#Linearity),
-$$E(\mathbf{x}) = E(\mathbf{L} \mathbf{z} + \mathbf{b}) = \mathbf{L} E(\mathbf{z}) + \mathbf{b} = \mathbf{b} \, .$$
+###########################################
+# Tut: Ensemble [Monte-Carlo] approach
+###########################################
 
-Moreover,
-$$\newcommand{\b}{\mathbf{b}} \newcommand{\x}{\mathbf{x}} \newcommand{\z}{\mathbf{z}} \newcommand{\L}{\mathbf{L}}
-E((\x - \b)(\x - \b)^T) = E((\L \z)(\L \z)^T) = \L E(\z^{} \z^T) \L^T = \L \mathbf{I}_m \L^T = \L \L^T \, .$$
+# answers['Gaussian sampling a'] = ['MD',r'''
+# Firstly, a linear (affine) transformation can be decomposed into a sequence of sums. This means that $\mathbf{x}$ will be Gaussian.
+# It remains only to calculate its moments.
+
+# By the [linearity of the expected value](https://en.wikipedia.org/wiki/Expected_value#Linearity),
+# $$E(\mathbf{x}) = E(\mathbf{L} \mathbf{z} + \mathbf{b}) = \mathbf{L} E(\mathbf{z}) + \mathbf{b} = \mathbf{b} \, .$$
+
+# Moreover,
+# $$\newcommand{\b}{\mathbf{b}} \newcommand{\x}{\mathbf{x}} \newcommand{\z}{\mathbf{z}} \newcommand{\L}{\mathbf{L}}
+# E((\x - \b)(\x - \b)^T) = E((\L \z)(\L \z)^T) = \L E(\z^{} \z^T) \L^T = \L \mathbf{I}_m \L^T = \L \L^T \, .$$
+# ''']
+
+answers['KDE'] = ['MD',r'''
+    from scipy.stats import gaussian_kde`
+    ax.plot(xx,gaussian_kde(E.ravel()).evaluate(xx),label="KDE estimate")
 ''']
-answers['Gaussian sampling b'] = ['MD',r'''
+
+answers['Gaussian sampling a'] = ['MD',r'''
+
 Type `randn??` in a code cell and execute it.
 ''']
-answers['Gaussian sampling c'] = ['MD',r'''
-    z = randn((m,1))
+answers['Gaussian sampling b'] = ['MD',r'''
+    z = randn((M,1))
     x = b + L @ z
 ''']
 
-answers['Gaussian sampling d'] = ['MD',r'''
-    b_vertical = 10*ones((m,1))
-    E = b_vertical + L @ randn((m,N))
-    #E = np.random.multivariate_normal(b,P,N).T
+answers['Gaussian sampling c'] = ['MD',r'''
+    E = b[:,None] + L @ randn((M,N))
+    # Alternatives:
+    # E = np.random.multivariate_normal(b,B,N).T
+    # E = ( b + randn((N,M)) @ L.T ).T
 ''']
 
 answers['Average sampling error'] = ['MD',r'''
@@ -276,17 +615,17 @@ Procedure:
 
  1. Repeat the experiment many times.
  2. Compute the average error ("bias") of $\overline{\mathbf{x}}$. Verify that it converges to 0 as $N$ is increased.
- 3. Compute the average *squared* error. Verify that it is approximately $\text{diag}(\mathbf{P})/N$.
+ 3. Compute the average *squared* error. Verify that it is approximately $\text{diag}(\mathbf{B})/N$.
 ''']
 
 answers['ensemble moments'] = ['MD',r'''
     x_bar = np.sum(E,axis=1)/N
-    P_bar = zeros((m,m))
+    B_bar = zeros((M,M))
     for n in range(N):
-        anomaly = (E[:,n] - x_bar)[:,None]
-        P_bar += anomaly @ anomaly.T
-        #P_bar += np.outer(anomaly,anomaly)
-    P_bar /= (N-1)
+        xc = (E[:,n] - x_bar)[:,None] # x_centered
+        B_bar += xc @ xc.T
+        #B_bar += np.outer(xc,xc)
+    B_bar /= (N-1)
 ''']
 
 answers['Why (N-1)'] = ['MD',r'''
@@ -295,15 +634,17 @@ answers['Why (N-1)'] = ['MD',r'''
 ''']
 
 answers['ensemble moments vectorized'] = ['MD',r'''
- * (a). Show that element $(i,j)$ of the matrix product $\mathbf{A}^{} \mathbf{B}^T$
- equals element $(i,j)$ of the sum of the outer product of their columns: $\sum_n \mathbf{a}_n \mathbf{b}_n^T$. Put this in the context of $\overline{\mathbf{P}}$.
+ * (a). Show that element $(i,j)$ of the matrix product $\mathbf{X}^{} \mathbf{Y}^T$
+ equals element $(i,j)$ of the sum of the outer product of their columns:
+ $\sum_n \mathbf{x}_n \mathbf{y}_n^T$.
+ Put this in the context of $\overline{\mathbf{B}}$.
  * (b). Use the following
  
 code:
 
     x_bar = np.sum(E,axis=1,keepdims=True)/N
-    A     = E - x_bar
-    P_bar = A @ A.T / (N-1)   
+    X     = E - x_bar
+    B_bar = X @ X.T / (N-1)   
 ''']
 
 # Skipped
@@ -318,12 +659,12 @@ answers['Why matrix notation'] = ['MD',r'''
 ''']
 
 answers['estimate cross'] = ['MD',r'''
-    def estimate_cross_cov(E1,E2):
-        N = E1.shape[1]
-        assert N==E2.shape[1]
-        A1 = E1 - np.mean(E1,axis=1,keepdims=True)
-        A2 = E2 - np.mean(E2,axis=1,keepdims=True)
-        CC = A1 @ A2.T / (N-1)
+    def estimate_cross_cov(Ex,Ey):
+        N = Ex.shape[1]
+        assert N==Ey.shape[1]
+        X = Ex - np.mean(Ex,axis=1,keepdims=True)
+        Y = Ey - np.mean(Ey,axis=1,keepdims=True)
+        CC = X @ Y.T / (N-1)
         return CC
 ''']
 
@@ -335,24 +676,17 @@ Residual: discrepancy from explained to observed data.
 ''']
 
 
-# Also comment on CFL condition (when resolution is increased)?
-answers['Cov memory'] = ['MD',r'''
- * (a). $m$-by-$m$
- * (b). Using the [cholesky decomposition](https://en.wikipedia.org/wiki/Cholesky_decomposition#Computation),
-    at least 2 times $m^3/3$.
- * (c). Assume $\mathbf{P}$ stored as float (double). Then it's 8 bytes/element.
- And the number of elements in $\mathbf{P}$: $m^2$. So the total memory is $8 m^2$.
- * (d). 8 trillion bytes. I.e. 8 million MB. 
-''']
-
+###########################################
+# Tut: Writing your own EnKF
+###########################################
 answers['EnKF v1'] = ['MD',r'''
     def my_EnKF(N):
-        E = mu0[:,None] + P0_chol @ randn((m,N))
+        E = mu0[:,None] + P0_chol @ randn((M,N))
         for k in range(1,K+1):
             # Forecast
             t   = k*dt
             E   = f(E,t-dt,dt)
-            E  += Q_chol @ randn((m,N))
+            E  += Q_chol @ randn((M,N))
             if not k%dkObs:
                 # Analysis
                 y        = yy[k//dkObs-1] # current obs
@@ -383,6 +717,10 @@ answers['Repeat experiment cd'] = ['MD',r'''
  * (d). Use: `Perturb  = D_infl * R_chol @ randn((p,N))` in the EnKF algorithm.
 ''']
 
+
+###########################################
+# Tut: Benchmarking with DAPPER
+###########################################
 answers['jagged diagnostics'] = ['MD',r'''
 Because they are only defined at analysis times, i.e. every `dkObs` time step.
 ''']
@@ -403,7 +741,7 @@ answers['Rank hist'] = ['MD',r'''
 # The "butterfly" is contained within a certain box (limits for $x$, $y$ and $z$).
 answers['RMSE vs inf error'] = ['MD',r'''
 It follows from [the fact that](https://en.wikipedia.org/wiki/Lp_space#Relations_between_p-norms)
-$ \newcommand{\x}{\mathbf{x}} \|\x\|_2 \leq m^{1/2} \|\x\|\_\infty \text{and}  \|\x\|_1 \leq m^{1/2} \|\x\|_2$
+$ \newcommand{\x}{\mathbf{x}} \|\x\|_2 \leq M^{1/2} \|\x\|\_\infty \text{and}  \|\x\|_1 \leq M^{1/2} \|\x\|_2$
 that
 $$ 
 \text{RMSE} 
@@ -411,7 +749,7 @@ $$
 \leq \| \text{RMSE}\_{0:k} \|\_\infty
 $$
 and
-$$ \text{RMSE}_k = \| \text{Error}_k \|\_2 / \sqrt{m} \leq \| \text{Error}_k \|\_\infty$$
+$$ \text{RMSE}_k = \| \text{Error}_k \|\_2 / \sqrt{M} \leq \| \text{Error}_k \|\_\infty$$
 ''']
 
 answers['Twin Climatology'] = ['MD',r'''
@@ -425,6 +763,10 @@ answers['Twin Var3D'] = ['MD',r'''
     ...
 ''']
 
+
+###########################################
+# Colin Grudzen
+###########################################
 
 answers['forward_euler'] = ['MD', r'''
 Missing line:
@@ -645,5 +987,12 @@ Moreover, the eigenvalues of <span style='font-size:1.25em'>$\mathbf{U}$</span> 
 <li> the eigenvalues of the diagonal blocks <span style='font-size:1.25em'>$U^{ii}$</span> are ordered descending in magnitude.
 </ol>
 ''']                     
+
+
+###########################################
+# Topic
+###########################################
+
+
 
 

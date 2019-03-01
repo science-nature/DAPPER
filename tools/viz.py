@@ -121,51 +121,6 @@ def get_plot_inds(xx,chrono,K=None,T=None,**kwargs):
   return plot_kk, plot_kkObs
 
 
-def plot_3D_trajectory(stats,dims=0,**kwargs):
-  """
-  Plot 3D phase-space trajectory.
-  kwargs forwarded to get_plot_inds().
-  """
-  if is_int(dims):
-    dims = dims + arange(3)
-  assert len(dims)==3
-
-  xx     = stats.xx
-  mu     = stats.mu
-  chrono = stats.HMM.t
-
-  kk,kkA = get_plot_inds(xx,chrono,mult=100,**kwargs)
-
-  if mu.store_u:
-    xx = xx[kk]
-    mu = mu[kk]
-    T  = chrono.tt[kk[-1]]
-  else:
-    xx = xx[kkA]
-    mu = mu.a[:len(kkA)]
-    T  = chrono.tt[kkA[-1]]
-
-  plt.figure(14).clf()
-  set_figpos('3321 mac')
-  ax3 = plt.subplot(111, projection='3d')
-
-  xx = xx.T[dims]
-  mu = mu.T[dims]
-
-  ax3.plot   (*xx      ,c='k',label='Truth')
-  ax3.plot   (*mu      ,c='b',label='DA estim.')
-  ax3.scatter(*xx[:, 0],c='g',s=40)
-  ax3.scatter(*xx[:,-1],c='r',s=40)
-
-  ax3.set_title('Phase space trajectory up to t={:<5.2f}'.format(T))
-  ax3.set_xlabel('dim ' + str(dims[0]))
-  ax3.set_ylabel('dim ' + str(dims[1]))
-  ax3.set_zlabel('dim ' + str(dims[2]))
-  ax3.legend(frameon=False)
-  ax3.set_facecolor('w')
-
-
-
 def plot_hovmoller(xx,chrono=None,**kwargs):
   """
   Plot Hovmöller diagram.
@@ -292,18 +247,17 @@ def plot_rank_histogram(stats):
       hasattr(stats,'rh') and \
       not all(stats.rh.a[-1]==array(np.nan).astype(int))
 
-  fig = plt.figure(23,figsize=(6,3)).clf()
+  fig, ax = freshfig(24, (6,3))
   set_figpos('3331 mac')
-  #
-  ax_H = plt.subplot(111)
-  ax_H.set_title('(Average of marginal) rank histogram (_a)')
-  ax_H.set_ylabel('Freq. of occurence\n (of truth in interval n)')
-  ax_H.set_xlabel('ensemble member index (n)')
-  ax_H.set_position([0.125,0.15, 0.78, 0.75])
+  ax.set_title('(Mean of marginal) rank histogram (_a)')
+  ax.set_ylabel('Freq. of occurence\n (of truth in interval n)')
+  ax.set_xlabel('ensemble member index (n)')
+  adjust_position(ax, y0=0.05, x0=0.05, adjust_extent=True)
+
   if has_been_computed:
     ranks = stats.rh.a[chrono.maskObs_BI]
     Nx    = ranks.shape[1]
-    stats.config.N
+    N     = stats.config.N
     if not hasattr(stats,'w'):
       # Ensemble rank histogram
       integer_hist(ranks.ravel(),N)
@@ -321,13 +275,28 @@ def plot_rank_histogram(stats):
       w  = 1/w
       integer_hist(ranks.ravel(),N,weights=w)
   else:
-    not_available_text(ax_H)
+    not_available_text(ax)
   
 
 def adjustable_box_or_forced():
   "For set_aspect(), adjustable='box-forced' replaced by 'box' since mpl 2.2.0."
   from pkg_resources import parse_version as pv
   return 'box-forced' if pv(mpl.__version__) < pv("2.2.0") else 'box'
+
+
+def freshfig(num,figsize=None,*args,**kwargs):
+  """Create/clear figure.
+  - If the figure does not exist: create figure it.
+    This allows for figure sizing -- even on Macs.
+  - Otherwise: clear figure (we avoid closing/opening so as
+    to keep (potentially manually set) figure pos and size.
+  - The rest is the same as:
+    >>> fig, ax = suplots()
+  """
+  fig = plt.figure(num=num,figsize=figsize)
+  fig.clf()
+  _, ax = plt.subplots(num=fig.number,*args,**kwargs)
+  return fig, ax
 
 
 def show_figs(fignums=None):

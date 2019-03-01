@@ -580,7 +580,7 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
 
           # Locate local obs
           jj, tapering = obs_localizer(ii)
-          if len(jj) == 0: return
+          if len(jj) == 0: return E[:,ii], N1 # no update
           Y_jj   = Y[:,jj]
           dy_jj  = dy [jj]
 

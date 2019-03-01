@@ -25,7 +25,7 @@ import mods.Lorenz95.core as core
 HMM.t.T = 4**4.0
 
 # Specify the control variable (i.e. the plotting xlabel) of interest.
-CtrlVar = sys.argv[1] # command-line argument #1
+CtrlVar = sys.argv[1] # For example, run script with: `python example_3.py N`
 # CtrlVar = 'N'
 
 # Define range of the experiment control variable.
@@ -39,7 +39,7 @@ if CtrlVar == 'F': # Model forcing
 xticks = array(xticks).repeat(32)
 
 # If this script is run
-# - with the second argument PARALLELIZE,
+# - with the 2nd command-line argument being PARALLELIZE,
 #   then this function will split the 'xticks' array into 'nCore' batches,
 #   and distribute each to a WORKER which run the rest of the script in parallel.
 #   Important: see comment in distribute() about enforcing single-core use by numpy.
@@ -81,6 +81,7 @@ def adjust_osse(variable,X):
 def adjust_cfg(C,variable,X):
   if variable == 'F':
     if getattr(C,'loc_rad',None)=='?': C = C.update_settings(loc_rad=L95_rad(X,core.Force))
+    if getattr(C,'loc_rad',None)=='$': C = C.update_settings(loc_rad=L95_rad(X,core.Force))
   elif variable == 'N':
     if getattr(C,'N'      ,None)=='?': C = C.update_settings(      N=X)
     if getattr(C,'loc_rad',None)=='?': C = C.update_settings(loc_rad=L95_rad(X,core.Force))
@@ -93,7 +94,7 @@ def adjust_cfg(C,variable,X):
 #  => Tuneable parameters exits. Here, we define some tuning xticks.
 def L95_rad(N,F):
   # Approximately fitted (for infl=1.0) variogram (Gaussian).
-  r = 10*(1-exp(-(N/40)**2))**0.8
+  r = 0.08 + 10*(1-exp(-(N/40)**2))**0.8
   r *= sqrt(8/F) # Not tuned at all!
   return r
 def L95_lag(N,F):
@@ -186,6 +187,8 @@ if R.xlabel=='N':
 #   is still very clear.
 # - TODO: replace tuning functions by argmin (i.e. R.minz_tuning), and merge with example_4.
 #   Why: good tuning functions require too much manual labor, and bad ones yield noisy curves.
+#   Also use 2d plotting tools.
+# - TODO: more thought to localization + adaptive inflation
 #   This should also enable {inflation+localization} to get more advantage over {localization only}.
 
 ##

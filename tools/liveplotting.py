@@ -70,15 +70,15 @@ class LivePlot:
         self.plot_u = plot_u(stats.mu,key0)
         post_title = "" if self.plot_u else "\n(obs times only)"
         updater = init(num,stats,key0,self.plot_u,E,P,**kwargs)
-        if plt.fignum_exists(num):
-          self.figures[name] = (num, updater)
-          fig = plt.figure(num)
-          win = fig.canvas
-          ax0 = fig.axes[0]
-          win.set_window_title("%s [%d]"%(name,num))
-          ax0.set_title(ax0.get_title() + post_title)
-          self.update(key0,E,P) # Call initial update
-          plot_pause(0.01)      # Draw
+        if plt.fignum_exists(num) and getattr(updater,'is_active',1):
+            self.figures[name] = (num, updater)
+            fig = plt.figure(num)
+            win = fig.canvas
+            ax0 = fig.axes[0]
+            win.set_window_title("%s [%d]"%(name,num))
+            ax0.set_title(ax0.get_title() + post_title)
+            self.update(key0,E,P) # Call initial update
+            plot_pause(0.01)      # Draw
 
 
   def update(self,key,E,P):
@@ -129,7 +129,7 @@ class LivePlot:
       f_a_u = key[2]
       if f_a_u is not 'u' or self.plot_u:
         for name, (num, updater) in self.figures.items():
-          if plt.fignum_exists(num):
+          if plt.fignum_exists(num) and getattr(updater,'is_active',1):
             fig = plt.figure(num)
             updater(key,E,P)
             plot_pause(self.options['pause_'+f_a_u])
@@ -366,6 +366,8 @@ class weight_histogram:
       self.stats = stats
       self.ax    = ax
       self.init_incomplete = True
+    else:
+      self.is_active = False
 
   def __call__(self,key,E,P):
     k,kObs,f_a_u = key

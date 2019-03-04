@@ -4,7 +4,7 @@
 from common import *
 
 from mods.LA.core import Fmat, homogeneous_1D_cov
-from mods.Lorenz95.core import LP
+from mods.Lorenz95.core import LPs
 
 tseq = Chronology(dt=1,dkObs=5,T=300,BurnIn=-1,Tplot=100)
 
@@ -31,7 +31,7 @@ Obs  = partial_direct_Obs(Nx,jj)
 Obs['noise'] = 0.01
 
  
-HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,LP=LP(jj))
+HMM = HiddenMarkovModel(Dyn,Obs,tseq,X0,LP=LPs(jj))
 
 
 ####################

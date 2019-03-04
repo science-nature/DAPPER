@@ -1,51 +1,61 @@
 from common import *
 
 
-
 class LivePlot:
-  """
-  Live plotting manager. Deals with
-   - Pause, skip
-   - Which liveploters to call
-   - Figure window (title and number)
-  Everything else is managed by each specific liveplotter.
-  """
-  def __init__(self,stats,fignums,key0=(0,None,'u'),E=None,P=None):
+  """Live plotting manager.
+  Deals with
+   - Pause, skip.
+   - Which liveploters to call.
+   - plot_u
+   - Figure window (title and number)."""
+  def __init__(self,stats,figlist,key0=(0,None,'u'),E=None,P=None,speed=1.0,**kwargs):
     """
     Initialize plots.
+    - figlist: figures to plot; alternatives:
+      - "default"/[]/True: All default figures for this HMM.
+      - "all"            : Even more.
+      - non-empty list   : Only the figures with these numbers (int) or names (str).
+      - False            : None.
+    - speed: speed of animation.
+        - np.inf : instantaneous (works well for replays)
+        - 1      : default (as quick as possible while allowing for plt.draw())
+        - below 1: slower."""
 
-    - fignums: List of figures requested for this config,
-      referred to by their number. Can also specify using:
-         - "default": show all recommended plots (specified here and in HMM)
-         - "all"    : show all possible plots
-         - boolean  : show all default, or none.
-    """
+    # Set speed/pause and write options
+    self.options = {
+        'pause_f' : 0.05,
+        'pause_a' : 0.05,
+        'pause_u' : 0.001,
+        }
+    for pause in ["pause_"+x for x in "fau"]:
+      self.options[pause] /= speed
+    self.options.update(kwargs)
 
-    # HMM-independent
-    potential_figures = OrderedDict(
-        # name               num  show_by_default init(ializer)
-        sliding_diagnostics = (1, 1,              LP_sliding_diagnostics),
-        weight_histogram    = (4, 1,              LP_weight_histogram   ),
-        )
-    # HMM-specific
-    for name, (num, dflt, init) in getattr(stats.HMM,'liveplotters',dict()).items():
+    def get_name(init):
+      "Get name of liveplotter function/class."
+      try:                    return init.__qualname__.split(".")[0]
+      except AttributeError:  return init.__class__.__name__
+
+    # Add HMM-specific liveplotters
+    potential_LPs = {get_name(init): (num, show, init) for num, show, init in default_liveplotters}
+    for num, show, init in getattr(stats.HMM,'liveplotters',dict()):
       assert num>10, "Liveplotters specified in the HMM should have fignum>10."
-      potential_figures[name] = (num, dflt, init)
+      potential_LPs[get_name(init)] = (num, show, init)
 
-    # Figures requested for this config.
-    if isinstance(fignums,str):
-      fn = fignums.lower()                               # Yields:
-      if   "all" == fn:              fignums = range(99) # All potential_figures
-      elif "default" in fn:          fignums = []        # All show_by_default
-    elif hasattr(fignums,'__len__'): fignums = fignums   # This list only
-    elif fignums:                    fignums = []        # All show_by_default
-    else:                            fignums = [None]    # None
+    # Figures requested for this config. Convert to list
+    if isinstance(figlist,str):
+      fn = figlist.lower()                               # Yields:
+      if   "all" == fn:              figlist = range(99) # All potential_LPs
+      elif "default" in fn:          figlist = []        # All show_by_default
+    elif hasattr(figlist,'__len__'): figlist = figlist   # This list (only)
+    elif figlist:                    figlist = []        # All show_by_default
+    else:                            figlist = [None]    # None
 
-    # Call figure inits
+    # Loop over requeted figures
     self.any_figs = False
     self.figures = OrderedDict()
-    for name, (num, show_by_default, init) in potential_figures.items():
-      if num in fignums or (fignums==[] and show_by_default):
+    for name, (num, show_by_default, init) in potential_LPs.items():
+      if (num in figlist) or (name in figlist) or (figlist==[] and show_by_default):
 
         # Startup message
         if not self.any_figs:
@@ -56,11 +66,19 @@ class LivePlot:
           self.skipping = False
           self.any_figs = True
 
-        updater = init(num,stats,key0,E,P)
+        # Init figure
+        self.plot_u = plot_u(stats.mu,key0)
+        post_title = "" if self.plot_u else "\n(obs times only)"
+        updater = init(num,stats,key0,self.plot_u,E,P,**kwargs)
         if plt.fignum_exists(num):
           self.figures[name] = (num, updater)
-          plt.figure(num).canvas.set_window_title("%s [%d]"%(name,num))
-          plot_pause(0.01)
+          fig = plt.figure(num)
+          win = fig.canvas
+          ax0 = fig.axes[0]
+          win.set_window_title("%s [%d]"%(name,num))
+          ax0.set_title(ax0.get_title() + post_title)
+          self.update(key0,E,P) # Call initial update
+          plot_pause(0.01)      # Draw
 
 
   def update(self,key,E,P):
@@ -74,6 +92,7 @@ class LivePlot:
     # If no open figures: don't update
     if not self.any_figs:
       return
+
 
     # Playback control
     SPACE  = b' '   
@@ -93,40 +112,80 @@ class LivePlot:
     if self.paused:
       pause()
     else:
-      # Set switches for pause & skipping
-      ch = read1()
-      if ch==SPACE: # Turn ON pause & turn OFF skipping.
-        self.paused = True
-        self.skipping = False
-        pause()
-      elif ch in ENTERs: # Toggle skipping
-        self.skipping = not self.skipping 
-
+      if key==(0,None,'u'):
+        pass # Skip read1 for key0 (coz it blocks)
+      else:
+        # Set switches for pause & skipping
+        ch = read1()
+        if ch==SPACE: # Turn ON pause & turn OFF skipping.
+          self.paused = True
+          self.skipping = False
+          pause()
+        elif ch in ENTERs: # Toggle skipping
+          self.skipping = not self.skipping 
         
     if not self.skipping:
       # Update figures
-      for name, (num, updater) in self.figures.items():
-        if plt.fignum_exists(num):
-          plt.figure(num)
-          updater(key,E,P)
-          plot_pause(0.01)
+      f_a_u = key[2]
+      if f_a_u is not 'u' or self.plot_u:
+        for name, (num, updater) in self.figures.items():
+          if plt.fignum_exists(num):
+            fig = plt.figure(num)
+            updater(key,E,P)
+            plot_pause(self.options['pause_'+f_a_u])
+
+
+
+
+def replay(stats, figlist=[], speed=np.inf, t1=0, t2=None, **kwargs):
+  """Replay LivePlot with what's been stored in 'stats'.
+  - t1, t2: time window to plot.
+  - 'figlist' and 'speed': See LivePlot's doc.
+  Note: store_u (specify in the config to store intermediate stats)
+        must have been True to have smooth graphs as in the actual LivePlot.
+  Note: Ensembles are generally not stored in the stats and so cannot be replayed.
+  """
+
+  # Time settings
+  chrono = stats.HMM.t
+  if t2 is None:
+    t2 = t1 + chrono.Tplot
+
+  # Ens does not get stored in stats, so we cannot replay that.
+  # If the LPs are initialized with P0!=None, then they will avoid ens plotting.
+  P0 = np.full_like(stats.HMM.X0.C.full, nan) 
+
+  LP = LivePlot(stats, figlist, P=P0, speed=speed, Tplot=t2-t1, **kwargs)
+
+  # Remember: must use progbar to unblock read1.
+  # Let's also make a proper description.
+  desc = stats.config.da_method.__name__ + " (replay)"
+
+  # Play through assimilation cycles
+  for k,kObs,t,dt in progbar(chrono.ticker, desc):
+    if t1 <= t <= t2:
+      if kObs is not None:
+        LP.update((k,kObs,'f'),None,None)
+        LP.update((k,kObs,'a'),None,None)
+      LP.update((k,kObs,'u'),None,None)
 
 
 
 # TODO:
 # - iEnKS diagnostics don't work at all when store_u=False
 star = "${}^*$"
-class LP_sliding_diagnostics:
+class sliding_diagnostics:
 
-  def __init__(self,fignum,stats,key0,E,P,Tplot=None):
+  def __init__(self,fignum,stats,key0,_,E,P,Tplot=None,**kwargs):
       GS = {'left':0.125,'right':0.76}
       fig, (ax1, ax2) = freshfig(fignum, (5,3.5), nrows=2, sharex=True, gridspec_kw=GS)
 
+      ax1.set_title("Diagnostics")
       ax1.set_ylabel('RMS')
       ax2.set_ylabel('Values') 
       ax2.set_xlabel('Time (t)')
 
-      self.T_lag, K_lag, a_lag, self.dt_margin = validate_lag(Tplot, stats.HMM.t)
+      self.T_lag, K_lag, a_lag = validate_lag(Tplot, stats.HMM.t)
 
       def init_ax(ax,style_table):
         plotted_lines = OrderedDict()
@@ -148,9 +207,14 @@ class LP_sliding_diagnostics:
             ln['plt']    = style_table[name][2]
 
             # Create series
-            K_plot, ln['plot_u'] = determine_K_plot(stat,key0,K_lag,a_lag)
-            ln['data'] = RollingArray(K_plot)
-            ln['tt']   = RollingArray(K_plot)
+            if isinstance(stat,FAU_series):
+              ln['plot_u'] = plot_u(stat,key0)
+              K_plot       = comp_K_plot(K_lag,a_lag,ln['plot_u'])
+            else:
+              ln['plot_u'] = False
+              K_plot       = a_lag
+            ln['data']   = RollingArray(K_plot)
+            ln['tt']     = RollingArray(K_plot)
 
             # Plot (init)
             ln['handle'], = ax.plot(ln['tt'],ln['data'],**ln['plt'])
@@ -173,11 +237,7 @@ class LP_sliding_diagnostics:
       self.ax1 = ax1
       self.ax2 = ax2
       self.stats = stats
-      self.not_yet_seen_analysis = True
-
-      # Finalize init
-      self(key0,E,P)
-
+      self.init_incomplete = True
 
   # Update plot
   def __call__(self,key,E,P):
@@ -193,7 +253,7 @@ class LP_sliding_diagnostics:
           stat = getattr(stats,name)
           t    = chrono.tt[k] # == chrono.ttObs[kObs]
           if isinstance(stat,FAU_series):
-            #                 ln['data'] will contain duplicates for f/a times.
+            # ln['data'] will contain duplicates for f/a times.
             if ln['plot_u']:
               val = stat[key]
               ln['tt']  .insert(k   , t)
@@ -203,7 +263,8 @@ class LP_sliding_diagnostics:
               ln['tt']  .insert(kObs, t)
               ln['data'].insert(kObs, ln['transf'](val))
           else:
-            if 'a' in f_a_u: # ln['data'] will not contain duplicates, coz only 'a' is input.
+            # ln['data'] will not contain duplicates, coz only 'a' is input.
+            if 'a' in f_a_u: 
               val = stat[kObs]
               ln['tt']  .insert(kObs, t)
               ln['data'].insert(kObs, ln['transf'](val))
@@ -259,7 +320,7 @@ class LP_sliding_diagnostics:
       update_plot_data(ax2, self.d2)
 
       # Set x-limits (time)
-      sliding_xlim(ax1, self.d1['rmse']['tt'], self.dt_margin, self.T_lag)
+      sliding_xlim(ax1, self.d1['rmse']['tt'], self.T_lag, margin=True)
       self.baseline0.set_xdata(ax1.get_xlim())
 
       # Set y-limits
@@ -269,14 +330,15 @@ class LP_sliding_diagnostics:
       ax2.set_ylim(  *d_ylim(data2, ax2, Max=4, Min=-4, cC=0.3,cE=0.9))
 
       # Init legend. Rm nan lines.
-      if self.not_yet_seen_analysis and 'a'==f_a_u:
-         self.not_yet_seen_analysis = False
+      if self.init_incomplete and 'a'==f_a_u:
+         self.init_incomplete = False
          finalize_init(ax1, self.d1, False)
          finalize_init(ax2, self.d2, True)
 
 
 
-def sliding_xlim(ax, tt, dt_margin, lag):
+def sliding_xlim(ax, tt, lag, margin=False):
+  dt = lag/20 if margin else 0
   if tt.nFilled==0: return        # Quit
   t1, t2 = tt.span()              # Get suggested span.
   s1, s2 = ax.get_xlim()          # Get previous lims.
@@ -284,61 +346,57 @@ def sliding_xlim(ax, tt, dt_margin, lag):
     t1 -= 1                       #   add width
     t2 += 1                       #   add width
   elif np.isnan(t1):              # If user has skipped (too much):
-    s2    -= dt_margin            #   Correct for dt_margin.
+    s2    -= dt                   #   Correct for dt.
     span   = s2-s1                #   Compute previous span
     if span < lag:                #   If span<lag:
       span  += (t2-s2)            #     Grow by "dt".
     span   = min(lag, span)       #   Bound
     t1     = t2 - span            #   Set span.
-  ax.set_xlim(t1, t2 + dt_margin) # Set xlim to span
+  ax.set_xlim(t1, t2 + dt)        # Set xlim to span
 
 
-class LP_weight_histogram:
+class weight_histogram:
 
-  def __init__(self,fignum,stats,key0,E,P):
+  def __init__(self,fignum,stats,key0,plot_u,E,P,**kwargs):
     if hasattr(stats,'w'):
       fig, ax = freshfig(fignum, (6,3), gridspec_kw={'bottom':.15})
       ax.set_xscale('log')
-      ax.set_xlabel('Weigth × N')
+      ax.set_xlabel('Weigth')
       ax.set_ylabel('Count')
+      self.stats = stats
+      self.ax    = ax
+      self.init_incomplete = True
 
-      w0 = stats.w[key0]
-      if len(w0)<10001:
-        hist   = ax.hist(w0)[2]
-        N      = len(w0)
-        xticks = 1/N * 10**arange(-4,log10(N)+1)
-        xtlbls = array(['$10^{'+ str(int(log10(w*N))) + '}$' for w in xticks])
-        xtlbls[xticks==1/N] = '1'
-        ax.set_xticks(xticks)
-        ax.set_xticklabels(xtlbls)
-        self.ax    = ax
-        self.hist  = hist
-        self.stats = stats
-      else:
-        not_available_text(ax,'Not computed (N > threshold)')
-
-  # Update plot
   def __call__(self,key,E,P):
-    if 'a' in key[2]:
-      w         = self.stats.w[key]
-      ax        = self.ax
-      _         = [b.remove() for b in self.hist]
-      N         = len(w)
-      wmax      = w.max()
-      bins      = exp(linspace(log(1e-5/N), log(1), int(N/20)))
-      counted   = w>bins[0]
-      nC        = np.sum(counted)
-      nn,_,pp   = ax.hist(w[counted], bins=bins, color='b')
-      self.hist = pp
-      #thresh   = '#(w<$10^{'+ str(int(log10(bins[0]*N))) + '}/N$ )'
-      ax.set_title('N: {:d}.   N_eff: {:.4g}.   Not shown: {:d}. '.\
-          format(N, 1/(w@w), N-nC))
-      ax.set_ylim(*d_ylim([nn]))
+    k,kObs,f_a_u = key
+    if 'a'==f_a_u:
+      w  = self.stats.w[key]
+      N  = len(w)
+      ax = self.ax
+
+      if self.init_incomplete:
+        self.init_incomplete = False
+        self.affordable = N<10001
+        self.bins = exp( linspace( log(1e-6), log(1), 20 ) )
+        if not self.affordable:
+          not_available_text(ax,'Not computed (N > threshold)')
+
+      if self.affordable:
+        try:
+          _ = [b.remove() for b in self.hist]
+        except AttributeError:
+          pass
+
+        counted = w>self.bins[0]
+        nn,_,self.hist = ax.hist(w[counted], bins=self.bins, color='b')
+
+        ax.set_title('N: {:d}.   N_eff: {:.4g}.   Not shown: {:d}. '.\
+            format(N, 1/(w@w), N-np.sum(counted)))
 
 
-class LP_spectral_errors:
+class spectral_errors:
 
-  def __init__(self,fignum,stats,key0,E,P):
+  def __init__(self,fignum,stats,key0,plot_u,E,P,**kwargs):
     fig, ax = freshfig(fignum, (6,3))
     ax.set_xlabel('Sing. value index')
     ax.set_yscale('log')
@@ -367,7 +425,6 @@ class LP_spectral_errors:
 
     self.do_spectral_error = do_spectral_error
     self.ax  = ax
-    self(key0,E,P)
 
   # Update plot
   def __call__(self,key,E,P):
@@ -379,12 +436,12 @@ class LP_spectral_errors:
       self.ax.set_ylim(*d_ylim(msft))
 
 
-class LP_correlations:
+class correlations:
 
   # Whether to show half/full (symmetric) corr matrix.
   half = True
 
-  def __init__(self,fignum,stats,key0,E,P):
+  def __init__(self,fignum,stats,key0,plot_u,E,P,**kwargs):
     GS = {'height_ratios':[4, 1],'hspace':0.09,'top':0.95}
     fig, (ax,ax2) = freshfig(fignum, (5,6), nrows=2, gridspec_kw=GS)
 
@@ -436,8 +493,6 @@ class LP_correlations:
       self.line_AC = line_AC
       self.line_AA = line_AA
       self.mask    = mask
-
-      self(key0,E,P)
     else:
       not_available_text(ax)
 
@@ -509,25 +564,28 @@ def sliding_marginals(
     Tplot        = None,
     ens_props    = dict(alpha=0.4),
     zoomy        = 1.0,
-    pause_f      = 0.0,
-    pause_a      = 0.0,
-    pause_u      = 0.0,
     ):
 
-  def init(fignum,stats,key0,E,P):
+  # Store parameters
+  p = Bunch(**locals())
+
+  def init(fignum,stats,key0,plot_u,E,P,**kwargs):
     xx, yy, mu, var, chrono = stats.xx, stats.yy, stats.mu, stats.var, stats.HMM.t
 
+    # Overwrite parameters with new settings
+    for kw, val in kwargs.items(): p[kw] = val
+
     # Lag settings:
-    T_lag, K_lag, a_lag, dt_margin = validate_lag(Tplot, chrono)
-    K_plot, plot_u = determine_K_plot(stats.mu,key0,K_lag,a_lag)
+    T_lag, K_lag, a_lag = validate_lag(p.Tplot, chrono)
+    K_plot = comp_K_plot(K_lag,a_lag,plot_u)
     # Extend K_plot forther for adding blanks in resampling (PartFilt):
     has_w = hasattr(stats,'w')
     if has_w: K_plot += a_lag
 
     # Pre-process dimensions
-    DimsX = arange(xx.shape[-1]) if dims==[] else dims              # Chose marginal dims to plot
-    iiY   = [i for i,m in enumerate(obs_inds) if m in DimsX]        # Rm inds of obs if not in DimsX
-    DimsY = [m for i,m in enumerate(obs_inds) if m in DimsX]        # Rm obs_inds    if not in DimsX
+    DimsX = arange(xx.shape[-1]) if p.dims==[] else p.dims          # Chose marginal dims to plot
+    iiY   = [i for i,m in enumerate(p.obs_inds) if m in DimsX]      # Rm inds of obs if not in DimsX
+    DimsY = [m for i,m in enumerate(p.obs_inds) if m in DimsX]      # Rm obs_inds    if not in DimsX
     DimsY = [DimsY.index(m) if m in DimsY else None for m in DimsX] # Get dim (within y) of each x
 
     Nx = len(DimsX)
@@ -539,11 +597,11 @@ def sliding_marginals(
     set_figpos('2322')
 
     # Tune plots
-    axs[0].set_title("Marginal time series.")
+    axs[0].set_title("Marginal time series")
     for ix, (m,ax) in enumerate(zip(DimsX,axs)):
-      ax.set_ylim(*stretch(*span(xx[:,m]), 1/zoomy))
-      if labels==[]: ax.set_ylabel("Dim %d"%m)
-      else:          ax.set_ylabel(labels[ix])
+      ax.set_ylim(*stretch(*span(xx[:,m]), 1/p.zoomy))
+      if p.labels==[]: ax.set_ylabel("Dim %d"%m)
+      else:            ax.set_ylabel(p.labels[ix])
     axs[-1].set_xlabel('Time (t)')
 
     # Allocate
@@ -561,29 +619,29 @@ def sliding_marginals(
     for ix, (m, iy, ax) in enumerate(zip(DimsX,DimsY,axs)):
       if True     : h.x  +=  ax.plot(d.t, d.x [:,ix]  , 'k')
       if iy!=None : h.y  +=  ax.plot(d.t, d.y [:,iy]  , 'g*', ms=10)
-      if 'E'  in d: h.E  += [ax.plot(d.t, d.E [:,:,ix], **ens_props)]
+      if 'E'  in d: h.E  += [ax.plot(d.t, d.E [:,:,ix], **p.ens_props)]
       if 'mu' in d: h.mu +=  ax.plot(d.t, d.mu[:,ix]  , 'b')
       if 's'  in d: h.s  += [ax.plot(d.t, d.s [:,:,ix], 'b--',lw=1)]
 
 
     def update(key,E,P):
-      nonlocal d 
       k,kObs,f_a_u = key
 
       EE = duplicate_with_blanks_for_resampled(E, DimsX, key, has_w)
 
       # Roll data array
+      ind = k if plot_u else kObs
       for Ens in EE: # If E is duplicated, so must the others be.
-        if 'E'  in d: d.E .insert(k, Ens)
-        if 'mu' in d: d.mu.insert(k, mu[key][DimsX])
-        if 's'  in d: d.s .insert(k, mu[key][DimsX] + [[1],[-1]]*sqrt(var[key][DimsX]))
-        if True     : d.t .insert(k, chrono.tt[k])
-        if True     : d.y .insert(k, yy[kObs,iiY] if kObs is not None else nan*ones(Ny))
-        if True     : d.x .insert(k, xx[k,DimsX])
+        if 'E'  in d: d.E .insert(ind, Ens)
+        if 'mu' in d: d.mu.insert(ind, mu[key][DimsX])
+        if 's'  in d: d.s .insert(ind, mu[key][DimsX] + [[1],[-1]]*sqrt(var[key][DimsX]))
+        if True     : d.t .insert(ind, chrono.tt[k])
+        if True     : d.y .insert(ind, yy[kObs,iiY] if kObs is not None else nan*ones(Ny))
+        if True     : d.x .insert(ind, xx[k,DimsX])
 
       # Update graphs
       for ix, (m, iy, ax) in enumerate(zip(DimsX,DimsY,axs)):
-        sliding_xlim(ax, d.t, dt_margin, T_lag)
+        sliding_xlim(ax, d.t, T_lag, True)
         if True:       h.x [ix]   .set_data(d.t, d.x [:,ix])
         if iy!=None:   h.y [iy]   .set_data(d.t, d.y [:,iy])
         if 'mu' in d:  h.mu[ix]   .set_data(d.t, d.mu[:,ix])
@@ -591,15 +649,8 @@ def sliding_marginals(
         if 'E'  in d: [h.E [ix][n].set_data(d.t, d.E [:,n,ix]) for n in range(len(E))]
         if 'E'  in d: update_alpha(key, stats, h.E[ix])
 
-      if   'f' in f_a_u: plot_pause(pause_f)
-      elif 'a' in f_a_u: plot_pause(pause_a)
-      elif 'u' in f_a_u: plot_pause(pause_u)
 
       return # end update()
-
-    # Finalize init
-    update(key0,E,P)
-
     return update # end init()
   return init # end sliding_marginals()
 
@@ -611,86 +662,79 @@ def phase3d(
     Tplot        = None,
     ens_props    = dict(alpha=0.4),
     zoom         = 1.5,
-    pause_f      = 0.0,
-    pause_a      = 0.0,
-    pause_u      = 0.0,
     ):
 
-  M = 3 # Only applicable for 3d plots
+  params = Bunch(**locals()) # Store input arguments
 
-  def init(fignum,stats,key0,E,P):
-
-    # Extract data arrays
-    k, kObs, f_a_u = key0
+  def init(fignum,stats,key0,plot_u,E,P,**kwargs):
     xx, yy, mu, var, chrono = stats.xx, stats.yy, stats.mu, stats.var, stats.HMM.t
+    M = 3 # Only applicable for 3d plots
+
+    # Set parameters (kwargs takes precedence over params)
+    p = Bunch(**{kw: kwargs.get(kw, val) for kw, val in params.items()})
 
     # Lag settings:
-    T_lag, K_lag, a_lag, dt_margin = validate_lag(Tplot, chrono)
-    K_plot, plot_u = determine_K_plot(stats.mu,key0,K_lag,a_lag)
+    T_lag, K_lag, a_lag = validate_lag(p.Tplot, chrono)
+    K_plot = comp_K_plot(K_lag,a_lag,plot_u)
     # Extend K_plot forther for adding blanks in resampling (PartFilt):
     has_w = hasattr(stats,'w')
     if has_w: K_plot += a_lag
     
     # Dimension settings
-    nonlocal dims, labels
-    if dims   == []: dims   = [0,1,2]
-    if labels == []: labels = ["$x_%s$"%i for i in "123"]
-    assert len(dims)==M
+    if p.dims   == []: p.dims   = [0,1,2]
+    if p.labels == []: p.labels = ["$x_%s$"%i for i in "123"]
+    assert len(p.dims)==M
 
     # Set up figure, axes
     fig = plt.figure(fignum, figsize=(5,5))
     ax3 = plt.subplot(111, projection='3d')
     ax3.set_facecolor('w')
-    ax3.set_title("Phase space trajectories" +
-        ("" if plot_u else "\n(obs times only)"))
+    ax3.set_title("Phase space trajectories")
     # Tune plot
-    for s,i in zip(labels, dims):
-      set_ilim(ax3, i, *stretch(*span(xx[:,i]),1/zoom))
-      ax3.set_xlabel(labels[0])
-      ax3.set_ylabel(labels[1])
-      ax3.set_zlabel(labels[2])
+    for ind, (s,i) in enumerate(zip(p.labels, p.dims)):
+      set_ilim(ax3, ind, *stretch(*span(xx[:,i]),1/p.zoom))
+    ax3.set_xlabel(p.labels[0])
+    ax3.set_ylabel(p.labels[1])
+    ax3.set_zlabel(p.labels[2])
 
     # Allocate
     d = Bunch() # data arrays
     h = Bunch() # plot handles
     s = Bunch() # scatter handles
-    if E is not None             : d.E  = RollingArray((K_plot,len(E),M)); h.E = []
-    if P is not None             : d.mu = RollingArray((K_plot,M))
-    if True                      : d.x  = RollingArray((K_plot,M))
-    if list(obs_inds)==list(dims): d.y  = RollingArray((K_plot,M))
+    if E is not None                 : d.E  = RollingArray((K_plot,len(E),M)); h.E = []
+    if P is not None                 : d.mu = RollingArray((K_plot,M))
+    if True                          : d.x  = RollingArray((K_plot,M))
+    if list(p.obs_inds)==list(p.dims): d.y  = RollingArray((K_plot,M))
 
     # Plot tails (invisible coz everything here is nan, for the moment).
-    if 'E'  in d: h.E  += [ax3.plot(*xn    , **ens_props)[0] for xn in np.transpose(d.E,[1,2,0])]
-    if 'mu' in d: h.mu  =  ax3.plot(*d.mu.T, 'b' ,lw=2)  [0]
-    if True     : h.x   =  ax3.plot(*d.x .T, 'k' ,lw=3)  [0]
-    if 'y'  in d: h.y   =  ax3.plot(*d.y .T, 'g*',ms=14) [0]
+    if 'E'  in d: h.E  += [ax3.plot(*xn    , **p.ens_props)[0] for xn in np.transpose(d.E,[1,2,0])]
+    if 'mu' in d: h.mu  =  ax3.plot(*d.mu.T, 'b' ,lw=2    )[0]
+    if True     : h.x   =  ax3.plot(*d.x .T, 'k' ,lw=3    )[0]
+    if 'y'  in d: h.y   =  ax3.plot(*d.y .T, 'g*',ms=14   )[0]
 
     # Scatter
-    if 'E'  in d: s.E   =  ax3.scatter(*E.T  [dims],s=3 **2, c=[ hn.get_color() for hn in h.E])
+    if 'E'  in d: s.E   =  ax3.scatter(*E.T[p.dims],s=3 **2, c=[ hn.get_color() for hn in h.E])
     if 'mu' in d: s.mu  =  ax3.scatter(*nan*ones(M),s=8 **2, c=h.mu.get_color()               )
-    if True     : s.x   =  ax3.scatter(*xx[k, dims],s=14**2, c=h.x .get_color(), marker=(5, 1), zorder=99)
+    if True     : s.x   =  ax3.scatter(*nan*ones(M),s=14**2, c=h.x .get_color(), marker=(5, 1), zorder=99)
 
 
     def update(key,E,P):
       k,kObs,f_a_u = key
       show_y = 'y' in d and kObs is not None
 
-      if plot_u:             ind = k
-      elif 'u' not in f_a_u: ind = kObs
-      else: return
-
       def update_tail(handle,newdata):
         handle.set_data(newdata[:,0],newdata[:,1])
         handle.set_3d_properties(newdata[:,2])
 
-      EE = duplicate_with_blanks_for_resampled(E, dims, key, has_w)
+      EE = duplicate_with_blanks_for_resampled(E, p.dims, key, has_w)
 
-      for Ens in EE:
-        # Roll data array
+      # Roll data array
+      ind = k if plot_u else kObs
+      for Ens in EE: # If E is duplicated, so must the others be.
         if 'E'  in d: d.E .insert(ind, Ens)
-        if True     : d.x .insert(ind, xx[k,   dims])
-        if 'y'  in d: d.y .insert(ind, yy[kObs,  : ] if show_y else nan*ones(M))
-        if 'mu' in d: d.mu.insert(ind, mu[key][dims])
+        if True     : d.x .insert(ind, xx[k,   p.dims])
+        if 'y'  in d: d.y .insert(ind, yy[kObs,   :  ] if show_y else nan*ones(M))
+        if 'mu' in d: d.mu.insert(ind, mu[key][p.dims])
 
       # Update graph
       s.x._offsets3d = juggle_axes(*d.x[[-1]].T,'z')
@@ -706,56 +750,65 @@ def phase3d(
             update_tail(h.E[n],d.E[:,n,:])
           update_alpha(key, stats, h.E, s.E)
 
-      if   'f' in f_a_u: plot_pause(pause_f)
-      elif 'a' in f_a_u: plot_pause(pause_a)
-      elif 'u' in f_a_u: plot_pause(pause_u)
-
       return # end update()
-
-    # Finalize init
-    update(key0,E,P)
-
     return update # end init()
   return init # end phase3d()
 
 
 
-def validate_t1t2(chrono,t1,t2): 
-  t = chrono
-  if t1 is None: t1 = t.tt[0]
-  if t2 is None: t2 = t1 + t.Tplot
-  assert t1<t2
-  t1, t2 = array([t1,t2]).clip(t.tt[0], t.tt[-1])
-  return t1, t2
+def validate_lag(Tplot, chrono):
+  """Return T_lag:
+   - equal to Tplot with fallback: HMM.t.Tplot.
+   - no longer than HMM.t.T.
+   Also return corresponding K_lag, a_lag."""
 
-# TODO: add plot_pause for animation
-def replay(updater,chrono,t1,t2):
-  "Used for non-live plotting (plot_time_series)"
-  for k,kObs,t,dt in chrono.ticker:
-    if t1 <= t <= t2:
-      if kObs is not None:
-        updater((k,kObs,'f'),None,None)
-        updater((k,kObs,'a'),None,None)
-      updater((k,kObs,'u'),None,None)
+  # Defaults
+  if Tplot is None:
+    Tplot = chrono.Tplot
+  
+  # Rename
+  T_lag = Tplot
 
-def plot_time_series(stats,fignum=22,t1=None,t2=None):
-  """Plot time series of various statistics."""
-  chrono  = stats.HMM.t 
-  t1, t2  = validate_t1t2(chrono,t1,t2)
-  updater = LP_sliding_diagnostics(fignum,stats,(0,None,'u'),None,None,Tplot=(t2-t1))
-  updater.dt_margin = 0
-  replay(updater,chrono,t1,t2)
+  assert T_lag >= 0
 
-  set_figpos('1313 mac')
+  # Validate
+  t2 = chrono.tt[-1]
+  t1 = max(chrono.tt[0], t2-T_lag)
+  T_lag = t2-t1
+  
+  K_lag = int(T_lag / chrono.dt) + 1 # Lag in indices
+  a_lag = K_lag//chrono.dkObs + 1    # Lag in obs indices
 
-def plot_3D_trajectory(stats,fignum=23,t1=None,t2=None,**kwargs):
-  """Plot 3D phase-space trajectory."""
-  chrono  = stats.HMM.t
-  t1, t2  = validate_t1t2(chrono,t1,t2)
-  init    = phase3d(Tplot=t2-t1,**kwargs)
-  P0      = np.full_like(stats.HMM.X0.C.full, nan) # P0 not None => plots mu
-  updater = init(fignum,stats,(0,None,'u'),None,P0)
-  replay(updater,chrono,t1,t2)
+  return T_lag, K_lag, a_lag
+
+
+def plot_u(ref_stat,key0):
+  """Determine whether to intermediate (between obs times) statistics are plotted.
+  This is determine this by inspecting the reference statistic passed in.
+  True if available (i.e. store_u) or if live.
+  """
+  return ref_stat.store_u or ref_stat.k_tmp==key0[0]
+
+def comp_K_plot(K_lag,a_lag,plot_u):
+  K_plot = 2*a_lag  # Sum of lags of {f,a} series.
+  if plot_u:
+    K_plot += K_lag # Add lag of u series.
+  return K_plot
+
+def determine_K_plot(stat,key0,K_lag,a_lag):
+  """Determine K_plot: the time (in inds) window of plotting,
+  i.e. the length of the RollingArray to be used."""
+
+  if isinstance(stat,FAU_series):
+    plot_u  = stat.store_u or stat.k_tmp==key0[0]
+    K_plot  = 2*a_lag          # f+a series
+    if plot_u: K_plot += K_lag # u series.
+
+  else:
+    plot_u = False
+    K_plot = a_lag
+
+  return K_plot, plot_u
 
 
 def update_alpha(key, stats, lines, scatters=None):
@@ -802,43 +855,6 @@ def duplicate_with_blanks_for_resampled(E,dims,key,has_w):
   EE.append(E)                   
   return EE
 _Ea = [None] # persistent ens storage
-
-
-def validate_lag(Tplot, chrono):
-
-  # Defaults
-  if Tplot is None:
-    Tplot = chrono.Tplot
-  
-  # Rename
-  T_lag = Tplot
-
-  # Validate
-  t2 = chrono.tt[-1]
-  t1 = max(chrono.tt[0], t2-T_lag)
-  T_lag = t2-t1
-  
-  K_lag = int(T_lag / chrono.dt) + 1 # Lag in indices
-  a_lag = K_lag//chrono.dkObs + 1    # Lag in obs indices
-  dt_margin = T_lag/20               # Size of leading, empty space
-
-  return T_lag, K_lag, a_lag, dt_margin
-
-
-def determine_K_plot(stat,key0,K_lag,a_lag):
-  """Determine K_plot: the time (in inds) window of plotting,
-  i.e. the length of the RollingArray to be used."""
-
-  if isinstance(stat,FAU_series):
-    plot_u  = stat.store_u or stat.k_tmp==key0[0]
-    K_plot  = 2*a_lag          # f+a series
-    if plot_u: K_plot += K_lag # u series.
-
-  else:
-    plot_u = False
-    K_plot = a_lag
-
-  return K_plot, plot_u
 
 
 
@@ -914,12 +930,9 @@ def spatial1d(
     ens_props    = {'color': 0.7*RGBs['w'],'alpha':0.5},
     periodic     = True,
     conf_mult    = 0,
-    pause_f      = 0.5,
-    pause_a      = 1.0,
-    pause_u      = 0.0,
     ):
 
-  def init(fignum,stats,key0,E,P):
+  def init(fignum,stats,key0,plot_u,E,P,**kwargs):
 
     # Extract data arrays
     xx, yy, mu, Nx = stats.xx, stats.yy, stats.mu, stats.HMM.Nx
@@ -1007,25 +1020,23 @@ def spatial1d(
           line_y.set_ydata(yy[kObs])
           line_y.set_zorder(5)
           line_y.set_visible(True)
-        plot_pause(pause_f)
-
-      if 'a' in f_a_u:
-        plot_pause(pause_a)
 
       if 'u' in f_a_u:
         if obs_inds is not None:
           line_y.set_visible(False)
-        plot_pause(pause_u)
 
       return # end update
-
-    # Finalize init
-    update(key0,E,P)
-
     return update # end init()
   return init # end spatial1d()
 
 
+
+# List of liveplotters available for all HMMs.
+default_liveplotters = [
+    # num  show_by_default  function/class
+    (  1,  1,               sliding_diagnostics),
+    (  4,  1,               weight_histogram   ),
+    ]
 
 
 

@@ -62,13 +62,16 @@ class Stats(NestedPrint):
       minN         = min(Nx,N)
       self.w       = new_series(N)            # Importance weights
       self.rh      = new_series(Nx,dtype=int) # Rank histogram
+      do_spectral  = sqrt(Nx*N) <= Stats.comp_threshold_3
     else:
       # Linear-Gaussian assessment
       self._is_ens = False
       minN         = Nx
+      do_spectral  = Nx <= Stats.comp_threshold_3
 
-    self.svals = new_series(minN) # Principal component (SVD) scores
-    self.umisf = new_series(minN) # Error in component directions
+    if do_spectral:
+      self.svals = new_series(minN) # Principal component (SVD) scores
+      self.umisf = new_series(minN) # Error in component directions
 
 
     ######################################
@@ -236,7 +239,7 @@ class Stats(NestedPrint):
 
     self.derivative_stats(k,x)
 
-    if sqrt(Nx*N) <= Stats.comp_threshold_3:
+    if hasattr(self,'svals'):
       if N<=Nx:
         _,s,UT         = svd( (sqrt(w)*A.T).T, full_matrices=False)
         s             *= sqrt(ub) # Makes s^2 unbiased
@@ -272,7 +275,7 @@ class Stats(NestedPrint):
 
     self.derivative_stats(k,x)
 
-    if Nx <= Stats.comp_threshold_3:
+    if hasattr(self,'svals'):
       P             = P.full if isinstance(P,CovMat) else P
       s2,U          = nla.eigh(P)
       self.svals[k] = sqrt(np.maximum(s2,0.0))[::-1]

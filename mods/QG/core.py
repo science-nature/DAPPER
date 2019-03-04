@@ -152,3 +152,18 @@ if not os.path.isfile(sample_filename):
 
 
 
+#########################
+# Liveplotting
+#########################
+cm   = mpl.colors.ListedColormap(0.85*mpl.cm.jet(arange(256)))
+cntr = nx*int(ny/2) + int(0.5*nx)
+import tools.liveplotting as LP
+def LP_setup(jj=None): return [
+    (11, 1, LP.spatial2d(square,ind2sub,jj, cm) ),
+    (15, 0, LP.spectral_errors ),
+    (11, 0, LP.sliding_marginals(jj,dims=cntr+arange(4)) ),
+    ]
+
+
+
+

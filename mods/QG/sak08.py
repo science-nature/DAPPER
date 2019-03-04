@@ -2,8 +2,7 @@
 
 from common import *
 
-from mods.QG.core import model_config, shape, sample_filename
-from mods.QG.liveplotting import LP_setup
+from mods.QG.core import model_config, shape, sample_filename, LP_setup
 from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
 
 ############################

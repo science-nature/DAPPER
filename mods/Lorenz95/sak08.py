@@ -4,9 +4,8 @@
 
 from common import *
 
-from mods.Lorenz95.core import step, dfdx
+from mods.Lorenz95.core import step, dfdx, x0, Tplot, LPs
 from tools.localization import partial_direct_obs_nd_loc_setup as loc_setup
-from mods.Lorenz95.core import step, dfdx, x0, Tplot, LP
 
 t = Chronology(0.05, dkObs=1, KObs=1000, Tplot=Tplot, BurnIn=2*Tplot)
 
@@ -29,7 +28,7 @@ Obs['localizer'] = loc_setup( (Nx,), (2,), jj, periodic=True )
 
 HMM = HiddenMarkovModel(Dyn,Obs,t,X0)
 
-HMM.liveplotters = LP(jj)
+HMM.liveplotters = LPs(jj)
 
 
 ####################

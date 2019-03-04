@@ -60,10 +60,12 @@ def dfdx(x,t,dt):
 # Add some non-default liveplotters
 ################################################
 import tools.liveplotting as LP
-def LP(jj=None): return [
-      (11, 1, LP.spatial1d(jj)  ),
-      (12, 1, LP.correlations   ),
-      (13, 0, LP.spectral_errors),
-      ]
+def LPs(jj=None): return [
+    (11, 1, LP.spatial1d(jj)  ),
+    (12, 1, LP.correlations   ),
+    (15, 0, LP.spectral_errors),
+    (13, 0, LP.phase3d(jj)    ),
+    (11, 0, LP.sliding_marginals(jj)) ,
+    ]
 
 

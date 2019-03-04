@@ -53,9 +53,9 @@ def dfdx(x,t,dt):
 ################################################
 # Add some non-default liveplotters
 ################################################
-from tools.liveplotting import sliding_marginals, phase3d
+import tools.liveplotting as LP
 props = dict(labels='xyz', Tplot=1)
-def LP(jj=None): return dict(
-      sliding_marginals   = (11, 1, sliding_marginals(jj, zoomy=0.8, **props)) ,
-      phase3d             = (13, 1, phase3d(jj, **props)                     ) ,
-      )
+def LPs(jj=None): return [
+    (11, 1, LP.sliding_marginals(jj, zoomy=0.8, **props)) ,
+    (13, 1, LP.phase3d(jj, **props)                     ) ,
+    ]

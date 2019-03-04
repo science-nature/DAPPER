@@ -4,7 +4,7 @@
 
 from common import *
 
-from mods.Lorenz63.core import step, dfdx, x0, Tplot, LP
+from mods.Lorenz63.core import step, dfdx, x0, Tplot, LPs
 
 t = Chronology(0.01, dkObs=25, KObs=1000, Tplot=Tplot, BurnIn=4*Tplot)
 
@@ -25,7 +25,7 @@ Obs['noise'] = 2 # GaussRV(C=CovMat(2*eye(Nx)))
 
 HMM = HiddenMarkovModel(Dyn,Obs,t,X0)
 
-HMM.liveplotters = LP(jj)
+HMM.liveplotters = LPs(jj)
 
 
 ####################

@@ -59,11 +59,11 @@ def dfdx(x,t,dt):
 ################################################
 # Add some non-default liveplotters
 ################################################
-from tools.liveplotting import LP_correlations, LP_spectral_errors, spatial1d
-def LP(jj=None): return dict(
-      spatial1d           = (11, 1, spatial1d(jj)      ),
-      correlations        = (12, 1, LP_correlations    ),
-      spectral_errors     = (13, 0, LP_spectral_errors ),
-      )
+import tools.liveplotting as LP
+def LP(jj=None): return [
+      (11, 1, LP.spatial1d(jj)  ),
+      (12, 1, LP.correlations   ),
+      (13, 0, LP.spectral_errors),
+      ]
 
 

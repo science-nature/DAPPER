@@ -9,7 +9,8 @@ class Stats(NestedPrint):
   comp_threshold_3 = 51
 
   # Used by NestedPrint
-  excluded  = NestedPrint.excluded + ['HMM','config','xx','yy']
+  excluded  = NestedPrint.excluded +\
+      ['HMM','config','xx','yy','style1','style2','LP_instance']
   precision = 3
   ordr_by_linenum = -1
  

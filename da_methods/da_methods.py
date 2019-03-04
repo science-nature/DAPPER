@@ -455,7 +455,7 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
         y    = yy[kObs]
         inds = serial_inds(ordr, y, R, center(E)[0])
             
-        state_localizer = Obs.localizer(loc_rad, 'y2x', t, taper)
+        state_taperer = Obs.localizer(loc_rad, 'y2x', t, taper)
         for j in inds:
           # Prep:
           # ------------------------------------------------------
@@ -478,7 +478,7 @@ def SL_EAKF(N,loc_rad,taper='GC',ordr='rand',infl=1.0,rot=False,**kwargs):
           Y2     = alpha*Y_j               # Anomaly update
           # Update state (regress update from obs space, using localization)
           # ------------------------------------------------------
-          ii, tapering = state_localizer(j)
+          ii, tapering = state_taperer(j)
           if len(ii) == 0: continue
           Regression = (A[:,ii]*tapering).T @ Y_j/np.sum(Y_j**2)
           mu[ ii]   += Regression*dy2
@@ -574,12 +574,12 @@ def LETKF(N,loc_rad,taper='GC',infl=1.0,rot=False,mp=False,**kwargs):
         Y  = Y        @ R.sym_sqrt_inv.T
         dy = (y - xo) @ R.sym_sqrt_inv.T
 
-        state_batches, obs_localizer = Obs.localizer(loc_rad, 'x2y', t, taper)
+        state_batches, obs_taperer = Obs.localizer(loc_rad, 'x2y', t, taper)
         # for ii in state_batches:
         def local_analysis(ii):
 
           # Locate local obs
-          jj, tapering = obs_localizer(ii)
+          jj, tapering = obs_taperer(ii)
           if len(jj) == 0: return E[:,ii], N1 # no update
           Y_jj   = Y[:,jj]
           dy_jj  = dy [jj]
@@ -1093,7 +1093,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
         DAW_dt = chrono.ttObs[DAW[-1]] - chrono.ttObs[DAW[0]] + chrono.dtObs
 
         # Get localization setup (at time t)
-        state_batches, obs_localizer = Obs.localizer(loc_rad, 'x2y', chrono.ttObs[kObs], taper)
+        state_batches, obs_taperer = Obs.localizer(loc_rad, 'x2y', chrono.ttObs[kObs], taper)
         nBatch = len(state_batches)
 
         # Store 0th (iteration) estimate as (x0,A0)
@@ -1142,7 +1142,7 @@ def iLEnKS(upd_a,N,loc_rad,taper='GC',Lag=1,nIter=10,xN=1.0,infl=1.0,rot=False,*
               # Shift indices (to adjust for time difference)
               ii_kObs = Obs.loc_shift(ii, DAW_dt)
               # Localize
-              jj, tapering = obs_localizer(ii_kObs)
+              jj, tapering = obs_taperer(ii_kObs)
               if len(jj) == 0: continue
               Y_jj   = Y[:,jj] * sqrt(tapering)
               dy_jj  = dy[jj]  * sqrt(tapering)
@@ -2235,10 +2235,10 @@ def LNETF(N,loc_rad,taper='GC',infl=1.0,Rs=1.0,rot=False,**kwargs):
         YR = (Eo-xo)  @ Rm12.T
         yR = (yy[kObs] - xo) @ Rm12.T
 
-        state_batches, obs_localizer = Obs.localizer(loc_rad, 'x2y', t, taper)
+        state_batches, obs_taperer = Obs.localizer(loc_rad, 'x2y', t, taper)
         for ii in state_batches:
           # Localize obs
-          jj, tapering = obs_localizer(ii)
+          jj, tapering = obs_taperer(ii)
           if len(jj) == 0: return
 
           Y_jj  = YR[:,jj] * sqrt(tapering)

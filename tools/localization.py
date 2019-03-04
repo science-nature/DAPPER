@@ -144,7 +144,7 @@ def rectangular_partitioning(shape,steps):
   return batches
 
 
-# NB: Don't try to put the time-dependence of obs_inds inside obs_localizer().
+# NB: Don't try to put the time-dependence of obs_inds inside obs_taperer().
 # That would require calling ind2sub len(batches) times per analysis,
 # and the result cannot be easily cached, because of multiprocessing.
 def obs_inds_safe(obs_inds, t):
@@ -180,46 +180,38 @@ def partial_direct_obs_nd_loc_setup(shape,batch_shape,obs_inds,periodic):
     obs_coord = ind2sub( obs_inds_now )
 
     if direction is 'x2y':
-      def obs_localizer(batch):
+      def obs_taperer(batch):
         # Don't use "batch = batches[iBatch]" (with iBatch as this function's input).
         # This would slow down multiproc., coz batches gets copied to each process.
         batch_center_coord = array(ind2sub(batch)).mean(axis=1)
         dists = distance_nd(batch_center_coord, obs_coord, shape, periodic)
         return inds_and_coeffs(dists, radius, tag=tag)
-      return batches, obs_localizer
+      return batches, obs_taperer
 
     elif direction is 'y2x':
-      def state_localizer(iObs):
+      def state_taperer(iObs):
         obs_j_coord = ind2sub(obs_inds_now[iObs])
         dists = distance_nd(obs_j_coord, state_coord, shape, periodic)
         return inds_and_coeffs(dists, radius, tag=tag)
-    return state_localizer
+    return state_taperer
 
   return loc_setup
 
 
 
-def no_localization(shape,obs_inds):
+def no_localization(Nx,Ny):
+
+  def obs_taperer(batch ): return arange(Ny), ones(Ny)
+  def state_taperer(iObs): return arange(Nx), ones(Nx)
 
   def loc_setup(radius,direction,t,tag=None):
-    """
-    Returns all indices, with all tapering coeffs=1.
-    Useful for testing local DA methods without localization. Examples:
-     - To test if LETKF <==> EnKF('Sqrt') -- alternatively: set loc_rad=inf;
-     - Pretend that Lorenz63 has localization.
-    """
+    """Returns all indices, with all tapering coeffs=1.
+    Useful for testing local DA methods without localization
+    e.g. if LETKF <==> EnKF('Sqrt')."""
+    assert radius == np.inf, "Localization functions not specified"
 
-    M = np.prod(shape)
-    batches = [arange(M)]
-    jj = obs_inds_safe(obs_inds,t)
-
-    if direction is 'x2y':
-      obs_localizer = lambda batch: ( jj, ones(len(jj)) )
-      return batches, obs_localizer
-
-    elif direction is 'y2x':
-      state_localizer = lambda iObs: ( arange(M), ones(M) )
-    return state_localizer
+    if   direction is 'x2y': return [arange(Nx)], obs_taperer
+    elif direction is 'y2x': return             state_taperer
 
   return loc_setup
 

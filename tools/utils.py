@@ -121,7 +121,7 @@ except ImportError:
       else:
         return None
 
-def read1(fd=sys.stdin.fileno()):
+def read1():
   "Get 1 character. Non-blocking, non-echoing."
   if disable_user_interaction: return None
   return _read1()

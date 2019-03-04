@@ -21,26 +21,31 @@ class LivePlot:
         - 1      : default (as quick as possible while allowing for plt.draw())
         - below 1: slower."""
 
-    # Set speed/pause and write options
-    self.options = {
+    # Set speed/pause 
+    self.params = {
         'pause_f' : 0.05,
         'pause_a' : 0.05,
         'pause_u' : 0.001,
         }
     for pause in ["pause_"+x for x in "fau"]:
-      self.options[pause] /= speed
-    self.options.update(kwargs)
+      self.params[pause] /= speed
+    # Write params
+    self.params.update(getattr(stats.config, "LP_kwargs", dict()))
+    self.params.update(kwargs)
 
     def get_name(init):
       "Get name of liveplotter function/class."
       try:                    return init.__qualname__.split(".")[0]
       except AttributeError:  return init.__class__.__name__
 
+    # Set up dict of liveplotters
+    potential_LPs = OrderedDict()
+    for num, show, init in default_liveplotters:
+      potential_LPs[get_name(init)] = num, show, init
     # Add HMM-specific liveplotters
-    potential_LPs = {get_name(init): (num, show, init) for num, show, init in default_liveplotters}
     for num, show, init in getattr(stats.HMM,'liveplotters',dict()):
       assert num>10, "Liveplotters specified in the HMM should have fignum>10."
-      potential_LPs[get_name(init)] = (num, show, init)
+      potential_LPs[get_name(init)] = num, show, init
 
     # Figures requested for this config. Convert to list
     if isinstance(figlist,str):
@@ -70,15 +75,15 @@ class LivePlot:
         self.plot_u = plot_u(stats.mu,key0)
         post_title = "" if self.plot_u else "\n(obs times only)"
         updater = init(num,stats,key0,self.plot_u,E,P,**kwargs)
-        if plt.fignum_exists(num):
-          self.figures[name] = (num, updater)
-          fig = plt.figure(num)
-          win = fig.canvas
-          ax0 = fig.axes[0]
-          win.set_window_title("%s [%d]"%(name,num))
-          ax0.set_title(ax0.get_title() + post_title)
-          self.update(key0,E,P) # Call initial update
-          plot_pause(0.01)      # Draw
+        if plt.fignum_exists(num) and getattr(updater,'is_active',1):
+            self.figures[name] = (num, updater)
+            fig = plt.figure(num)
+            win = fig.canvas
+            ax0 = fig.axes[0]
+            win.set_window_title("%s [%d]"%(name,num))
+            ax0.set_title(ax0.get_title() + post_title)
+            self.update(key0,E,P) # Call initial update
+            plot_pause(0.01)      # Draw
 
 
   def update(self,key,E,P):
@@ -129,10 +134,10 @@ class LivePlot:
       f_a_u = key[2]
       if f_a_u is not 'u' or self.plot_u:
         for name, (num, updater) in self.figures.items():
-          if plt.fignum_exists(num):
+          if plt.fignum_exists(num) and getattr(updater,'is_active',1):
             fig = plt.figure(num)
             updater(key,E,P)
-            plot_pause(self.options['pause_'+f_a_u])
+            plot_pause(self.params['pause_'+f_a_u])
 
 
 
@@ -153,6 +158,8 @@ def replay(stats, figlist=[], speed=np.inf, t1=0, t2=None, **kwargs):
 
   # Ens does not get stored in stats, so we cannot replay that.
   # If the LPs are initialized with P0!=None, then they will avoid ens plotting.
+  # TODO: This system for switching from Ens to stats must be replaced.
+  #       It breaks down when M is very large.
   P0 = np.full_like(stats.HMM.X0.C.full, nan) 
 
   LP = LivePlot(stats, figlist, P=P0, speed=speed, Tplot=t2-t1, **kwargs)
@@ -358,14 +365,16 @@ def sliding_xlim(ax, tt, lag, margin=False):
 class weight_histogram:
 
   def __init__(self,fignum,stats,key0,plot_u,E,P,**kwargs):
-    if hasattr(stats,'w'):
-      fig, ax = freshfig(fignum, (6,3), gridspec_kw={'bottom':.15})
-      ax.set_xscale('log')
-      ax.set_xlabel('Weigth')
-      ax.set_ylabel('Count')
-      self.stats = stats
-      self.ax    = ax
-      self.init_incomplete = True
+    if not hasattr(stats,'w'):
+      self.is_active = False
+      return
+    fig, ax = freshfig(fignum, (7,3), gridspec_kw={'bottom':.15})
+    ax.set_xscale('log')
+    ax.set_xlabel('Weigth')
+    ax.set_ylabel('Count')
+    self.stats = stats
+    self.ax    = ax
+    self.init_incomplete = True
 
   def __call__(self,key,E,P):
     k,kObs,f_a_u = key
@@ -376,22 +385,20 @@ class weight_histogram:
 
       if self.init_incomplete:
         self.init_incomplete = False
-        self.affordable = N<10001
-        self.bins = exp( linspace( log(1e-6), log(1), 20 ) )
-        if not self.affordable:
+        self.is_active = N<10001
+        self.bins = exp( linspace( log(1e-10), log(1), 31 ) )
+        if not self.is_active:
           not_available_text(ax,'Not computed (N > threshold)')
+          return
+      else:
+        _ = [b.remove() for b in self.hist]
 
-      if self.affordable:
-        try:
-          _ = [b.remove() for b in self.hist]
-        except AttributeError:
-          pass
+      counted = w>self.bins[0]
+      nn,_,self.hist = ax.hist(w[counted], bins=self.bins, color='b')
+      ax.set_ylim(top=max(nn))
 
-        counted = w>self.bins[0]
-        nn,_,self.hist = ax.hist(w[counted], bins=self.bins, color='b')
-
-        ax.set_title('N: {:d}.   N_eff: {:.4g}.   Not shown: {:d}. '.\
-            format(N, 1/(w@w), N-np.sum(counted)))
+      ax.set_title('N: {:d}.   N_eff: {:.4g}.   Not shown: {:d}. '.\
+          format(N, 1/(w@w), N-np.sum(counted)))
 
 
 class spectral_errors:
@@ -400,50 +407,56 @@ class spectral_errors:
     fig, ax = freshfig(fignum, (6,3))
     ax.set_xlabel('Sing. value index')
     ax.set_yscale('log')
-    ax.set_ylim(bottom=1e-5)
-    #ax.set_ylim([1e-3,1e1])
+    self.init_incomplete = True
+    self.ax = ax
+    self.plot_u = plot_u
 
     try:
       self.msft = stats.umisf
       self.sprd = stats.svals
-    except KeyError:
-      do_spectral_error = False
+    except AttributeError:
+      self.is_active = False
       not_available_text(ax, "Spectral stats not being computed")
-    else:
-      if np.any(np.isinf(self.msft[key0])):
-        not_available_text(ax, "Spectral stats not finite")
-        do_spectral_error = False
-      else:
-        do_spectral_error = True
-
-    if do_spectral_error:
-      M = len(self.msft[key0])
-      self.line_msft, = ax.plot(arange(M),ones(M),'k',lw=2,label='Error')
-      self.line_sprd, = ax.plot(arange(M),ones(M),'b',lw=2,label='Spread',alpha=0.9)
-      ax.get_xaxis().set_major_locator(MaxNLocator(integer=True))
-      ax.legend()
-
-    self.do_spectral_error = do_spectral_error
-    self.ax  = ax
 
   # Update plot
   def __call__(self,key,E,P):
-    if self.do_spectral_error:
+    k,kObs,f_a_u = key
+    ax = self.ax
+    if self.init_incomplete:
+      if self.plot_u or 'f'==f_a_u:
+        self.init_incomplete = False
+        msft = abs(self.msft[key])
+        sprd =     self.sprd[key]
+        if np.any(np.isinf(msft)):
+          not_available_text(ax, "Spectral stats not finite")
+          self.is_active = False
+        else:
+          self.line_msft, = ax.plot(msft,'k',lw=2,label='Error')
+          self.line_sprd, = ax.plot(sprd,'b',lw=2,label='Spread',alpha=0.9)
+          ax.get_xaxis().set_major_locator(MaxNLocator(integer=True))
+          ax.legend()
+    else:
       msft = abs(self.msft[key])
       sprd =     self.sprd[key]
       self.line_sprd.set_ydata(sprd)
       self.line_msft.set_ydata(msft)
-      self.ax.set_ylim(*d_ylim(msft))
+    # ax.set_ylim(*d_ylim(msft))
+    # ax.set_ylim(bottom=1e-5)
+    ax.set_ylim([1e-3,1e1])
 
 
 class correlations:
-
-  # Whether to show half/full (symmetric) corr matrix.
-  half = True
+  half = True # Whether to show half/full (symmetric) corr matrix.
 
   def __init__(self,fignum,stats,key0,plot_u,E,P,**kwargs):
+
     GS = {'height_ratios':[4, 1],'hspace':0.09,'top':0.95}
     fig, (ax,ax2) = freshfig(fignum, (5,6), nrows=2, gridspec_kw=GS)
+
+    if E is None and np.isnan(P).all():
+      not_available_text(ax,'Not available in replays\ncoz full Ens/Cov not stored.')
+      self.is_active = False
+      return
 
     Nx = len(stats.mu[key0])
     if Nx<=1003:
@@ -567,13 +580,13 @@ def sliding_marginals(
     ):
 
   # Store parameters
-  p = Bunch(**locals())
+  params_orig = Bunch(**locals())
 
   def init(fignum,stats,key0,plot_u,E,P,**kwargs):
     xx, yy, mu, var, chrono = stats.xx, stats.yy, stats.mu, stats.var, stats.HMM.t
 
-    # Overwrite parameters with new settings
-    for kw, val in kwargs.items(): p[kw] = val
+    # Set parameters (kwargs takes precedence over params_orig)
+    p = Bunch(**{kw: kwargs.get(kw, val) for kw, val in params_orig.items()})
 
     # Lag settings:
     T_lag, K_lag, a_lag = validate_lag(p.Tplot, chrono)
@@ -582,14 +595,18 @@ def sliding_marginals(
     has_w = hasattr(stats,'w')
     if has_w: K_plot += a_lag
 
-    # Pre-process dimensions
-    DimsX = arange(xx.shape[-1]) if p.dims==[] else p.dims          # Chose marginal dims to plot
+    # Chose marginal dims to plot
+    if p.dims==[]:
+      Nx      = min(10,xx.shape[-1])
+      DimsX   = equi_spaced_integers(xx.shape[-1], Nx)
+    else:
+      Nx      = len(p.dims)
+      DimsX   = p.dims
+    # Pre-process obs dimensions
     iiY   = [i for i,m in enumerate(p.obs_inds) if m in DimsX]      # Rm inds of obs if not in DimsX
     DimsY = [m for i,m in enumerate(p.obs_inds) if m in DimsX]      # Rm obs_inds    if not in DimsX
     DimsY = [DimsY.index(m) if m in DimsY else None for m in DimsX] # Get dim (within y) of each x
-
-    Nx = len(DimsX)
-    Ny = len(iiY)
+    Ny    = len(iiY)
 
     # Set up figure, axes
     fig, axs = freshfig(fignum, (5,7), nrows=Nx, sharex=True)
@@ -600,7 +617,7 @@ def sliding_marginals(
     axs[0].set_title("Marginal time series")
     for ix, (m,ax) in enumerate(zip(DimsX,axs)):
       ax.set_ylim(*stretch(*span(xx[:,m]), 1/p.zoomy))
-      if p.labels==[]: ax.set_ylabel("Dim %d"%m)
+      if p.labels==[]: ax.set_ylabel("$x_{%d}$"%m)
       else:            ax.set_ylabel(p.labels[ix])
     axs[-1].set_xlabel('Time (t)')
 
@@ -664,14 +681,15 @@ def phase3d(
     zoom         = 1.5,
     ):
 
-  params = Bunch(**locals()) # Store input arguments
+  # Store parameters
+  params_orig = Bunch(**locals())
 
   def init(fignum,stats,key0,plot_u,E,P,**kwargs):
     xx, yy, mu, var, chrono = stats.xx, stats.yy, stats.mu, stats.var, stats.HMM.t
     M = 3 # Only applicable for 3d plots
 
-    # Set parameters (kwargs takes precedence over params)
-    p = Bunch(**{kw: kwargs.get(kw, val) for kw, val in params.items()})
+    # Set parameters (kwargs takes precedence over params_orig)
+    p = Bunch(**{kw: kwargs.get(kw, val) for kw, val in params_orig.items()})
 
     # Lag settings:
     T_lag, K_lag, a_lag = validate_lag(p.Tplot, chrono)
@@ -838,10 +856,11 @@ def update_alpha(key, stats, lines, scatters=None):
 
 def duplicate_with_blanks_for_resampled(E,dims,key,has_w): 
   "Particle filter: insert breaks for resampled particles."
+  if E is None:
+    return [E]
   EE = []
-
-  if has_w and E is not None:
-    E = E[:,dims]
+  E  = E[:,dims]
+  if has_w:
     k,kObs,f_a_u = key
     if   f_a_u=='f': pass
     elif f_a_u=='a': _Ea[0] = E[:,0] # Store (1st dim of) ens.
@@ -850,11 +869,10 @@ def duplicate_with_blanks_for_resampled(E,dims,key,has_w):
       resampled = _Ea[0] != E[:,0]  # Mark as resampled if ens changed.
       EE.append( E.copy() )         # Insert current ensemble (copy to avoid overwriting).
       EE[0][resampled] = nan        # Write breaks
-
   # Always: append current ensemble
   EE.append(E)                   
   return EE
-_Ea = [None] # persistent ens storage
+_Ea = [None] # persistent storage for ens
 
 
 
@@ -929,42 +947,44 @@ def spatial1d(
     obs_inds     = None,
     ens_props    = {'color': 0.7*RGBs['w'],'alpha':0.5},
     periodic     = True,
-    conf_mult    = 0,
+    conf_mult    = None,
     ):
 
-  def init(fignum,stats,key0,plot_u,E,P,**kwargs):
+  # Store parameters
+  params_orig = Bunch(**locals())
 
-    # Extract data arrays
+  def init(fignum,stats,key0,plot_u,E,P,**kwargs):
     xx, yy, mu, Nx = stats.xx, stats.yy, stats.mu, stats.HMM.Nx
 
+    # Set parameters (kwargs takes precedence over params_orig)
+    p = Bunch(**{kw: kwargs.get(kw, val) for kw, val in params_orig.items()})
+
     # Make periodic wrapper
-    ii, wrap = setup_wrapping(Nx,periodic)
+    ii, wrap = setup_wrapping(Nx,p.periodic)
 
     # Set up figure, axes
     fig, ax = freshfig(fignum, (8,5))
     fig.suptitle("1d amplitude plot")
 
-    # Plot x,y
+    # Nans
     nan1 = wrap(nan*ones(Nx))
-    line_x, = ax.plot(ii,nan1,'k-',lw=3,label='Truth')
-    if obs_inds is not None:
-      line_y, = ax.plot(obs_inds, nan*obs_inds,'g*',ms=5,label='Obs')
 
-    # Plot mu/std.dev
-    if conf_mult:
-      line_mu, = ax.plot(ii,nan1,'b-', lw=2,label='DA mean')
-      patch_s  = ax.fill_between(ii,nan1,nan1,
-          color='b',alpha=0.4,label=(str(conf_mult) + '$\sigma$'))
+    if E is None and p.conf_mult is None:
+      p.conf_mult = 2
 
-    # Plot ensemble/conf
-    else:
-      if E is not None:
-        lines_E  = ax.plot(ii,wrap(E[0] .T),lw=1,**ens_props,label='Ensemble')
-        lines_E += ax.plot(ii,wrap(E[1:].T),lw=1,**ens_props)
-      else:
-        lines_s  = ax.plot(ii,nan1,"b-", lw=1,label=(str(conf_mult) + '$\sigma$'))
-        lines_s += ax.plot(ii,nan1,"b-", lw=1)
-        line_mu, = ax.plot(ii,nan1,'b-', lw=2,label='DA mean')
+    # Init plots
+    if p.conf_mult:
+      lines_s  = ax.plot(ii,nan1,                     "b-" ,lw=1,label=(str(p.conf_mult) + '$\sigma$ conf'))
+      lines_s += ax.plot(ii,nan1,                     "b-" ,lw=1)
+      line_mu, = ax.plot(ii,nan1,                     'b-' ,lw=2,label='DA mean')
+    else:                                                      
+      nanE     = nan*ones((stats.config.N,Nx))
+      lines_E  = ax.plot(ii,wrap(nanE[0] .T), **p.ens_props,lw=1,label='Ensemble')
+      lines_E += ax.plot(ii,wrap(nanE[1:].T), **p.ens_props,lw=1)
+    # Truth, Obs
+    line_x,    = ax.plot(ii,nan1,                     'k-' ,lw=3,label='Truth')
+    if p.obs_inds is not None:                                 
+      line_y,  = ax.plot(p.obs_inds, nan*p.obs_inds,  'g*' ,ms=5,label='Obs')
 
     # Tune plot
     ax.set_ylim( *span(xx) )
@@ -977,57 +997,153 @@ def spatial1d(
         transform=ax.transAxes,family='monospace',ha='left')
 
     # Init visibility (must come after legend):
-    if obs_inds is not None:
+    if p.obs_inds is not None:
       line_y.set_visible(False)
 
 
     def update(key,E,P):
-      nonlocal patch_s
       k,kObs,f_a_u = key
 
-      if conf_mult:
-        line_mu.set_ydata(wrap(mu[k]))
-        patch_s.remove()
-        patch_s = ax.fill_between(ii,
-          wrap(mu[k] - conf_mult*sqrt(stats.var[k])),
-          wrap(mu[k] + conf_mult*sqrt(stats.var[k])),
-          color='b',alpha=0.4)
-
+      if p.conf_mult:
+        sigma = mu[key] + p.conf_mult * sqrt(stats.var[key]) * [[1],[-1]]
+        lines_s[0].set_ydata(wrap(sigma[0]))
+        lines_s[1].set_ydata(wrap(sigma[1]))
+        line_mu   .set_ydata(wrap(mu[key]))
       else:
-        if E is not None:
+        for i,line in enumerate(lines_E):
+          line.set_ydata(wrap(E[i]))
 
+        if hasattr(stats,'w'):
+          w    = stats.w[key]
+          wmax = w.max()
           for i,line in enumerate(lines_E):
-            line.set_ydata(wrap(E[i]))
-
-          if hasattr(stats,'w'):
-            w    = stats.w[k]
-            wmax = w.max()
-            for i,line in enumerate(lines_E):
-              line.set_alpha((w[i]/wmax).clip(0.1))
-            
-        else:
-          sigma = mu[k] + conf_mult * sqrt(stats.var[k]) * [[1],[-1]]
-          lines_s[0].set_ydata(wrap(sigma[0]))
-          lines_s[1].set_ydata(wrap(sigma[1]))
-          line_mu   .set_ydata(wrap(mu[k]))
+            line.set_alpha((w[i]/wmax).clip(0.1))
 
       line_x.set_ydata(wrap(xx[k]))
 
       text_t.set_text(format_time(k,kObs,stats.HMM.t.tt[k]))
 
       if 'f' in f_a_u:
-        if obs_inds is not None:
+        if p.obs_inds is not None:
           line_y.set_ydata(yy[kObs])
           line_y.set_zorder(5)
           line_y.set_visible(True)
 
       if 'u' in f_a_u:
-        if obs_inds is not None:
+        if p.obs_inds is not None:
           line_y.set_visible(False)
 
       return # end update
     return update # end init()
   return init # end spatial1d()
+
+
+
+def spatial2d(
+    square,
+    ind2sub,
+    obs_inds = None,
+    cm = plt.cm.jet,
+    clims = [(-40,40),(-40,40),(-10,10),(-10,10)],
+    ):
+
+  def init(fignum,stats,key0,plot_u,E,P,**kwargs):
+
+    GS = {'left':0.125-0.04,'right':0.9-0.04}
+    fig, axs = freshfig(fignum, (6,6), nrows=2,ncols=2,sharex=True,sharey=True, gridspec_kw=GS)
+
+    for ax in axs.flatten():ax.set_aspect('equal',adjustable_box_or_forced())
+
+    ((ax_11, ax_12), (ax_21, ax_22)) = axs
+
+    ax_11.grid(color='w',linewidth=0.2)
+    ax_12.grid(color='w',linewidth=0.2)
+    ax_21.grid(color='k',linewidth=0.1)
+    ax_22.grid(color='k',linewidth=0.1)
+
+
+    # Upper colorbar -- position relative to ax_12
+    bb    = ax_12.get_position()
+    dy    = 0.1*bb.height
+    ax_13 = fig.add_axes([bb.x1+0.03, bb.y0 + dy, 0.04, bb.height - 2*dy])
+    # Lower colorbar -- position relative to ax_22
+    bb    = ax_22.get_position()
+    dy    = 0.1*bb.height
+    ax_23 = fig.add_axes([bb.x1+0.03, bb.y0 + dy, 0.04, bb.height - 2*dy])
+
+    # Extract data arrays
+    xx, yy, mu, var, err = stats.xx, stats.yy, stats.mu, stats.var, stats.err
+    k = key0[0]
+    tt = stats.HMM.t.tt
+
+    # Plot
+    # - origin='lower' might get overturned by set_ylim() below.
+    im_11 = ax_11.imshow(square(mu[k])       , cmap=cm) 
+    im_12 = ax_12.imshow(square(xx[k])       , cmap=cm)
+    im_21 = ax_21.imshow(square(sqrt(var[k])), cmap=plt.cm.bwr) # hot is better, but needs +1 colorbar
+    im_22 = ax_22.imshow(square(err[k])      , cmap=plt.cm.bwr)
+    ims = (im_11, im_12, im_21, im_22)
+    # Obs init -- a list where item 0 is the handle of something invisible.
+    lh = list(ax_12.plot(0,0)[0:1])
+    
+    sx = '$\\psi$'
+    ax_11.set_title('mean '+sx)
+    ax_12.set_title('true '+sx)
+    ax_21.set_title('std. '+sx)
+    ax_22.set_title('err. '+sx)
+
+    # TODO
+    # for ax in axs.flatten():
+      # lims = (1, nx-2) # crop boundries (which should be 0, i.e. yield harsh q gradients).
+      # step = (nx - 1)/8
+      # ticks = arange(step,nx-1,step)
+      # ax.set_xlim  (lims)
+      # ax.set_ylim  (lims[::-1])
+      # ax.set_xticks(ticks)
+      # ax.set_yticks(ticks)
+    
+    for im,clim in zip(ims,clims):
+      im.set_clim(clim)
+
+    fig.colorbar(im_12,cax=ax_13)
+    fig.colorbar(im_22,cax=ax_23)
+    for ax in [ax_13, ax_23]:
+      ax.yaxis.set_tick_params('major',length=2,width=0.5,direction='in',left=True,right=True)
+      ax.set_axisbelow('line') # make ticks appear over colorbar patch
+
+    # Title
+    title = "Streamfunction ("+sx+")"
+    fig.suptitle(title)
+    # Time info
+    text_t = ax_12.text(1, 1.1, format_time(None,None,None),
+        transform=ax_12.transAxes,family='monospace',ha='left')
+
+    def update(key,E,P):
+      k,kObs,f_a_u = key
+      t = tt[k]
+
+      im_11.set_data(square( mu[key])        )
+      im_12.set_data(square( xx[k])          )
+      im_21.set_data(square( sqrt(var[key])) )
+      im_22.set_data(square( err[key])       )
+
+      # Remove previous obs
+      try:
+        lh[0].remove()
+      except ValueError:
+        pass
+      # Plot current obs. 
+      #  - plot() automatically adjusts to direction of y-axis in use.
+      #  - ind2sub returns (iy,ix), while plot takes (ix,iy) => reverse.
+      if kObs is not None and obs_inds is not None:
+        lh[0] = ax_12.plot(*ind2sub(obs_inds(t))[::-1],'k.',ms=1,zorder=5)[0]
+
+      text_t.set_text(format_time(k,kObs,t))
+
+      return       # end update()
+    return update  # end init()
+  return init      # end LP_setup()
+
 
 
 

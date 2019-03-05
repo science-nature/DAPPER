@@ -12,7 +12,7 @@
 from common import *
 
 from mods.Lorenz84.core import step, dfdx, Nx
-from mods.Lorenz63.liveplotting import LP_setup
+from mods.Lorenz63.core import LPs
 
 Ny = Nx
 
@@ -28,18 +28,11 @@ Dyn = {
 
 X0 = GaussRV(C=0.01,M=Nx) # Decreased from Pajonk's C=1.
 
-Obs = {
-    'M'    : Ny,
-    'model': Id_op(),
-    'jacob': Id_mat(Ny),
-    'noise': 0.1,
-    }
+jj = arange(Nx)
+Obs = partial_direct_Obs(Nx, jj)
+Obs['noise'] = 0.1
 
-other = {'name': os.path.relpath(__file__,'mods/')}
-
-HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
-
-HMM.liveplotters = LP_setup(arange(Nx))
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0,LP=LPs(jj))
 
 ####################
 # Suggested tuning

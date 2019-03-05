@@ -9,8 +9,6 @@ HMM.t = Chronology(0.05,dkObs=10,T=4**5,BurnIn=20)
 
 HMM.X0 = GaussRV(C=0.01, mu=array([0.9, 0.44, 0.3]))
 
-HMM.name = os.path.relpath(__file__,'mods/')
-
 
 ####################
 # Suggested tuning

@@ -256,6 +256,8 @@ class ImmutableAttributes():
     self.__isfrozen = True
 
 
+
+from IPython.lib.pretty import pretty as pretty_repr
 class NestedPrint:
   """
   Multi-Line, Recursive repr (print) functionality.
@@ -304,7 +306,7 @@ class NestedPrint:
       # Process attribute repr's
       txts = {}
       for key in keys:
-        t = repr(getattr(self,key)) # sub-repr
+        t = pretty_repr(getattr(self,key)) # sub-repr
         if '\n' in t:
           # Activate multi-line printing
           t = t.replace('\n',NL+' '*self.indent)      # other lines

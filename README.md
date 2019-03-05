@@ -113,14 +113,16 @@ do not hesitate make your own scripts and functions
 Models
 ------------
 
-Model       | Linear? | Phys.dim. | State len | # Lyap≥0 | Implementer
------------ | ------- | --------- | --------- | -------- | ----------
-Lin. Advect.| Yes     | 1d        | 1000 *    | 51       | Evensen/Raanes
-Lorenz63    | No      | 0d        | 3         | 2        | Sakov
-Lorenz84    | No      | 0d        | 3         | 2        | Raanes
-Lorenz95    | No      | 1d        | 40 *      | 13       | Raanes
-LorenzUV    | No      | 2x 1d     | 256 + 8 * | ≈60      | Raanes
-Quasi-Geost | No      | 2d        | 129²≈17k  | ≈140     | Sakov
+Model             | Linear? | Phys.dim. | State len | # Lyap≥0 | Implementer
+-----------       | ------- | --------- | --------- | -------- | ----------
+Lin. Advect.      | Yes     | 1d        | 1000 *    | 51       | Evensen/Raanes
+DoublePendulum    | No      | 0d        | 4         | ?        | Matplotlib/Raanes
+LotkaVolterra     | No      | 0d        | 5 *       | ?        | Wikipedia/Raanes
+Lorenz63          | No      | 0d        | 3         | 2        | Sakov
+Lorenz84          | No      | 0d        | 3         | 2        | Raanes
+Lorenz95          | No      | 1d        | 40 *      | 13       | Raanes
+LorenzUV          | No      | 2x 1d     | 256 + 8 * | ≈60      | Raanes
+Quasi-Geost       | No      | 2d        | 129²≈17k  | ≈140     | Sakov
 
 *: flexible; set as necessary
 

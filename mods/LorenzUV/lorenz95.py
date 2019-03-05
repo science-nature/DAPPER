@@ -24,13 +24,13 @@ Dyn = {
     'model': with_rk4(LUV.dxdt,autonom=True),
     'noise': 0,
     'jacob': LUV.dfdx,
-    'plot' : LUV.plot_state
     }
 
 X0 = GaussRV(C=0.01*eye(LUV.M))
 
 R = 1.0
-Obs = partial_direct_Obs(LUV.M,arange(LUV.nU))
+jj = arange(LUV.nU)
+Obs = partial_direct_Obs(LUV.M,jj)
 Obs['noise'] = R
 
 other = {'name': rel_path(__file__,'mods/')+'_full'}
@@ -52,7 +52,8 @@ Dyn = {
 
 X0 = GaussRV(C=0.01*eye(nU))
 
-Obs = partial_direct_Obs(nU,arange(nU))
+jj = arange(nU)
+Obs = partial_direct_Obs(nU,jj)
 Obs['noise'] = R
  
 other = {'name': rel_path(__file__,'mods/')+'_trunc'}

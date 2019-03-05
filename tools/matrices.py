@@ -403,7 +403,7 @@ class CovMat():
     else:
       # Only compute corners of full matrix
       K  = np.get_printoptions()['edgeitems']
-      s += " (only computing corners)"
+      s += " (only computing/printing corners)"
       if hasattr(self,'_R'):
         U = self.Left[:K ,:] # Upper
         L = self.Left[-K:,:] # Lower

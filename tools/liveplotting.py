@@ -945,8 +945,9 @@ def d_ylim(data,ax=None,cC=0,cE=1,pp=(1,99),Min=-1e20,Max=+1e20):
 from tools.viz import setup_wrapping
 def spatial1d(
     obs_inds     = None,
-    ens_props    = {'color': 0.7*RGBs['w'],'alpha':0.5},
     periodic     = True,
+    dims         = [],
+    ens_props    = {'color': 0.7*RGBs['w'],'alpha':0.5},
     conf_mult    = None,
     ):
 
@@ -954,20 +955,26 @@ def spatial1d(
   params_orig = Bunch(**locals())
 
   def init(fignum,stats,key0,plot_u,E,P,**kwargs):
-    xx, yy, mu, Nx = stats.xx, stats.yy, stats.mu, stats.HMM.Nx
+    xx, yy, mu = stats.xx, stats.yy, stats.mu
 
     # Set parameters (kwargs takes precedence over params_orig)
     p = Bunch(**{kw: kwargs.get(kw, val) for kw, val in params_orig.items()})
 
+    if p.dims==[]:
+      M = xx.shape[-1]
+      p.dims = arange(M)
+    else:
+      M = len(p.dims)
+
     # Make periodic wrapper
-    ii, wrap = setup_wrapping(Nx,p.periodic)
+    ii, wrap = setup_wrapping(M,p.periodic)
 
     # Set up figure, axes
     fig, ax = freshfig(fignum, (8,5))
     fig.suptitle("1d amplitude plot")
 
     # Nans
-    nan1 = wrap(nan*ones(Nx))
+    nan1 = wrap(nan*ones(M))
 
     if E is None and p.conf_mult is None:
       p.conf_mult = 2
@@ -978,7 +985,7 @@ def spatial1d(
       lines_s += ax.plot(ii,nan1,                     "b-" ,lw=1)
       line_mu, = ax.plot(ii,nan1,                     'b-' ,lw=2,label='DA mean')
     else:                                                      
-      nanE     = nan*ones((stats.config.N,Nx))
+      nanE     = nan*ones((stats.config.N,M))
       lines_E  = ax.plot(ii,wrap(nanE[0] .T), **p.ens_props,lw=1,label='Ensemble')
       lines_E += ax.plot(ii,wrap(nanE[1:].T), **p.ens_props,lw=1)
     # Truth, Obs
@@ -988,7 +995,15 @@ def spatial1d(
 
     # Tune plot
     ax.set_ylim( *span(xx) )
-    ax.set_xlim(stretch(ii[0],ii[-1],1,int=True))
+    ax.set_xlim(stretch(ii[0],ii[-1],1))
+    # Xticks
+    xt = ax.get_xticks()
+    xt = xt[abs(xt%1)<0.01].astype(int) # Keep only the integer ticks 
+    xt = xt[xt >= 0]
+    xt = xt[xt < len(p.dims)]
+    ax.set_xticks(xt)
+    ax.set_xticklabels(p.dims[xt])
+
     ax.set_xlabel('State index')
     ax.set_ylabel('Value')
     ax.legend(loc='upper right')
@@ -1006,20 +1021,20 @@ def spatial1d(
 
       if p.conf_mult:
         sigma = mu[key] + p.conf_mult * sqrt(stats.var[key]) * [[1],[-1]]
-        lines_s[0].set_ydata(wrap(sigma[0]))
-        lines_s[1].set_ydata(wrap(sigma[1]))
-        line_mu   .set_ydata(wrap(mu[key]))
+        lines_s[0].set_ydata(wrap(sigma[0,p.dims]))
+        lines_s[1].set_ydata(wrap(sigma[1,p.dims]))
+        line_mu   .set_ydata(wrap(mu[key][p.dims]))
       else:
-        for i,line in enumerate(lines_E):
-          line.set_ydata(wrap(E[i]))
+        for n,line in enumerate(lines_E):
+          line.set_ydata(wrap(E[n,p.dims]))
 
         if hasattr(stats,'w'):
           w    = stats.w[key]
           wmax = w.max()
-          for i,line in enumerate(lines_E):
-            line.set_alpha((w[i]/wmax).clip(0.1))
+          for n,line in enumerate(lines_E):
+            line.set_alpha((w[n]/wmax).clip(0.1))
 
-      line_x.set_ydata(wrap(xx[k]))
+      line_x.set_ydata(wrap(xx[k,p.dims]))
 
       text_t.set_text(format_time(k,kObs,stats.HMM.t.tt[k]))
 

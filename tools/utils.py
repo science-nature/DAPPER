@@ -190,6 +190,7 @@ def printoptions(*args, **kwargs):
 
 
 import tools.tabulate as tabulate_orig
+# import tabulate as tabulate_orig # TODO
 tabulate_orig.MIN_PADDING = 0
 def tabulate(data,headr=(),formatters=(),inds='nice'):
   """
@@ -256,6 +257,8 @@ class ImmutableAttributes():
     self.__isfrozen = True
 
 
+
+from IPython.lib.pretty import pretty as pretty_repr
 class NestedPrint:
   """
   Multi-Line, Recursive repr (print) functionality.
@@ -304,7 +307,7 @@ class NestedPrint:
       # Process attribute repr's
       txts = {}
       for key in keys:
-        t = repr(getattr(self,key)) # sub-repr
+        t = pretty_repr(getattr(self,key)) # sub-repr
         if '\n' in t:
           # Activate multi-line printing
           t = t.replace('\n',NL+' '*self.indent)      # other lines

@@ -126,12 +126,13 @@ def rk4(f, x, t, dt, order=4):
   else: raise NotImplementedError
 
 
+from IPython.lib.pretty import pretty as pretty_repr
 def with_rk4(dxdt,autonom=False,order=4):
   """Wrap dxdt in rk4"""
   integrator       = functools.partial(rk4,order=order)
   if autonom: step = lambda x0,t0,dt: integrator(lambda t,x: dxdt(x),x0,np.nan,dt)
   else:       step = lambda x0,t0,dt: integrator(            dxdt   ,x0,t0    ,dt)
-  name = "rk"+str(order)+" integration of "+repr(dxdt)+" from "+dxdt.__module__
+  name = "rk"+str(order)+" integration of "+pretty_repr(dxdt)
   step = NamedFunc(step,name)
   return step
 
@@ -328,6 +329,18 @@ def validate_int(x):
 # Misc
 ########################
 
+def equi_spaced_integers(Nx,Ny):
+  """Provide a range of Ny equispaced integers between 0 and Nx-1"""
+  return np.round(linspace(floor(Nx/Ny/2),ceil(Nx-Nx/Ny/2-1),Ny)).astype(int)
+
+# TODO: replace equi_spaced_integers by this. Rerun all tests.
+def linspace_int(Nx,Ny,periodic=True):
+  """Provide a range of Ny equispaced integers between 0 and Nx-1"""
+  if periodic: jj = linspace(0, Nx, Ny+1)[:-1]
+  else:        jj = linspace(0, Nx-1, Ny)
+  jj = jj.astype(int)
+  return jj
+
 def LogSp(start,stop,num=50,**kwargs):
   """Log space defined through non-log numbers"""
   assert 'base' not in kwargs, "The base is irrelevant."
@@ -463,6 +476,7 @@ def tinv(A,*kargs,**kwargs):
 
 def Id_op():
   return NamedFunc(lambda *args: args[0], "Id operator")
+
 def Id_mat(M):
   I = np.eye(M)
   return NamedFunc(lambda x,t: I, "Id("+str(M)+") matrix")
@@ -481,18 +495,6 @@ def linear_model_setup(ModelMatrix):
       }
   return Dyn
 
-
-def equi_spaced_integers(Nx,Ny):
-  """Provide a range of Ny equispaced integers between 0 and Nx-1"""
-  return np.round(linspace(floor(Nx/Ny/2),ceil(Nx-Nx/Ny/2-1),Ny)).astype(int)
-
-# TODO: replace equi_spaced_integers by this. Rerun all tests.
-def linspace_int(Nx,Ny,periodic=True):
-  """Provide a range of Ny equispaced integers between 0 and Nx-1"""
-  if peridic: jj = linspace(0, Nx, Ny+1)[:-1]
-  else:       jj = linspace(0, Nx-1, Ny)
-  jj = jj.astype(int)
-  return jj
 
 
 def direct_obs_matrix(Nx,obs_inds):

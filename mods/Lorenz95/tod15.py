@@ -23,8 +23,7 @@ Obs['localizer'] = loc_setup( (Nx,), (1,), jj, periodic=True )
 # Obs['noise'] = LaplaceRV(C=1,M=len(jj))
 Obs['noise'] = LaplaceParallelRV(C=1,M=len(jj))
 
-other = {'name': os.path.relpath(__file__,'mods/')}
-HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0)
 
 ####################
 # Suggested tuning

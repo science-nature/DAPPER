@@ -36,8 +36,7 @@ Obs = partial_direct_Obs(Nx,jj)
 Obs['noise'] = 0.5
 Obs['localizer'] = loc_setup( (Nx,), (2,), jj, periodic=True )
 
-other = {'name': os.path.relpath(__file__,'mods/')}
-HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0)
 
 
 

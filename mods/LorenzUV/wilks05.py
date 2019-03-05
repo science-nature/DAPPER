@@ -24,17 +24,17 @@ Dyn = {
     'model': with_rk4(LUV.dxdt,autonom=True),
     'noise': 0,
     'jacob': LUV.dfdx,
-    'plot' : LUV.plot_state
     }
 
 X0 = GaussRV(C=0.01*eye(LUV.M))
 
 R = 0.1
-Obs = partial_direct_Obs(LUV.M,arange(LUV.nU))
+jj = arange(nU)
+Obs = partial_direct_Obs(LUV.M,jj)
 Obs['noise'] = R
 
 other = {'name': rel_path(__file__,'mods/')+'_full'}
-HMM_full = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
+HMM_full = HiddenMarkovModel(Dyn,Obs,t,X0,LP=LUV.LPs(jj),**other)
 
 
 ################
@@ -52,12 +52,14 @@ Dyn = {
 
 X0 = GaussRV(C=0.01*eye(nU))
 
-Obs = partial_direct_Obs(nU,arange(nU))
+jj = arange(nU)
+Obs = partial_direct_Obs(nU,jj)
 Obs['noise'] = R
  
 other = {'name': rel_path(__file__,'mods/')+'_trunc'}
-HMM_trunc = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
+HMM_trunc = HiddenMarkovModel(Dyn,Obs,t,X0,LP=LUV.LPs(jj),**other)
 
+LUV.prmzt = lambda t,x: polynom_prmzt(t,x,1)
 
 def polynom_prmzt(t,x,order):
   """
@@ -71,19 +73,19 @@ def polynom_prmzt(t,x,order):
   """
   if   order==4:
     # From Wilks
-    d -= 0.262 + 1.45*x - 0.0121*x**2 - 0.00713*x**3 + 0.000296*x**4
+    d = 0.262 + 1.45*x - 0.0121*x**2 - 0.00713*x**3 + 0.000296*x**4
   elif order==3:
     # From Arnold
-    d -= 0.341 + 1.30*x - 0.0136*x**2 - 0.00235*x**3
+    d = 0.341 + 1.30*x - 0.0136*x**2 - 0.00235*x**3
   elif order==1:
     # From me -- see AdInf/illust_parameterizations.py
-    d -= 0.74 + 0.82*x
+    d = 0.74 + 0.82*x
   elif order==0:
     # From me -- see AdInf/illust_parameterizations.py
-    d -= 3.82
+    d = 3.82
   elif order==-1:
     # Leave as dxdt_trunc
-    pass
+    d = 0
   else:
     raise NotImplementedError
   return d
@@ -98,3 +100,5 @@ def polynom_prmzt(t,x,order):
 # cfgs += Climatology()                                    # 0.93
 # cfgs += Var3D()                                          # 0.38
 # cfgs += EnKF_N(N=20)                                     # 0.27
+
+

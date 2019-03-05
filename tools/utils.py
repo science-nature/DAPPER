@@ -190,6 +190,7 @@ def printoptions(*args, **kwargs):
 
 
 import tools.tabulate as tabulate_orig
+# import tabulate as tabulate_orig # TODO
 tabulate_orig.MIN_PADDING = 0
 def tabulate(data,headr=(),formatters=(),inds='nice'):
   """

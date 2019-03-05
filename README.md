@@ -405,6 +405,25 @@ TODO
 
 <!--
 
+Notations:
+x: truth
+y: obs
+E: ensemble -- shape (N,M)
+xn: member (column) n of E
+M: ndims
+N: ensemble size (number of members)
+Nx: ndims x
+Ny: ndims y
+Repeat symbols: series
+xx: time series of truth -- shape (K+1, M)
+kk: time series of times
+yy: time series of obs
+EE: time series of ens
+
+-->
+
+<!--
+
 [![DOI](https://zenodo.org/badge/62547494.svg)](https://zenodo.org/badge/latestdoi/62547494)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./licence.txt)

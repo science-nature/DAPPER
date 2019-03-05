@@ -74,7 +74,6 @@ from mods.Lorenz95.sak08 import *
 # yet more information is gained, since the observations are noisy.
 Ny = 12
 
-
 X0 = GaussRV(M=Nx, C=0.001) 
 
 def make_H(Ny,Nx):
@@ -91,7 +90,17 @@ H = make_H(Ny,Nx)
 # plt.figure(1).gca().matshow(H)
 # plt.figure(2).gca().matshow(H @ H.T)
 
+Obs = {
+    'M': Ny,
+    'model': lambda x,t: x @ H.T,
+    'noise': GaussRV(C=0.01*eye(Ny)),
+    }
 
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0)
+
+####################
+# Obs plotting -- needs updating
+####################
 # "raw" obs plotting
 # if Ny<=Nx:
   # Hinv = H.T
@@ -102,24 +111,13 @@ H = make_H(Ny,Nx)
   # return lh
 
 # "implicit" (interpolated sine/cosine) obs plotting
-Hplot = make_H(Ny,max(Ny,201))
-Hplot_inv = Hplot.T
-def yplot(y):
-  x = y @ Hplot_inv.T
-  ii = linspace(0,Nx-1,len(x))
-  lh = plt.plot(ii,x,'g')[0]
-  return lh
-
-Obs = {
-    'M': Ny,
-    'model': lambda x,t: x @ H.T,
-    'noise': GaussRV(C=0.01*eye(Ny)),
-    'plot' : yplot,
-    }
-
-other = {'name': os.path.relpath(__file__,'mods/')}
-
-HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
+# Hplot = make_H(Ny,max(Ny,201))
+# Hplot_inv = Hplot.T
+# def yplot(y):
+  # x = y @ Hplot_inv.T
+  # ii = linspace(0,Nx-1,len(x))
+  # lh = plt.plot(ii,x,'g')[0]
+  # return lh
 
 
 ####################

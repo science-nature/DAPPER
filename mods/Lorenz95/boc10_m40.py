@@ -10,8 +10,7 @@ jj = arange(0,Nx,2)
 Obs = partial_direct_Obs(Nx,jj)
 Obs['noise'] = 1.5
  
-other = {'name': os.path.relpath(__file__,'mods/')}
-HMM = HiddenMarkovModel(Dyn,Obs,t,X0,**other)
+HMM = HiddenMarkovModel(Dyn,Obs,t,X0)
 
 ####################
 # Suggested tuning

@@ -54,8 +54,8 @@ def dfdx(x,t,dt):
 # Add some non-default liveplotters
 ################################################
 import tools.liveplotting as LP
-props = dict(labels='xyz', Tplot=1)
-def LPs(jj=None): return [
-    (11, 1, LP.sliding_marginals(jj, zoomy=0.8, **props)) ,
-    (13, 1, LP.phase3d(jj, **props)                     ) ,
+params = dict(labels='xyz', Tplot=1)
+def LPs(jj=None,params=params): return [
+    (11, 1, LP.sliding_marginals(jj, zoomy=0.8, **params)) ,
+    (13, 1, LP.phase3d(jj, **params)                     ) ,
     ]

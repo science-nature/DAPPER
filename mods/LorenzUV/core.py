@@ -24,7 +24,7 @@ import numpy as np
 from numpy import arange
 from tools.math import rk4, is1d
 from matplotlib import pyplot as plt
-
+import tools.liveplotting as LP
 
 # Shift elements
 s = lambda x,n: np.roll(x,-n,axis=-1)
@@ -124,19 +124,6 @@ class model_instance():
       F[i,self.iiX[i-nU]] = dt * h*c/b
     return F
 
-  def plot_state(self,x):
-    nU, J = self.nU, self.J
-    circX = np.mod(arange(nU+1)  ,nU)
-    circY = np.mod(arange(nU*J+1),nU*J) + nU
-    lhX   = plt.plot(arange(nU+1)    ,x[circX],'b',lw=3)[0]
-    lhY   = plt.plot(arange(nU*J+1)/J,x[circY],'g',lw=2)[0]
-    ax    = plt.gca()
-    ax.set_xticks(arange(nU+1))
-    ax.set_xticklabels([(str(i) + '/\n' + str(i*J)) for i in circX])
-    ax.set_ylim(-5,15)
-    def setter(x):
-      lhX.set_ydata(x[circX])
-      lhY.set_ydata(x[circY])
-    return setter
-
+  def LPs(self,jj):
+    return [ ( 11, 1, LP.spatial1d(jj,dims=arange(self.nU)) ) ]
 

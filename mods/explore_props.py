@@ -31,6 +31,15 @@ sd0 = seed(5)
 # eps = 0.001
 # N   = Nx
 
+# from mods.DoublePendulum.core import step, x0
+# ------------------
+# Lyapunov exponents: [ 1.05  0.   -0.01 -1.05]
+# T   = 5e2
+# dt  = 0.005
+# eps = 0.0002
+# Nx  = len(x0)
+# N   = Nx
+
 
 # from mods.LorenzUV.lorenz95 import LUV
 # # ------------------

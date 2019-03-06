@@ -1,12 +1,24 @@
 """Load tutorials workspace."""
 
-# CD to DAPPER folder
-from IPython import get_ipython
-IP = get_ipython()
-if IP.magic("pwd").endswith('tutorials'):
-    IP.magic("cd ..")
+# Ensure cwd/pwd folder is DAPPER
+# from IPython import get_ipython
+# pwd = get_ipython().magic("pwd")
+import os
+pwd = os.getcwd()
+pwd = os.path.split(pwd)[-1]
+if pwd == 'tutorials':
+  # In case Jupyter was opened with pwd "tutorials"
+  os.chdir("..")
+elif any("DAPPER" in x for x in os.listdir()):
+  # In case the actual DAPPER folder is in this folder
+  # (sometimes happens when unzipped from github)
+  try:
+    os.chdir("DAPPER")
+  except FileNotFoundError:
+    os.chdir("DAPPER-master")
 else:
-    assert IP.magic("pwd").endswith("DAPPER"), "The pwd must be DAPPER/"
+  msg = "The working directory must be DAPPER/"
+  assert "DAPPER" in pwd, msg
 
 # Load DAPPER
 from common import *

@@ -971,7 +971,7 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,step=False,bundle=False,xN=Non
                 if iteration==0: w2x_right = make_CVar(E,1/EPS) # CVar for x[DAW_right], used for f/a stats.
 
                 # Prepare analysis of current obs: yy[kObs], where kObs==DAW_right if len(DAW)>0
-                Eo     = Obs(E,t)            # Observe ensemble.
+                Eo     = Obs(E,t)          # Observe ensemble.
                 y      = yy[DAW_right]     # Select current obs/data.
                 Y,xo   = center(Eo)        # Get obs {anomalies, mean}.
                 dy     = (y - xo) @ Rm12.T # Transform obs space.
@@ -1019,12 +1019,12 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,step=False,bundle=False,xN=Non
                       D     = mean0(randn(Y.shape)) if iteration==0 else D
                       gradT = -(Y+D)@Y0.T + N1*(eye(N) - T)
                       T     = T + gradT@Pw
-                      Tinv  = tinv(T)
+                      Tinv  = tinv(T, threshold=N1)
                     elif 'Order1' in upd_a:  #== "DEnKF-ish". By Raanes.
                       # Included for completeness; a non-MDA Order1 version does not make much sense.
                       gradT = -0.5*Y@Y0.T + N1*(eye(N) - T)
                       T     = T + gradT@Pw
-                      Tinv  = tinv(T)
+                      Tinv  = tinv(T, threshold=N1)
                 # END if MDA
 
                 # Check for convergence

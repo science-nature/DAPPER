@@ -419,8 +419,6 @@ def tsvd(A, threshold=0.99999, avoid_pathological=True):
       full_matrices = True
       r = min(M,N)
 
-
-  # SVD
   U,s,VT = sla.svd(A, full_matrices)
 
   if isinstance(threshold,float):
@@ -442,6 +440,7 @@ def svd0(A):
   except that the input and output are transposed, in keeping with DAPPER convention.
   It contrasts with scipy.linalg's svd(full_matrice=False) and Matlab's svd(A,'econ'),
   both of which always compute the reduced svd.
+
   For reduction down to rank, see tsvd() instead.
   """
   M,N = A.shape
@@ -468,6 +467,10 @@ def tinv(A,*kargs,**kwargs):
   """
   U,s,VT = tsvd(A,*kargs,**kwargs)
   return (VT.T * s**(-1.0)) @ U.T
+
+def trank(A,*kargs,**kwargs):
+  """Rank following truncation"""
+  return len(tsvd(A,*kargs,**kwargs)[1])
 
 
 ########################

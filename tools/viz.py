@@ -298,7 +298,6 @@ def freshfig(num,figsize=None,*args,**kwargs):
   _, ax = plt.subplots(num=fig.number,*args,**kwargs)
   return fig, ax
 
-
 def show_figs(fignums=None):
   """Move all fig windows to top"""
   if fignums == None:
@@ -525,6 +524,14 @@ def savefig_n(f=None, ext='.pdf'):
   savefig_n.index += 1                           # Increment index
   plt.pause(0.1)                                 # For safety?
 savefig_n.index = -1
+
+
+
+def nrowcol(nTotal,AR=1):
+  "Return integer nrows and ncols such that nTotal ≈ nrows*ncols."
+  nrows = int(floor(sqrt(nTotal)/AR))
+  ncols = int(ceil(nTotal/nrows))
+  return nrows, ncols
 
 
 from matplotlib.gridspec import GridSpec

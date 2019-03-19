@@ -182,9 +182,12 @@ def rel_path(path,start=None,ext=False):
   return path
 
 import socket
-def save_dir(filepath,pre=''):
+def save_dir(filepath,pre='',host=True):
   """Make dir DAPPER/data/filepath_without_ext/hostname"""
-  host = socket.gethostname().split('.')[0]
+  if host is True:
+    host = socket.gethostname().split('.')[0]
+  else:
+    host = ''
   path = rel_path(filepath)
   dirpath  = os.path.join(pre,'data',path,host,'')
   os.makedirs(dirpath, exist_ok=True)

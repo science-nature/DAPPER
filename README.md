@@ -229,14 +229,14 @@ sorted by approximate project size.
 Name               | Developers            | Purpose (approximately)
 ------------------ | --------------------- | -----------------------------
 [DART][1]          | NCAR                  | Operational, general
-[ERT][2]*          | Statoil               | Operational, history matching (Petroleum)
+[PDAF][7]          | AWI                   | Operational, general
 [JEDI][22]         | JCSDA (NOAA, NASA, ++)| Operational, general (in develpmt?)
-[OpenDA][3]        | TU Delft              | Operational
-[EMPIRE][4]        | Reading (Met)         | Operational
-[SANGOMA][5]       | Conglomerate**        | Unify DA research
+[ERT][2]*          | Statoil               | Operational, history matching (Petroleum)
+[OpenDA][3]        | TU Delft              | Operational, general
 [Verdandi][6]      | INRIA                 | Biophysical DA
-[PDAF][7]          | Nerger                | Operational and research
 [PyOSSE][8]        | Edinburgh, Reading    | Earth-observation DA
+[SANGOMA][5]       | Conglomerate**        | Unify DA research
+[EMPIRE][4]        | Reading (Met)         | Research (high-dim)
 [MIKE][9]          | DHI                   | Oceanographic. Commercial?
 [OAK][10]          | Liège                 | Oceaonagraphic
 [Siroco][11]       | OMP                   | Oceaonagraphic
@@ -252,7 +252,7 @@ IEnKS code*        | Bocquet               | Python, personal publications
 
 *: Has been inspirational in the development of DAPPER. 
 
-**: Liege/CNRS/NERSC/Reading/Delft
+**: AWI/Liege/CNRS/NERSC/Reading/Delft
 
 [1]:  http://www.image.ucar.edu/DAReS/DART/
 [2]:  http://ert.nr.no/ert/index.php/Main_Page

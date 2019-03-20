@@ -231,11 +231,11 @@ Name               | Developers            | Purpose (approximately)
 [DART][1]          | NCAR                  | Operational, general
 [PDAF][7]          | AWI                   | Operational, general
 [JEDI][22]         | JCSDA (NOAA, NASA, ++)| Operational, general (in develpmt?)
-[ERT][2]*          | Statoil               | Operational, history matching (Petroleum)
+[ERT][2]           | Statoil               | Operational, history matching (Petroleum)
 [OpenDA][3]        | TU Delft              | Operational, general
 [Verdandi][6]      | INRIA                 | Biophysical DA
 [PyOSSE][8]        | Edinburgh, Reading    | Earth-observation DA
-[SANGOMA][5]       | Conglomerate**        | Unify DA research
+[SANGOMA][5]       | Conglomerate*         | Unify DA research
 [EMPIRE][4]        | Reading (Met)         | Research (high-dim)
 [MIKE][9]          | DHI                   | Oceanographic. Commercial?
 [OAK][10]          | Liège                 | Oceaonagraphic
@@ -244,15 +244,15 @@ Name               | Developers            | Purpose (approximately)
 [DASoftware][13]   | Yue Li, Stanford      | Matlab, large-scale
 [Pomp][18]         | U of Michigan         | R, general state-estimation
 [PyIT][14]         | CIPR                  | Real-world petroleum DA (?)
-Datum*             | Raanes                | Matlab, personal publications
-[EnKF-Matlab*][15] | Sakov                 | Matlab, personal publications and intro
+Datum              | Raanes                | Matlab, personal publications
+[EnKF-Matlab][15]  | Sakov                 | Matlab, personal publications and intro
 [EnKF-C][17]       | Sakov                 | C, light-weight EnKF, off-line
-IEnKS code*        | Bocquet               | Python, personal publications
+IEnKS code         | Bocquet               | Python, personal publications
 [pyda][16]         | Hickman               | Python, personal publications
 
-*: Has been inspirational in the development of DAPPER. 
+The `EnKF-Matlab` and `IEnKS` codes have been inspirational in the development of DAPPER. 
 
-**: AWI/Liege/CNRS/NERSC/Reading/Delft
+* AWI/Liege/CNRS/NERSC/Reading/Delft
 
 [1]:  http://www.image.ucar.edu/DAReS/DART/
 [2]:  http://ert.nr.no/ert/index.php/Main_Page

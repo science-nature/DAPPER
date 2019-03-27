@@ -1018,8 +1018,8 @@ def iEnKS(upd_a,N,Lag=1,nIter=10,wTol=0,MDA=False,step=False,bundle=False,xN=Non
                     elif 'PertObs' in upd_a: #== "EnRML". By Oliver/Chen/Raanes/Evensen/Stordal.
                       D     = mean0(randn(Y.shape)) if iteration==0 else D
                       gradT = -(Y+D)@Y0.T + N1*(eye(N) - T)
-                      T     = T + gradT@Pw
-                      Tinv  = tinv(T)
+                      # Tinv= tinv(T, threshold=N1) # unstable
+                      Tinv  = inv(T+1) # the +1 is for stability.
                     elif 'Order1' in upd_a:  #== "DEnKF-ish". By Raanes.
                       # Included for completeness; a non-MDA Order1 version does not make much sense.
                       gradT = -0.5*Y@Y0.T + N1*(eye(N) - T)

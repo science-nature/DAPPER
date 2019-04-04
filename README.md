@@ -9,4 +9,5 @@ The results are given by `Figure 1`,
 whose results can be reproduced using
 `run Stoch_iEnS/bench_L95.py N`
 from within `ipython` (with cwd DAPPER).
-Refer to `DAPPER/example_3.py` for more detailed code comments.
+
+DAPPER may be installed as described [for in the master branch (accessed March 2019)](https://github.com/nansencenter/DAPPER#installation). Refer to `DAPPER/example_3.py` for more detailed code comments.

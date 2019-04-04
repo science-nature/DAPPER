@@ -5,7 +5,7 @@ This (git) branch of DAPPER provides scripts to reproduce results from the artic
     by Patrick N. Raanes, Geir Evensen, and Andreas S. Stordal
 
 
-The results are given by `Figure 1`,
+The benchmark results are plotted in `Figure 1`,
 whose data points can be reproduced using
 `run Stoch_iEnS/bench_L95.py N`
 from within `ipython` (with cwd DAPPER).

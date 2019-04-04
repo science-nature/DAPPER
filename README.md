@@ -1,12 +1,11 @@
-This (git) branch of DAPPER provides scripts to reproduce results from the article
+This (git) branch of DAPPER provides scripts to reproduce results plotted in `Figure 1` of the article
 
 
     "Revising the stochastic iterative ensemble smoother"
     by Patrick N. Raanes, Geir Evensen, and Andreas S. Stordal
 
 
-The benchmark results are plotted in `Figure 1`,
-whose data points can be reproduced using
+The data points can be reproduced using
 `run Stoch_iEnS/bench_L95.py N`
 from within `ipython` (with cwd DAPPER).
 

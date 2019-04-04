@@ -6,7 +6,7 @@ This (git) branch of DAPPER provides scripts to reproduce results from the artic
 
 
 The results are given by `Figure 1`,
-whose results can be reproduced using
+whose data points can be reproduced using
 `run Stoch_iEnS/bench_L95.py N`
 from within `ipython` (with cwd DAPPER).
 

@@ -1,4 +1,4 @@
-This (git) branch of DAPPER provides scripts to reproduce results plotted in `Figure 1` of the article
+This (git) branch of DAPPER provides scripts to reproduce the benchmark results plotted in `Figure 1` of the article
 
 
     "Revising the stochastic iterative ensemble smoother"

@@ -5,14 +5,14 @@ from common import *
 
 sd0 = seed_init()
 
-GUI = True # else make animation
+GUI = False # else make animation
 
 # N=2 gives the interesting tinv case.
 # Use N>2 for validation purposes.
 N  = 2 
 N1 = N-1
 
-xlims = [-2,7]
+xlims = array([-2,7])
 
 y = array([[3],[4]])
 
@@ -104,10 +104,11 @@ def foo(_):
     # hh['l_k'].set_ydata(xt[1,0] + slope_pinv(t)          *(xlims-xt[0,0]))
 
   else:
-    hh['E_y'] = ax.scatter(y[0], y[1] ,15**2,'y','*', label='$\mathcal{N}(y|x)$')
-    hh['E_f'] = ax.scatter(E[0] ,E[1] ,15**2,'b',     label='$\\bar{P}^f$')
-    hh['E_a'] = ax.scatter(Ea[0],Ea[1],15**2,'r',     label='$\\bar{P}^a$')
-    hh['E_t'] = ax.scatter(Et[0],Et[1],15**2,'m',     label='$\\bar{P}^a_+$')
+    symbolic = True
+    hh['E_y'] = ax.scatter(y[0], y[1] ,15**2,'y','*', label='$\mathcal{N}(y|x)$' if symbolic else 'Likelihood')
+    hh['E_f'] = ax.scatter(E[0] ,E[1] ,15**2,'b',     label='$\\bar{P}^f$'       if symbolic else 'Prior (ens and contour)')
+    hh['E_a'] = ax.scatter(Ea[0],Ea[1],15**2,'r',     label='$\\bar{P}^a$'       if symbolic else 'Updated using K-gain.')
+    hh['E_t'] = ax.scatter(Et[0],Et[1],15**2,'m',     label='$\\bar{P}^a_+$'     if symbolic else 'Updated using p-inv.')
 
     hh['c_y'] = contour1(y  , R , 'y'         )
     hh['c_f'] = contour1(xb , Bb, 'b'         )
@@ -125,7 +126,7 @@ foo(None)
 # Adjust
 ax.set_aspect('equal')
 ax.set_xlim(xlims)
-ax.set_ylim(xlims)
+ax.set_ylim(xlims+.5)
 ax.set_xlabel('$x_1$')
 ax.set_ylabel('$x_2$')
 ax.set_xticklabels([])

@@ -1,6 +1,5 @@
 # Just stupidly compare the full table.
-# Seed-dependent test.
-# ==> Test cannot be run with different seeds or computers.
+# Seed-dependent test ==> cannot be run with different seeds or computers.
 
 from common import *
 
@@ -109,19 +108,19 @@ for ic,config in enumerate(cfgs):
 
 table = pa(cfgs,avrgs)
 old = """
-      da_method     N  upd_a    infl  rot   loc_rad  xN  |   rmse_a ±        rmse_f ±        rmse_u ±
-----  -----------  --  -------  ----  ----  -------  --  -  --------------  --------------  --------------
-[0]   Climatology                                        |   0.8347 0.2      0.8347 0.2      0.8347 0.2
-[1]   OptInterp                                          |   0.1275 0.03     0.8347 0.2      0.1275 0.03
-[2]   Var3D                     1.05                     |  0.08993 0.04     0.2405 0.2     0.08993 0.04
-[3]   ExtKF                     6                        |  0.02986 0.0008  0.02987 0.0009  0.02986 0.0008
-[4]   EnKF         40  PertObs  1.06                     |  0.03031 0.001   0.03018 0.0009  0.03031 0.001
-[5]   EnKF         28  Sqrt     1.02  True               |     0.03 0.001   0.02991 0.001      0.03 0.001
-[6]   EnKF_N       24                 True               |   0.0304 0.001   0.03032 0.001    0.0304 0.001
-[7]   EnKF_N       24                 True            2  |  0.03039 0.001   0.03031 0.001   0.03039 0.001
-[8]   iEnKS        40  Sqrt     1.01  True               |  0.03017 0.001   0.03011 0.0009  0.03017 0.001
-[9]   LETKF         7           1.04  True        4      |  0.03027 0.001   0.03022 0.001   0.03027 0.001
-[10]  SL_EAKF       7           1.07  True        6      |  0.03067 0.001    0.0305 0.001   0.03067 0.001
+      da_method     N  upd_a    infl  rot   loc_rad  xN  |   rmse_a ±       rmse_f ±       rmse_u ±
+----  -----------  --  -------  ----  ----  -------  --  -  -------------  -------------  -------------
+[0]   Climatology                                        |   0.5954 0.2     0.5954 0.2     0.5954 0.2
+[1]   OptInterp                                          |   0.1276 0.03    0.5954 0.2     0.1276 0.03
+[2]   Var3D                     1.05                     |  0.09292 0.03    0.1985 0.2    0.09292 0.03
+[3]   ExtKF                     6                        |  0.04828 0.01    0.0474 0.009  0.04828 0.01
+[4]   EnKF         40  PertObs  1.06                     |  0.04745 0.01   0.04719 0.009  0.04745 0.01
+[5]   EnKF         28  Sqrt     1.02  True               |  0.04771 0.01   0.04783 0.009  0.04771 0.01
+[6]   EnKF_N       24                 True               |  0.04815 0.009  0.04835 0.009  0.04815 0.009
+[7]   EnKF_N       24                 True            2  |  0.04815 0.009  0.04835 0.009  0.04815 0.009
+[8]   iEnKS        40  Sqrt     1.01  True               |  0.04707 0.009  0.04728 0.009  0.04686 0.009
+[9]   LETKF         7           1.04  True        4      |  0.04857 0.01   0.04836 0.01   0.04857 0.01
+[10]  SL_EAKF       7           1.07  True        6      |   0.0499 0.01   0.04894 0.01    0.0499 0.01
 """[1:-1]
 
 table = table.split('\n')

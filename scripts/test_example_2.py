@@ -1,10 +1,12 @@
-# Just stupidly compare the full table.
-# Seed-dependent test ==> cannot be run with different seeds or computers.
+# Just stupidly compare the full results table.
+# => seed-dependent test ==> cannot be run with different seeds or computers.
 
 from common import *
 
+# Table string creator
 from da_methods.admin import _print_averages
-def pa(cfgs,avrgs): return _print_averages(cfgs,avrgs,statkeys=['rmse_a','rmse_f','rmse_u'])
+def pa(cfgs,avrgs):
+  return _print_averages(cfgs,avrgs,statkeys=['rmse_a','rmse_f','rmse_u'])
 
 
 ##############################
@@ -65,11 +67,7 @@ def test_len():
 table = table.split('\n')
 old   = old  .split('\n')
 
-import pytest
-@pytest.mark.parametrize(('lineno'),arange(len(table)))
-def test_tables(lineno):
-    assert table[lineno] == old[lineno]
-
+L63 = dict(table=table,old=old)
 
 
 ##############################
@@ -126,12 +124,21 @@ old = """
 table = table.split('\n')
 old   = old  .split('\n')
 
-def test_len():
-  assert len(old)==len(table)
+L95 = dict(table=table,old=old)
+
+
+
+##############################
+# Test definitions
+##############################
 
 import pytest
-@pytest.mark.parametrize(('lineno'),arange(len(table)))
-def test_tables(lineno):
-    assert table[lineno] == old[lineno]
+@pytest.mark.parametrize(('lineno'),arange(len(L63['table'])))
+def test_tables_L63(lineno):
+    assert L63['table'][lineno] == L63['old'][lineno]
+
+@pytest.mark.parametrize(('lineno'),arange(len(L95['table'])))
+def test_tables_L95(lineno):
+    assert L95['table'][lineno] == L95['old'][lineno]
 
 

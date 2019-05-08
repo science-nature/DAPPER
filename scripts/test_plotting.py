@@ -58,16 +58,16 @@ def test_L63():
 def test_L95():
   cfgs  = List_of_Configs()
 
-  # from mods.Lorenz95.sak08 import HMM
-  # cfgs += EnKF('PertObs'        ,N=40, infl=1.06)               # 0.22
-  # cfgs += EnKF('Serial'         ,N=28, infl=1.02,rot=True)      # 0.18
-  # cfgs += ExtKF(infl=10)                                        # 0.24 
-  # cfgs += LETKF(N=6,rot=True,infl=1.05,loc_rad=4,taper='Step')  # 
+  from mods.Lorenz95.sak08 import HMM
+  cfgs += EnKF('PertObs'        ,N=40, infl=1.06)               # 0.22
+  cfgs += EnKF('Serial'         ,N=28, infl=1.02,rot=True)      # 0.18
+  cfgs += ExtKF(infl=10)                                        # 0.24 
+  cfgs += LETKF(N=6,rot=True,infl=1.05,loc_rad=4,taper='Step')  # 
 
-  from mods.Lorenz95.boc15loc import HMM
-  cfgs += EnKF_N(  N=24, rot=True ,infl=1.01)              # 0.38
-  cfgs += PartFilt(N=3000,NER=0.20,reg=1.2)                # 0.77
-  cfgs += PFxN(    N=1000,xN=100, NER=0.9,Qs=0.6)          # 0.51
+  # from mods.Lorenz95.boc15loc import HMM
+  # cfgs += EnKF_N(  N=24, rot=True ,infl=1.01)              # 0.38
+  # cfgs += PartFilt(N=3000,NER=0.20,reg=1.2)                # 0.77
+  # cfgs += PFxN(    N=1000,xN=100, NER=0.9,Qs=0.6)          # 0.51
 
   for iC,C in enumerate(cfgs):
     C.fail_gently=False

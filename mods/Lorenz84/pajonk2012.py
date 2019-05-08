@@ -11,9 +11,10 @@
 
 from common import *
 
-from mods.Lorenz84.core import step, dfdx, Nx
+from mods.Lorenz84.core import step, dfdx, x0
 from mods.Lorenz63.core import LPs
 
+Nx = len(x0)
 Ny = Nx
 
 day = 0.05/6 * 24 # coz dt=0.05 <--> 6h in "model time scale"
@@ -26,7 +27,8 @@ Dyn = {
     'noise': 0
     }
 
-X0 = GaussRV(C=0.01,M=Nx) # Decreased from Pajonk's C=1.
+# X0 = GaussRV(C=0.01,M=Nx) # Decreased from Pajonk's C=1.
+X0 = GaussRV(C=0.01,mu=x0)
 
 jj = arange(Nx)
 Obs = partial_direct_Obs(Nx, jj)

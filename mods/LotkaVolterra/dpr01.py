@@ -2,13 +2,15 @@
 
 from common import *
 
-from mods.LotkaVolterra.core import step, dfdx, Nx, LP_setup
+from mods.LotkaVolterra.core import step, dfdx, x0, LP_setup
 
 # dt has been chosen after noting that 
 # using dt up to 0.7 does not change the chaotic properties much,
 # as adjudged with eye-ball and Lyapunov measures.
 
 t = Chronology(0.5,dtObs=10,T=1000,BurnIn=10)
+
+Nx = len(x0)
 
 Dyn = {
     'M'    : Nx,
@@ -17,7 +19,7 @@ Dyn = {
     'noise': 0
     }
 
-X0 = GaussRV(mu=0.5*ones(Nx),C=0.01**2)
+X0 = GaussRV(mu=x0,C=0.01**2)
 
 jj = [1,3]
 Obs = partial_direct_Obs(Nx,jj)

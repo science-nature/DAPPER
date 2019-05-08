@@ -31,28 +31,24 @@ def compare(fun, Jacob, x):
 
 
 ##
-from mods.LotkaVolterra.core import dxdt, TLM, Nx
-x = 0.5 + 0.1*randn(Nx) # TODO replace with imported x0
-def test_LV(fun=dxdt,Jacob=TLM,x=x): # capture current values
-  assert compare(dxdt, TLM, x)
+from mods.LotkaVolterra.core import dxdt, TLM, x0
+def test_LV(fun=dxdt,Jacob=TLM,x=x0): # capture current values
+  assert compare(fun, Jacob, x)
 
 ##
 from mods.Lorenz63.core import dxdt, TLM, x0
-x = x0 + randn(len(x0))
-def test_L63(fun=dxdt,Jacob=TLM,x=x): # capture current values
-  assert compare(dxdt, TLM, x)
+def test_L63(fun=dxdt,Jacob=TLM,x=x0): # capture current values
+  assert compare(fun, Jacob, x)
 
 ##
-from mods.Lorenz84.core import dxdt, TLM, Nx
-x = 10*randn(Nx) # ? # TODO replace with imported x0
-def test_L84(fun=dxdt,Jacob=TLM,x=x): # capture current values
-  assert compare(dxdt, TLM, x)
+from mods.Lorenz84.core import dxdt, TLM, x0
+def test_L84(fun=dxdt,Jacob=TLM,x=x0): # capture current values
+  assert compare(fun, Jacob, x)
 
 ##
-from mods.Lorenz95.core import dxdt, TLM
-x = 5 + randn(10) # TODO replace with imported x0
-def test_L95(fun=dxdt,Jacob=TLM,x=x): # capture current values
-  assert compare(dxdt, TLM, x)
+from mods.Lorenz95.core import dxdt, TLM, x0
+def test_L95(fun=dxdt,Jacob=TLM,x=x0(40)): # capture current values
+  assert compare(fun, Jacob, x)
 
 ##
 # TODO
@@ -61,7 +57,7 @@ def test_L95(fun=dxdt,Jacob=TLM,x=x): # capture current values
 # x = 5 + randn(LUV.M)
 # LUV.dfdt
 # def test_LUV(fun=,Jacob=,x=): # capture current values
-  # assert compare(dxdt, TLM, x)
+  # assert compare(fun, Jacob, x)
 
 ##
 # test_LV()

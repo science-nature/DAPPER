@@ -4,12 +4,11 @@
 ##
 
 from common import *
-from mods.LotkaVolterra.core import step, Nx
+from mods.LotkaVolterra.core import step, x0
 
 ##
 simulator = with_recursion(step, prog="Simulating")
 
-x0 = 0.5*ones(Nx)
 dt = 0.7
 K  = int(1*10**4 / dt)
 xx = simulator(x0, K, t0=0, dt=dt)

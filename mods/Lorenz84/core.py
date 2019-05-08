@@ -12,8 +12,6 @@ import numpy as np
 from tools.math import with_rk4, is1d
 from common import ens_compatible, integrate_TLM
 
-Nx = 3
-
 # Constants
 a = 0.25;  b = 4; F = 8.0; G = 1.23;
 #G = 1.0
@@ -28,7 +26,8 @@ def dxdt(x):
   return d
 
 step = with_rk4(dxdt,autonom=True)
-  
+
+x0 = np.array([ 1.65,  0.49,  1.21])
 
 def TLM(x):
   x,y,z = x

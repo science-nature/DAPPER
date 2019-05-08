@@ -2,12 +2,11 @@
 
 
 from common import *
-from mods.Lorenz84.core import step
+from mods.Lorenz84.core import step, x0
 
 ##
 simulator = with_recursion(step, prog="Simulating")
 
-x0 = array([1,1,1])
 N  = 400
 K  = 10
 xx = simulator(x0, k=N*K, t0=0, dt=0.01)

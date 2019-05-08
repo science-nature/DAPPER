@@ -55,13 +55,13 @@ sd0 = seed(5)
 # N     = 66 # Don't need all Nx for a good approximation of upper spectrum.
 
 
-# from mods.LotkaVolterra.core import step, Nx
+# from mods.LotkaVolterra.core import step, x0
 # # ------------------
 # # Lyapunov exponents: [0.02  0 -0.28 -1.03]
 # T   = 1e3
 # dt  = 0.2
-# x0  = 0.5*ones(Nx)
 # eps = 0.0002
+# Nx  = len(x0)
 # N   = Nx
 
 

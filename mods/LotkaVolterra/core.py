@@ -17,10 +17,13 @@ A = array([
   [ 1.21 , 0.51 , 0.35 , 1    ]
   ])
 
+x0 = 0.25*ones(Nx)
+
 def dxdt(x):
   return (r*x) * (1 - x@A.T)
 
 step = with_rk4(dxdt,autonom=True)
+
 
 def TLM(x):
   return diag(r - r*(A@x)) - (r*x)[:,None]*A 

@@ -67,7 +67,7 @@ for ic,config in enumerate(cfgs):
   # config.store_u = True
   # config.liveplotting = True
   # config.fail_gently = True
-  seed(sd0+2)
+  seed(sd0+2) # use common random nums
 
   stats += [ config.assimilate(HMM,xx,yy) ]
   avrgs += [ stats[ic].average_in_time() ]

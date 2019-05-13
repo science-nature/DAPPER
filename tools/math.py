@@ -11,10 +11,6 @@ def is1d(a):
   """ Works for list and row/column arrays and matrices"""
   return np.sum(asarray(asarray(a).shape) > 1) <= 1
 
-# stackoverflow.com/q/37726830
-def is_int(a):
-  return np.issubdtype(type(a), np.integer)
-
 def tp(a):
   """Tranpose 1d vector"""
   return a[np.newaxis].T
@@ -214,10 +210,13 @@ def round2nice(xx):
     r1[-2] = r2[-2]
   return r1
 
-def validate_int(x):
-  x_int = int(x)
-  assert np.isclose(x,x_int)
-  return x_int
+def is_whole(x):
+  return np.isclose(x,round(x))
+
+# stackoverflow.com/q/37726830
+def is_int(a):
+  return np.issubdtype(type(a), np.integer)
+
 
 #   import decimal
 #   def round2(num,prec=1.0):
@@ -484,20 +483,27 @@ def Id_mat(M):
   I = np.eye(M)
   return NamedFunc(lambda x,t: I, "Id("+str(M)+") matrix")
 
-def linear_model_setup(ModelMatrix):
-  "ModelMatrix is normalized wrt step length dt."
-  ModelMatrix = np.asarray(ModelMatrix) # sparse or matrix classes not supported
-  M = len(ModelMatrix)
+def linear_model_setup(ModelMatrix,dt0):
+  """x(t+dt) = ModelMatrix^(dt/dt0) @ x(t),
+  i.e. dx/dt = log(ModelMatrix)/dt0 @ x(t)."""
+  Mat = np.asarray(ModelMatrix) # does not support sparse and matrix-class
+  
+  # Compute and cache ModelMatrix^(dt/dt0).
+  @functools.lru_cache(maxsize=1)
+  def MatPow(dt):
+    assert is_whole(dt/dt0), "Mat. exponentiation unique only for integer powers."
+    return nla.matrix_power(Mat, round(dt/dt0))
+
   @ens_compatible
-  def model(x,t,dt): return dt*(ModelMatrix@x)
-  def jacob(x,t,dt): return dt*ModelMatrix
+  def model(x,t,dt): return MatPow(dt) @ x
+  def jacob(x,t,dt): return MatPow(dt)
+
   Dyn = {
-      'M'    : M,
+      'M'    : len(Mat),
       'model': model,
       'jacob': jacob,
       }
   return Dyn
-
 
 
 def direct_obs_matrix(Nx,obs_inds):
@@ -506,6 +512,7 @@ def direct_obs_matrix(Nx,obs_inds):
   H = zeros((Ny,Nx))
   H[range(Ny),obs_inds] = 1
   return H
+
 
 def partial_direct_Obs(Nx,obs_inds):
   Ny = len(obs_inds)
